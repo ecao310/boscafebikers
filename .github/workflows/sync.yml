@@ -6,9 +6,6 @@ on:
     - cron: "0 */6 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 concurrency:
   group: sync-rides
   cancel-in-progress: false
@@ -16,6 +13,10 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -41,9 +42,11 @@ jobs:
         run: python scripts/promote_events.py "$RUNNER_TEMP/events.json" site/events.json
 
       - name: Commit site/events.json if changed
+        id: commit
         run: |
           if git diff --quiet -- site/events.json; then
             echo "No ride changes; nothing to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name "github-actions[bot]"
@@ -51,3 +54,16 @@ jobs:
           git add site/events.json
           git commit -m "Sync rides from Partiful feed"
           git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  # The push above uses GITHUB_TOKEN, which deliberately does not fire `push`
+  # workflow triggers — so Pages would never redeploy. Call the deploy workflow
+  # ourselves instead, and only when the rides actually changed.
+  deploy:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml

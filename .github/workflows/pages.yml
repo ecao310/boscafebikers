@@ -5,6 +5,9 @@ on:
     branches:
       - master
   workflow_dispatch:
+  # Callable by sync.yml: commits pushed with GITHUB_TOKEN do not fire the
+  # `push` trigger above, so the sync workflow has to invoke this one directly.
+  workflow_call:
 
 permissions:
   contents: read
@@ -25,6 +28,11 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          # Deploy the branch tip, not the SHA that started the run: when
+          # sync.yml calls this workflow, github.sha still points at the commit
+          # from *before* the bot pushed the new site/events.json.
+          ref: ${{ github.ref }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
