@@ -38,6 +38,33 @@ Tagline: "exploring the city one café at a time".
 - Git default branch here is `master`; the repo's "main" branch for PRs is `main`.
 - `ralph.log` is gitignored loop scratch — do not commit it.
 
+## `scripts/fetch_rides.py`
+
+Run it on the fixture (never the live feed) with:
+
+```
+.venv/bin/python scripts/fetch_rides.py --ics-file tests/fixtures/sample.ics
+```
+
+- CLI: `--ics-file PATH` (bypasses the network) and `--out PATH`
+  (default `site/events.json`). With no `--ics-file` it reads
+  `PARTIFUL_ICS_URL`, rewriting a leading `webcal://` to `https://`.
+- Importable API for tests: `parse_events(data: bytes, now=None) -> list[dict]`,
+  `extract_rsvp_url(description)`, `build_payload(rides, now=None)`,
+  `write_events(payload, path)`, `main(argv) -> int`, and `FeedError`.
+  Injecting `now` is how the tests pin "future" without depending on the clock.
+- **Never echo `requests` exception text** — it embeds the request URL. The
+  fetch path reports only `type(exc).__name__` (+ HTTP status when present).
+  `scrub()` strips URLs from any other text that gets surfaced.
+- Output shape: `{"updated_at", "count", "events": [...]}`; each event has
+  `uid, title, start (ISO+offset), date_display, time_display, location,
+  description (RSVP line stripped), rsvp_url (may be null)`. Display strings
+  are precomputed in Python so the page doesn't render in the visitor's tz.
+- Filtering is `start >= now` in `America/New_York`; `STATUS:CANCELLED` dropped.
+  All-day `DATE` values become local midnight.
+- The venv here is **Python 3.9**, so the module uses
+  `from __future__ import annotations` for `X | None` hints. Keep that import.
+
 ## Fixture contents (`tests/fixtures/sample.ics`)
 
 Partiful-style feed, 4 VEVENTs, deliberately **not** in chronological order so
@@ -66,5 +93,6 @@ included, so `icalendar` returns tz-aware datetimes directly).
 Iteration 1: repo scaffolding (`.gitignore`, `PLAN.md`, `CLAUDE.md`,
 `requirements.txt`).
 Iteration 2: `tests/fixtures/sample.ics` (see table above); verified it parses
-with `icalendar` and yields the expected 4 events. Next task is
-`scripts/fetch_rides.py`.
+with `icalendar` and yields the expected 4 events.
+Iteration 3: `scripts/fetch_rides.py` + generated `site/events.json` (2 future
+rides, sorted). Next task is `tests/test_fetch_rides.py`.
