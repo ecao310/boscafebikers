@@ -1,0 +1,14 @@
+name: TEMP chain test
+
+# Temporary: proves pages.yml is workflow_call-able from another workflow the
+# same way sync.yml calls it. Deleted immediately after the run.
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
