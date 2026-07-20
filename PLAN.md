@@ -23,7 +23,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Add README.md: what this is, how to get the ICS URL from Partiful
   (Settings → Calendar Sync → Apple Calendar, swap `webcal://` for `https://`),
   how to set the repo secret, how to deploy on GitHub Pages
-- [ ] End-to-end check: fresh clone simulation — script on fixture, open site,
+- [x] End-to-end check: fresh clone simulation — script on fixture, open site,
   confirm rides render; fix anything broken
 
 ## Discovered work

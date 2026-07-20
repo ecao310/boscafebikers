@@ -133,8 +133,34 @@ Iteration 8: `README.md` — how it works, getting the ICS URL (Partiful
 Settings → Calendar Sync → Apple Calendar, `webcal://` → `https://`), setting
 the `PARTIFUL_ICS_URL` secret, GitHub Pages deploy (branch + `/site` folder),
 local dev (`python -m http.server -d site 8000`; the page must be served over
-HTTP, not `file://`, for `fetch("events.json")` to work). Next and last task is
-the end-to-end check.
+HTTP, not `file://`, for `fetch("events.json")` to work).
+Iteration 9: end-to-end check — **all backlog tasks complete, nothing broken.**
+
+### End-to-end verification (how it was done, iteration 9)
+
+Fresh-clone simulation in `/tmp`, everything offline:
+
+1. `git clone` the repo → fresh `python3 -m venv .venv` + `pip install -r
+   requirements.txt` → `pytest tests/ -q` = 24 passed.
+2. Deleted `site/events.json`, regenerated it with `scripts/fetch_rides.py
+   --ics-file tests/fixtures/sample.ics` → exit 0, exactly the 2 future 2030
+   rides, sorted.
+3. Served with `python -m http.server -d site 8765`; `/` and `/events.json`
+   both 200.
+4. Rendering was checked against the **served** page (not the file on disk):
+   a small node script fetches `/`, regex-extracts the inline `<script>`,
+   `eval`s it against a shim `document` (whose `innerHTML` setter *throws*, so
+   the no-`innerHTML` rule is enforced) and a `fetch` rebased on the server
+   URL, then dumps the DOM. Both ride cards, `.when`/`.where`/description/RSVP
+   hrefs and the "Last updated … ET." stamp all rendered. Re-ran with an empty
+   `events` array and with `events.json` deleted (real 404) → both fell back to
+   a note plus the Partiful-profile button.
+5. Workflow guard: fetch to a temp file → `promote_events.py` → "Rides
+   unchanged", `git diff --quiet` clean (no bot commit). Repeated with an
+   edited title → "Rides changed", diff dirty (would commit). Both correct.
+6. `git grep` for feed-URL patterns in tracked files: only prose/code mentions
+   of the `webcal://` scheme, no real URL. HTML re-validated with
+   `html.parser` (no unclosed/mismatched tags).
 
 ## `site/index.html`
 
