@@ -18,6 +18,7 @@ Tagline: "exploring the city one café at a time".
 | `site/index.html` | The whole site: one page, inline CSS/JS, no build step. |
 | `site/events.json` | Generated ride data (committed; the workflow updates it). |
 | `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch. |
+| `README.md` | Human-facing: how it works, ICS URL, secret, Pages deploy, local dev. |
 
 ## Conventions & decisions
 
@@ -127,7 +128,13 @@ schedule area), "Your first ride", about, links, footer.
 Iteration 6: schedule rendering `<script>` in `site/index.html` (ride cards,
 last-updated stamp, empty/error fallback).
 Iteration 7: `.github/workflows/sync.yml` + `scripts/promote_events.py` (see
-above). Next task is `README.md`.
+above).
+Iteration 8: `README.md` — how it works, getting the ICS URL (Partiful
+Settings → Calendar Sync → Apple Calendar, `webcal://` → `https://`), setting
+the `PARTIFUL_ICS_URL` secret, GitHub Pages deploy (branch + `/site` folder),
+local dev (`python -m http.server -d site 8000`; the page must be served over
+HTTP, not `file://`, for `fetch("events.json")` to work). Next and last task is
+the end-to-end check.
 
 ## `site/index.html`
 

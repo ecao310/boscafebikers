@@ -20,7 +20,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   fallback to the Partiful profile
 - [x] Create .github/workflows/sync.yml per spec (cron `0 */6 * * *`,
   workflow_dispatch, commit-if-changed guard)
-- [ ] Add README.md: what this is, how to get the ICS URL from Partiful
+- [x] Add README.md: what this is, how to get the ICS URL from Partiful
   (Settings → Calendar Sync → Apple Calendar, swap `webcal://` for `https://`),
   how to set the repo secret, how to deploy on GitHub Pages
 - [ ] End-to-end check: fresh clone simulation — script on fixture, open site,
