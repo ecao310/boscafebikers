@@ -18,7 +18,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Add schedule rendering JS: load events.json, render ride cards
   (date, time, start location, RSVP button), last-updated stamp, empty-state
   fallback to the Partiful profile
-- [ ] Create .github/workflows/sync.yml per spec (cron `0 */6 * * *`,
+- [x] Create .github/workflows/sync.yml per spec (cron `0 */6 * * *`,
   workflow_dispatch, commit-if-changed guard)
 - [ ] Add README.md: what this is, how to get the ICS URL from Partiful
   (Settings → Calendar Sync → Apple Calendar, swap `webcal://` for `https://`),

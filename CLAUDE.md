@@ -12,6 +12,7 @@ Tagline: "exploring the city one café at a time".
 | `CLAUDE.md` | This file — decisions, gotchas, conventions for the next iteration. |
 | `requirements.txt` | Python deps: `icalendar`, `requests`, `pytest`. |
 | `scripts/fetch_rides.py` | Fetches + parses the ICS feed → `site/events.json`. |
+| `scripts/promote_events.py` | Copies fetched JSON over the committed one only if `events` differ. |
 | `tests/fixtures/sample.ics` | Offline fixture (2 future, 1 past, 1 cancelled). See table below. |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
 | `site/index.html` | The whole site: one page, inline CSS/JS, no build step. |
@@ -88,6 +89,30 @@ included, so `icalendar` returns tz-aware datetimes directly).
 - Local venv for verification: `python3 -m venv .venv && .venv/bin/pip install -r
   requirements.txt` (`.venv/` is gitignored).
 
+## `.github/workflows/sync.yml`
+
+Cron `0 */6 * * *` (UTC) + `workflow_dispatch`. Ubuntu, Python 3.11, pip cache
+keyed on `requirements.txt`, `permissions: contents: write`, and a
+`concurrency: sync-rides` group so two runs can't race a push.
+
+- **The commit-if-changed guard needs `promote_events.py`.** `build_payload()`
+  stamps a fresh `updated_at` on every run, so `git diff` on `site/events.json`
+  would *always* be dirty and the bot would commit a new timestamp every 6h
+  forever. So the workflow writes the fetch to `$RUNNER_TEMP/events.json`, then
+  `scripts/promote_events.py <new> site/events.json` copies it into place only
+  when the `events` lists differ. The final step is a plain
+  `git diff --quiet -- site/events.json` guard. Don't "simplify" this back into
+  a single fetch-in-place step.
+- `promote_events.py` is stdlib-only, exits 0 whether or not it copied, and
+  exits nonzero only if the new file is missing/unparseable. No tests yet
+  (verified by hand: unchanged → no diff, edited title → diff, missing file →
+  exit 1).
+- Committer identity is the `github-actions[bot]` noreply address.
+- The secret is passed as `env: PARTIFUL_ICS_URL: ${{ secrets.PARTIFUL_ICS_URL }}`
+  on the fetch step only — never as a CLI arg (args show up in logs).
+- No `yaml` module in the venv; validate the workflow with
+  `ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load_file(".github/workflows/sync.yml"))'`.
+
 ## Status
 
 Iteration 1: repo scaffolding (`.gitignore`, `PLAN.md`, `CLAUDE.md`,
@@ -100,8 +125,9 @@ Iteration 4: `tests/test_fetch_rides.py` — 24 tests, all green, all offline.
 Iteration 5: `site/index.html` — hero, upcoming-rides section (placeholder
 schedule area), "Your first ride", about, links, footer.
 Iteration 6: schedule rendering `<script>` in `site/index.html` (ride cards,
-last-updated stamp, empty/error fallback). Next task is
-`.github/workflows/sync.yml`.
+last-updated stamp, empty/error fallback).
+Iteration 7: `.github/workflows/sync.yml` + `scripts/promote_events.py` (see
+above). Next task is `README.md`.
 
 ## `site/index.html`
 
