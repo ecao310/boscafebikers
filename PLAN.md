@@ -21,7 +21,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Wire freshness: a ride-schedule update must redeploy the site even though
   `GITHUB_TOKEN` pushes don't fire `push` triggers. Verify via a `sync.yml`
   `workflow_dispatch` run.
-- [ ] Fix the README's GitHub Pages section — the "folder `/site`" instructions
+- [x] Fix the README's GitHub Pages section — the "folder `/site`" instructions
   are impossible. Document the Actions deploy, the live URL, and `site/CNAME`
   for a future custom domain.
 - [ ] Final CLAUDE.md pass (file map + "Deployment" section + manual redeploy),

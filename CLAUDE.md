@@ -149,6 +149,13 @@ Iteration 12: Pages source switched to Actions, pushed, first deploy green —
 Iteration 13: live-deploy verification (see "Deployment: live verification").
 Iteration 14: freshness chain — `sync.yml` calls `pages.yml` via `workflow_call`
 (see "Freshness chain").
+Iteration 15: README rewritten for the real deploy — the impossible
+"folder `/site`" instructions are gone, replaced by the Actions source (+ the
+`gh api -X PUT … build_type=workflow` headless form), the live URL, the manual
+`gh workflow run pages.yml` redeploy, why the sync→deploy chain uses
+`workflow_call`, the no-root-relative-paths rule, and `site/CNAME` for a future
+custom domain. Also added a callout that `PARTIFUL_ICS_URL` is still unset, and
+listed `pages.yml` in the repo-layout table.
 
 ### Deployment: pre-flight findings (iteration 10)
 
