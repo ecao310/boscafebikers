@@ -18,6 +18,7 @@ Tagline: "exploring the city one café at a time".
 | `site/index.html` | The whole site: one page, inline CSS/JS, no build step. |
 | `site/events.json` | Generated ride data (committed; the workflow updates it). |
 | `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch. |
+| `.github/workflows/pages.yml` | Builds `site/` and deploys it to GitHub Pages. |
 | `README.md` | Human-facing: how it works, ICS URL, secret, Pages deploy, local dev. |
 
 ## Conventions & decisions
@@ -167,6 +168,26 @@ State of the repo/GitHub side as of the start of phase 2:
 - **`PARTIFUL_ICS_URL` is not set** — `gh secret list` is empty. See
   "Discovered work" in PLAN.md; the freshness task must account for a sync run
   that fails at fetch.
+
+## `.github/workflows/pages.yml` (iteration 11)
+
+`checkout` → `actions/configure-pages@v5` → `actions/upload-pages-artifact@v3`
+(`path: site`) → `actions/deploy-pages@v4`, with `permissions: contents: read /
+pages: write / id-token: write`, `concurrency: pages` (`cancel-in-progress:
+false`), and the `github-pages` environment carrying the deploy URL.
+
+- Triggers so far: `push` on **`master`** (the default branch — there is no
+  `main`) and `workflow_dispatch`. The sync→deploy chain is *not* wired yet;
+  that's the "wire freshness" backlog task, and it must not rely on `push`
+  because `GITHUB_TOKEN` commits don't fire `push` triggers.
+- Why Actions and not "deploy from a branch": that source only offers `/` or
+  `/docs`, and the site lives in `site/`.
+- **Not pushed yet on purpose.** Pages is still on the legacy source
+  (publishing the repo root), so `deploy-pages` would fail with a
+  "not configured for Actions" style error. The next task switches the source
+  via `gh api` *and then* pushes.
+- Validated with `ruby -ryaml -rjson -e '…'` (parses; the `on:` key shows up as
+  `true` in the Ruby dump — YAML 1.1 boolean coercion, harmless).
 
 ### End-to-end verification (how it was done, iteration 9)
 

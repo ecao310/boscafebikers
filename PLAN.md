@@ -8,7 +8,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Pre-flight: confirm local `master` is pushed to the `boscafebikers` remote
   and is the repo's default branch; `git grep` tracked files for the real ICS
   feed URL; working tree clean. Record the default branch name in CLAUDE.md.
-- [ ] Add `.github/workflows/pages.yml`: `actions/upload-pages-artifact`
+- [x] Add `.github/workflows/pages.yml`: `actions/upload-pages-artifact`
   (`path: site`) + `actions/deploy-pages`, `permissions: pages: write /
   id-token: write / contents: read`, `concurrency: pages`, triggers `push` (default
   branch) + `workflow_dispatch`. Validate the YAML with `ruby -ryaml`.
