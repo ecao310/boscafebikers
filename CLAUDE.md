@@ -143,6 +143,9 @@ local dev (`python -m http.server -d site 8000`; the page must be served over
 HTTP, not `file://`, for `fetch("events.json")` to work).
 Iteration 9: end-to-end check — **phase 1 complete, nothing broken.**
 Iteration 10: phase-2 pre-flight (see "Deployment: pre-flight findings").
+Iteration 11: `.github/workflows/pages.yml`.
+Iteration 12: Pages source switched to Actions, pushed, first deploy green —
+**the site is live** (see "Deployment: live").
 
 ### Deployment: pre-flight findings (iteration 10)
 
@@ -182,12 +185,33 @@ false`), and the `github-pages` environment carrying the deploy URL.
   because `GITHUB_TOKEN` commits don't fire `push` triggers.
 - Why Actions and not "deploy from a branch": that source only offers `/` or
   `/docs`, and the site lives in `site/`.
-- **Not pushed yet on purpose.** Pages is still on the legacy source
-  (publishing the repo root), so `deploy-pages` would fail with a
-  "not configured for Actions" style error. The next task switches the source
-  via `gh api` *and then* pushes.
+- Pushed in iteration 12, after the Pages source was flipped to Actions (see
+  "Deployment: live" below).
 - Validated with `ruby -ryaml -rjson -e '…'` (parses; the `on:` key shows up as
   `true` in the Ruby dump — YAML 1.1 boolean coercion, harmless).
+
+### Deployment: live (iteration 12)
+
+**The site is live at <https://ecao310.github.io/boscafebikers/>**, served from
+`site/` by `pages.yml` (Actions source).
+
+- Flipping the source is headless:
+  `gh api -X PUT repos/:owner/:repo/pages -f build_type=workflow`. Confirm with
+  `gh api repos/:owner/:repo/pages` → `build_type: "workflow"`, `status: "built"`.
+  (`source: {branch: master, path: "/"}` is left over from the legacy config and
+  is ignored once `build_type` is `workflow` — don't try to "fix" it to `/site`;
+  that value is not accepted.)
+- **Gotcha:** right after the flip, the legacy `pages-build-deployment`
+  workflow can still have a run queued, and it holds the `github-pages`
+  environment, so the new "Deploy site to Pages" run sits `queued` for many
+  minutes. Cancel the stale legacy run (`gh run cancel <id>`) and the Actions
+  deploy starts within seconds (job itself takes ~15s).
+- Verified live: `curl -o /dev/null -w '%{http_code}'` on `/` and
+  `/events.json` = 200/200; the page `<title>` is the real one and
+  `events.json` decodes to the 2 fixture rides (Charles River Loop → Tatte,
+  Minuteman Bikeway to Lexington).
+- Redeploy by hand: `gh workflow run pages.yml --ref master` (then
+  `gh run watch <id>`).
 
 ### End-to-end verification (how it was done, iteration 9)
 

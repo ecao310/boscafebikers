@@ -12,7 +12,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   (`path: site`) + `actions/deploy-pages`, `permissions: pages: write /
   id-token: write / contents: read`, `concurrency: pages`, triggers `push` (default
   branch) + `workflow_dispatch`. Validate the YAML with `ruby -ryaml`.
-- [ ] Switch the repo's Pages source to GitHub Actions via `gh api` (create the
+- [x] Switch the repo's Pages source to GitHub Actions via `gh api` (create the
   Pages site if absent), push, and watch the first deploy with `gh run watch`.
   Record the live URL in CLAUDE.md.
 - [ ] Verify the live deploy: `curl` the site URL and its `events.json` (both
@@ -60,6 +60,8 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   task must therefore verify the sync→deploy chain some other way (e.g. confirm
   the deploy job is reached / correctly skipped), and the README should say the
   secret is a required setup step that is still outstanding.
-- [ ] Pages is currently on the **legacy** source publishing the repo root, so
+- [x] Pages is currently on the **legacy** source publishing the repo root, so
   <https://ecao310.github.io/boscafebikers/> serves the README, not the site.
   Converting it is part of the "switch Pages source" task, not a separate fix.
+  (Done in iteration 12: `build_type: workflow`, run 29714522817 deployed
+  `site/`; the live URL now serves `index.html`.)
