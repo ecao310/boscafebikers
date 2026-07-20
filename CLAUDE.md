@@ -13,7 +13,7 @@ Tagline: "exploring the city one café at a time".
 | `requirements.txt` | Python deps: `icalendar`, `requests`, `pytest`. |
 | `scripts/fetch_rides.py` | Fetches + parses the ICS feed → `site/events.json`. |
 | `tests/fixtures/sample.ics` | Offline fixture (2 future, 1 past, 1 cancelled). See table below. |
-| `tests/test_fetch_rides.py` | pytest suite for the fetch script. |
+| `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
 | `site/index.html` | The whole site: one page, inline CSS/JS, no build step. |
 | `site/events.json` | Generated ride data (committed; the workflow updates it). |
 | `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch. |
@@ -95,4 +95,24 @@ Iteration 1: repo scaffolding (`.gitignore`, `PLAN.md`, `CLAUDE.md`,
 Iteration 2: `tests/fixtures/sample.ics` (see table above); verified it parses
 with `icalendar` and yields the expected 4 events.
 Iteration 3: `scripts/fetch_rides.py` + generated `site/events.json` (2 future
-rides, sorted). Next task is `tests/test_fetch_rides.py`.
+rides, sorted).
+Iteration 4: `tests/test_fetch_rides.py` — 24 tests, all green, all offline.
+Next task is `site/index.html` (hero + about + first-ride + links, placeholder
+schedule area).
+
+## `tests/test_fetch_rides.py`
+
+Run with `.venv/bin/python -m pytest tests/ -q` (24 passing). Notes:
+
+- There is no `conftest.py` / packaging; the test file puts `scripts/` on
+  `sys.path` itself and does `import fetch_rides`.
+- Pinned clock is `NOW = 2025-01-01 12:00 America/New_York`, passed as
+  `parse_events(..., now=NOW)`. Never call the parser without `now` in a test.
+- Coverage: past + cancelled filtering, sort order, folded-RSVP extraction,
+  RSVP line stripped from description, `-04:00` offsets, precomputed display
+  strings, non-ASCII round-trip, `now` boundary (`>=` keeps an event starting
+  exactly now), empty result, malformed feed → `FeedError`, `main()` exit codes
+  (0 happy path, 1 for broken feed / missing file / unset env var), and two
+  leak tests asserting the feed URL never reaches an error message.
+- The suite passes under any system timezone (verified with `TZ=Asia/Tokyo`) —
+  keep it that way; assert on explicit offsets, not on local time.
