@@ -24,7 +24,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Fix the README's GitHub Pages section — the "folder `/site`" instructions
   are impossible. Document the Actions deploy, the live URL, and `site/CNAME`
   for a future custom domain.
-- [ ] Final CLAUDE.md pass (file map + "Deployment" section + manual redeploy),
+- [x] Final CLAUDE.md pass (file map + "Deployment" section + manual redeploy),
   then full end-to-end verification and `RALPH_DONE`.
 
 ## Backlog — phase 1: build (complete)

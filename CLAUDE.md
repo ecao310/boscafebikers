@@ -47,6 +47,36 @@ Tagline: "exploring the city one café at a time".
   needs the remote spelled out.
 - `ralph.log` is gitignored loop scratch — do not commit it.
 
+## Deployment
+
+**Live: <https://ecao310.github.io/boscafebikers/>** (also `/events.json`).
+Everything below is headless — nothing here needs the GitHub web UI.
+
+- **Pages source: GitHub Actions**, not "deploy from a branch". The branch
+  source only offers `/` or `/docs`, and the site lives in `site/`. Check with
+  `gh api repos/:owner/:repo/pages` (`build_type` must be `"workflow"`); set it
+  with `gh api -X PUT repos/:owner/:repo/pages -f build_type=workflow`. The
+  leftover `source: {branch: master, path: "/"}` is ignored — don't try to fix it.
+- **What deploys:** `.github/workflows/pages.yml` uploads `site/` via
+  `actions/upload-pages-artifact` and publishes it with `actions/deploy-pages`.
+- **Trigger chain — three ways in:**
+  1. `push` on `master` (a human commit) → deploy.
+  2. `sync.yml` (cron `0 */6 * * *` / dispatch) fetches the feed, promotes
+     `site/events.json` only if the rides changed, and if it committed, its
+     `deploy` job calls `pages.yml` via `workflow_call`. Bot commits made with
+     `GITHUB_TOKEN` do **not** fire `push`, hence the explicit call.
+  3. `workflow_dispatch` on `pages.yml`.
+- **Redeploy by hand:** `gh workflow run pages.yml --ref master` then
+  `gh run watch <id> --exit-status`. Takes ~15s.
+- **Never use root-relative (`/…`) URLs in `site/`** — the site is served from
+  the `/boscafebikers/` project subpath, so a leading slash 404s.
+- **Still outstanding (needs a human):** the `PARTIFUL_ICS_URL` secret is unset,
+  so every scheduled sync fails at fetch and no deploy is chained. The site
+  serves the committed fixture-derived `events.json` until then.
+
+Details per iteration: "Deployment: pre-flight findings", "Deployment: live",
+"Deployment: live verification", "Freshness chain: sync → deploy" below.
+
 ## `scripts/fetch_rides.py`
 
 Run it on the fixture (never the live feed) with:
@@ -156,6 +186,17 @@ Iteration 15: README rewritten for the real deploy — the impossible
 `workflow_call`, the no-root-relative-paths rule, and `site/CNAME` for a future
 custom domain. Also added a callout that `PARTIFUL_ICS_URL` is still unset, and
 listed `pages.yml` in the repo-layout table.
+Iteration 16: final CLAUDE.md pass — added the consolidated "## Deployment"
+section above (Pages source, all three trigger paths, manual redeploy, the
+subpath rule, the outstanding secret) and ran the phase-2 end-to-end check.
+**Phase 2 complete.** Evidence: `pytest tests/ -q` 24 passed; working tree
+clean; fetch-on-fixture → `promote_events.py` → "Rides unchanged" and
+`git diff --quiet -- site/events.json` clean (so the chain correctly skips the
+deploy on a no-op sync); `gh workflow run pages.yml` run 29715268132 green in
+14s; live `/` and `/events.json` both 200 and the served `events` byte-equal to
+the committed `site/events.json`. (The runners now warn that `actions/checkout@v4`
+et al. target the deprecated Node 20 and are forced onto Node 24 — harmless
+today, but a future iteration should bump the action majors.)
 
 ### Deployment: pre-flight findings (iteration 10)
 
