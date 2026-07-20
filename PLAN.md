@@ -3,7 +3,31 @@
 Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
-## Backlog
+## Backlog — phase 2: deploy to GitHub Pages
+
+- [ ] Pre-flight: confirm local `master` is pushed to the `boscafebikers` remote
+  and is the repo's default branch; `git grep` tracked files for the real ICS
+  feed URL; working tree clean. Record the default branch name in CLAUDE.md.
+- [ ] Add `.github/workflows/pages.yml`: `actions/upload-pages-artifact`
+  (`path: site`) + `actions/deploy-pages`, `permissions: pages: write /
+  id-token: write / contents: read`, `concurrency: pages`, triggers `push` (default
+  branch) + `workflow_dispatch`. Validate the YAML with `ruby -ryaml`.
+- [ ] Switch the repo's Pages source to GitHub Actions via `gh api` (create the
+  Pages site if absent), push, and watch the first deploy with `gh run watch`.
+  Record the live URL in CLAUDE.md.
+- [ ] Verify the live deploy: `curl` the site URL and its `events.json` (both
+  200, JSON valid, `events` match the committed file), no absolute-path breakage
+  under the `/<repo>/` project subpath.
+- [ ] Wire freshness: a ride-schedule update must redeploy the site even though
+  `GITHUB_TOKEN` pushes don't fire `push` triggers. Verify via a `sync.yml`
+  `workflow_dispatch` run.
+- [ ] Fix the README's GitHub Pages section — the "folder `/site`" instructions
+  are impossible. Document the Actions deploy, the live URL, and `site/CNAME`
+  for a future custom domain.
+- [ ] Final CLAUDE.md pass (file map + "Deployment" section + manual redeploy),
+  then full end-to-end verification and `RALPH_DONE`.
+
+## Backlog — phase 1: build (complete)
 
 - [x] Init repo: git init, .gitignore, PLAN.md (copy of this Backlog),
   CLAUDE.md with file map and conventions, requirements.txt (icalendar, requests)
