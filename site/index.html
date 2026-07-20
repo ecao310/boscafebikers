@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boston Café Bikers — exploring the city one café at a time</title>
+<meta name="description" content="A casual Boston cycling group that rides to cafés. No-drop, all levels, BlueBikes welcome.">
+<meta name="theme-color" content="#7a4a2b">
+<meta property="og:title" content="Boston Café Bikers">
+<meta property="og:description" content="Exploring the city one café at a time.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --espresso: #2e1d13;
+    --roast:    #4a2c1a;
+    --crema:    #b07a4a;
+    --latte:    #f6ece0;
+    --foam:     #fffaf4;
+    --oat:      #e6d5c2;
+    --ink:      #33261d;
+    --muted:    #7a685a;
+    --radius:   14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--latte);
+    color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  h1, h2, h3 {
+    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    line-height: 1.2;
+    margin: 0 0 .5rem;
+  }
+
+  a { color: var(--roast); }
+
+  /* --- hero --- */
+  .hero {
+    background: linear-gradient(160deg, var(--roast) 0%, var(--espresso) 100%);
+    color: var(--foam);
+    padding: 56px 0 48px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+    letter-spacing: -.01em;
+  }
+  .hero .tagline {
+    font-size: 1.1rem;
+    color: var(--oat);
+    margin: 0 0 1.5rem;
+  }
+  .hero .mark { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+  .hero a { color: var(--foam); }
+
+  .btn {
+    display: inline-block;
+    background: var(--crema);
+    color: #2b1a10;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: 0;
+  }
+  .btn:hover, .btn:focus { background: #c68f5d; }
+
+  /* --- sections --- */
+  section { padding: 40px 0; }
+  section + section { border-top: 1px solid var(--oat); }
+  section h2 { font-size: 1.6rem; }
+  .lede { color: var(--muted); margin-top: 0; }
+
+  ul.checks { list-style: none; padding: 0; margin: 1rem 0 0; }
+  ul.checks li {
+    position: relative;
+    padding-left: 1.9rem;
+    margin-bottom: .75rem;
+  }
+  ul.checks li::before {
+    content: "☕";
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  /* --- schedule (rendering JS arrives in the next iteration) --- */
+  .rides { margin: 0; padding: 0; list-style: none; }
+  .ride {
+    background: var(--foam);
+    border: 1px solid var(--oat);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .ride h3 { font-size: 1.2rem; }
+  .ride .when {
+    font-weight: 600;
+    color: var(--roast);
+    text-transform: uppercase;
+    font-size: .82rem;
+    letter-spacing: .06em;
+  }
+  .ride .where { color: var(--muted); margin: .4rem 0; }
+  .ride p { margin: .4rem 0 1rem; }
+
+  .note { color: var(--muted); font-size: .9rem; }
+  #updated { margin-top: .5rem; }
+
+  .links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 1rem; }
+  .links a {
+    flex: 1 1 auto;
+    text-align: center;
+    background: var(--foam);
+    border: 1px solid var(--oat);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .links a:hover, .links a:focus { border-color: var(--crema); }
+
+  footer {
+    background: var(--espresso);
+    color: var(--oat);
+    text-align: center;
+    padding: 28px 0;
+    font-size: .9rem;
+  }
+  footer a { color: var(--oat); }
+
+  @media (min-width: 560px) {
+    .hero { padding: 80px 0 64px; }
+    section { padding: 56px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="mark" aria-hidden="true">☕🚲</span>
+    <h1>Boston Café Bikers</h1>
+    <p class="tagline">Exploring the city one café at a time.</p>
+    <a class="btn" href="#rides">See upcoming rides</a>
+  </div>
+</header>
+
+<main>
+
+  <section id="rides" aria-labelledby="rides-heading">
+    <div class="wrap">
+      <h2 id="rides-heading">Upcoming rides</h2>
+      <p class="lede">Easy group rides that end with coffee. Everyone's invited.</p>
+
+      <!-- Schedule area. Populated from events.json by the rendering script
+           added in the next iteration; this static markup is the fallback. -->
+      <div id="schedule">
+        <p class="note">Loading rides…</p>
+      </div>
+
+      <p class="note" id="updated"></p>
+    </div>
+  </section>
+
+  <section id="first-ride" aria-labelledby="first-ride-heading">
+    <div class="wrap">
+      <h2 id="first-ride-heading">Your first ride</h2>
+      <p class="lede">Never ridden with a group before? This is the one to start with.</p>
+      <ul class="checks">
+        <li><strong>No-drop, always.</strong> We regroup at every light, bridge and hill. Nobody gets left behind.</li>
+        <li><strong>All levels welcome.</strong> Most rides are 10–20 flat-ish miles at a conversational pace.</li>
+        <li><strong>BlueBikes are perfect.</strong> Plenty of us ride them. Any bike that rolls is the right bike.</li>
+        <li><strong>Bring a lock</strong>, a water bottle, and enough cash or card for a coffee.</li>
+        <li><strong>Helmets encouraged</strong>, lights required if we're out near sunset.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="about" aria-labelledby="about-heading">
+    <div class="wrap">
+      <h2 id="about-heading">About us</h2>
+      <p>Boston Café Bikers is a casual cycling group built around the two best
+      things about this city: the riding and the coffee. We meet up somewhere
+      reachable by T or bike, roll out together, and finish at a café worth the
+      detour — Somerville, Brookline, the Charles paths, the Minuteman, and
+      wherever else looks good that week.</p>
+      <p>There's no membership, no dues, and no drop. Just show up, say hi, and
+      order something warm at the end.</p>
+    </div>
+  </section>
+
+  <section id="links" aria-labelledby="links-heading">
+    <div class="wrap">
+      <h2 id="links-heading">Find us</h2>
+      <p class="lede">Ride announcements go out on Partiful. Photos and route
+      teasers go on Instagram.</p>
+      <div class="links">
+        <a href="https://instagram.com/bostoncafebikers" rel="noopener">Instagram — @bostoncafebikers</a>
+        <a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">Partiful — all our events</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Boston Café Bikers — exploring the city one café at a time.</p>
+    <p><a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">RSVP to a ride</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
