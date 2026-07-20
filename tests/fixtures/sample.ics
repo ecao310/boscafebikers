@@ -1,0 +1,75 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Partiful//Partiful Calendar//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Boston Café Bikers
+X-WR-TIMEZONE:America/New_York
+BEGIN:VTIMEZONE
+TZID:America/New_York
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+TZNAME:EDT
+DTSTART:19700308T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+DTSTART:19701101T020000
+RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:evt-past-jamaica-pond@partiful.com
+DTSTAMP:20240412T140000Z
+DTSTART;TZID=America/New_York:20240504T090000
+DTEND;TZID=America/New_York:20240504T120000
+SUMMARY:Jamaica Pond Loop ☕
+LOCATION:Ula Café\, 284 Amory St\, Jamaica Plain\, MA 02130
+DESCRIPTION:Easy spin around the pond then pastries at Ula. No-drop\, all
+  levels welcome.\n\nRSVP: https://partiful.com/e/9fK2xQpLmN4tRvBz
+STATUS:CONFIRMED
+SEQUENCE:0
+END:VEVENT
+BEGIN:VEVENT
+UID:evt-cancelled-blue-hills@partiful.com
+DTSTAMP:20300901T140000Z
+DTSTART;TZID=America/New_York:20300914T083000
+DTEND;TZID=America/New_York:20300914T130000
+SUMMARY:Blue Hills Coffee Climb
+LOCATION:Fazenda Coffee Roasters\, 1642 Beacon St\, Brookline\, MA 02446
+DESCRIPTION:Rained out — we'll reschedule. Sorry team!\n\nRSVP:
+  https://partiful.com/e/7bQ4wZnR2cYdHs8K
+STATUS:CANCELLED
+SEQUENCE:1
+END:VEVENT
+BEGIN:VEVENT
+UID:evt-future-charles-loop@partiful.com
+DTSTAMP:20300601T140000Z
+DTSTART;TZID=America/New_York:20300622T093000
+DTEND;TZID=America/New_York:20300622T120000
+SUMMARY:Charles River Loop → Tatte
+LOCATION:Tatte Bakery & Café\, 1003 Beacon St\, Brookline\, MA 02446
+DESCRIPTION:14 flat miles along the Charles\, coffee and shakshuka at the
+  end. BlueBikes very welcome — we regroup at every bridge.\n\nRSVP:
+  https://partiful.com/e/3mTnV6xJaQ9wLpEr
+STATUS:CONFIRMED
+SEQUENCE:0
+END:VEVENT
+BEGIN:VEVENT
+UID:evt-future-minuteman@partiful.com
+DTSTAMP:20300601T140000Z
+DTSTART;TZID=America/New_York:20300706T100000
+DTEND;TZID=America/New_York:20300706T140000
+SUMMARY:Minuteman Bikeway to Lexington
+LOCATION:Diesel Café\, 257 Elm St\, Somerville\, MA 02144
+DESCRIPTION:Meet at Diesel for cold brew\, then the whole Minuteman out to
+  Lexington center and back. Bring a lock.\n\nRSVP:
+  https://partiful.com/e/5cXyB8kFgH2dNqUw
+STATUS:CONFIRMED
+SEQUENCE:0
+END:VEVENT
+END:VCALENDAR
