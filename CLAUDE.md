@@ -213,6 +213,26 @@ false`), and the `github-pages` environment carrying the deploy URL.
 - Redeploy by hand: `gh workflow run pages.yml --ref master` (then
   `gh run watch <id>`).
 
+### Deployment: live verification (iteration 13)
+
+Checked against the real URL, not the local files:
+
+- `curl` on `/` and `/events.json` → **200 / 200**. The served `events.json`
+  parses and is byte-for-byte equal to the committed `site/events.json`
+  (same `events`, same `updated_at`); the served `index.html` is identical to
+  `site/index.html`.
+- **No project-subpath breakage.** Nothing in the page uses a root-relative
+  (`/…`) URL: the only refs are `href="#rides"`, two absolute
+  `https://partiful.com/…` / instagram links, a `data:` favicon, and the
+  relative `fetch("events.json", {cache:"no-cache"})`. Keep it that way — the
+  site is served from `/boscafebikers/`, so any leading-slash path would 404.
+- Rendering re-verified against the **live** page with the node shim trick from
+  iteration 9 (`/tmp/render_check.mjs`: fetch the live HTML, regex out the last
+  `<script>`, `eval` it against a fake `document` whose `innerHTML` setter
+  throws, and a `fetch` rebased on the live base URL). Both ride cards rendered
+  with `.when`/`.where`/description/RSVP hrefs, plus the "Last updated … ET."
+  stamp.
+
 ### End-to-end verification (how it was done, iteration 9)
 
 Fresh-clone simulation in `/tmp`, everything offline:

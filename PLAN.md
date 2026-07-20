@@ -15,7 +15,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Switch the repo's Pages source to GitHub Actions via `gh api` (create the
   Pages site if absent), push, and watch the first deploy with `gh run watch`.
   Record the live URL in CLAUDE.md.
-- [ ] Verify the live deploy: `curl` the site URL and its `events.json` (both
+- [x] Verify the live deploy: `curl` the site URL and its `events.json` (both
   200, JSON valid, `events` match the committed file), no absolute-path breakage
   under the `/<repo>/` project subpath.
 - [ ] Wire freshness: a ride-schedule update must redeploy the site even though
