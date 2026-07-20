@@ -1,26 +1,16 @@
 {
-  "updated_at": "2026-07-19T20:14:44.657294-04:00",
-  "count": 2,
+  "updated_at": "2026-07-20T16:49:13.362655-04:00",
+  "count": 1,
   "events": [
     {
-      "uid": "evt-future-charles-loop@partiful.com",
-      "title": "Charles River Loop → Tatte",
-      "start": "2030-06-22T09:30:00-04:00",
-      "date_display": "Saturday, June 22",
-      "time_display": "9:30 am",
-      "location": "Tatte Bakery & Café, 1003 Beacon St, Brookline, MA 02446",
-      "description": "14 flat miles along the Charles, coffee and shakshuka at the end. BlueBikes very welcome — we regroup at every bridge.",
-      "rsvp_url": "https://partiful.com/e/3mTnV6xJaQ9wLpEr"
-    },
-    {
-      "uid": "evt-future-minuteman@partiful.com",
-      "title": "Minuteman Bikeway to Lexington",
-      "start": "2030-07-06T10:00:00-04:00",
-      "date_display": "Saturday, July 6",
-      "time_display": "10:00 am",
-      "location": "Diesel Café, 257 Elm St, Somerville, MA 02144",
-      "description": "Meet at Diesel for cold brew, then the whole Minuteman out to Lexington center and back. Bring a lock.",
-      "rsvp_url": "https://partiful.com/e/5cXyB8kFgH2dNqUw"
+      "uid": "Z50H1Zr8gbbyZtSyH75e",
+      "title": "Boston Cafe Bikers        Ice Cream Crawl | Partiful",
+      "start": "2026-07-25T14:00:00-04:00",
+      "date_display": "Saturday, July 25",
+      "time_display": "2:00 pm",
+      "location": "JP Licks, 659 Centre St, Jamaica Plain, MA",
+      "description": "View this event on Partiful at https://partiful.com/e/Z50H1Zr8gbbyZtSyH75e\n\nCome hungry! We'll start at the original JP Licks and make our way up to Gracie's in Union Square before stopping at Honeycomb on Mass Ave. and ending at the Speedway in Brighton from a Maple Creemee.\n\nUPDATE: Moved to Saturday July 25th",
+      "rsvp_url": null
     }
   ]
 }
