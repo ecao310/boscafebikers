@@ -18,7 +18,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Verify the live deploy: `curl` the site URL and its `events.json` (both
   200, JSON valid, `events` match the committed file), no absolute-path breakage
   under the `/<repo>/` project subpath.
-- [ ] Wire freshness: a ride-schedule update must redeploy the site even though
+- [x] Wire freshness: a ride-schedule update must redeploy the site even though
   `GITHUB_TOKEN` pushes don't fire `push` triggers. Verify via a `sync.yml`
   `workflow_dispatch` run.
 - [ ] Fix the README's GitHub Pages section — the "folder `/site`" instructions

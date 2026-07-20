@@ -146,6 +146,9 @@ Iteration 10: phase-2 pre-flight (see "Deployment: pre-flight findings").
 Iteration 11: `.github/workflows/pages.yml`.
 Iteration 12: Pages source switched to Actions, pushed, first deploy green —
 **the site is live** (see "Deployment: live").
+Iteration 13: live-deploy verification (see "Deployment: live verification").
+Iteration 14: freshness chain — `sync.yml` calls `pages.yml` via `workflow_call`
+(see "Freshness chain").
 
 ### Deployment: pre-flight findings (iteration 10)
 
@@ -232,6 +235,37 @@ Checked against the real URL, not the local files:
   throws, and a `fetch` rebased on the live base URL). Both ride cards rendered
   with `.when`/`.where`/description/RSVP hrefs, plus the "Last updated … ET."
   stamp.
+
+### Freshness chain: sync → deploy (iteration 14)
+
+`sync.yml` **calls** `pages.yml` instead of relying on `push`:
+
+- `pages.yml` gained a `workflow_call:` trigger. `sync.yml`'s `sync` job now
+  exports `outputs.changed` (set to `true`/`false` by the commit step via
+  `$GITHUB_OUTPUT`), and a second job
+  `deploy: {needs: sync, if: needs.sync.outputs.changed == 'true', uses:
+  ./.github/workflows/pages.yml}` redeploys only when a commit was actually
+  pushed.
+- **Why not `push`:** commits pushed with `GITHUB_TOKEN` don't fire `push`
+  triggers, so the sync bot's commit would never redeploy the site. `workflow_run`
+  would also work but fires on *every* sync, changed or not.
+- **Permissions moved to job level.** `sync.yml` no longer has a top-level
+  `permissions:` block: `sync` gets `contents: write`, `deploy` gets
+  `contents: read / pages: write / id-token: write`. A reusable-workflow caller
+  must declare the callee's permissions on the calling job.
+- **Gotcha:** `pages.yml`'s checkout now passes `ref: ${{ github.ref }}`.
+  Without it, checkout uses `github.sha` — which, in a workflow_call from
+  sync.yml, is the commit from *before* the bot pushed the new
+  `site/events.json`, so the deploy would publish stale rides. Keep that `with:`.
+- Verified: a temporary `chain-test.yml` (workflow_dispatch → `uses:
+  ./.github/workflows/pages.yml`, same shape as sync's deploy job) ran green —
+  run 29715148012, all steps ✓ — proving `pages.yml` is callable and deploys;
+  it was then deleted. Dispatching `sync.yml` (run 29715178013) failed at
+  "Fetch rides" because `PARTIFUL_ICS_URL` is unset, and `deploy` correctly
+  reported `skipped`. Live URL re-checked after: `/` and `/events.json` 200/200,
+  served `events` byte-equal to the committed file.
+- Still outstanding (not fixable here): the `PARTIFUL_ICS_URL` secret. Until a
+  human sets it, every scheduled sync fails at fetch and no deploy is chained.
 
 ### End-to-end verification (how it was done, iteration 9)
 
