@@ -99,7 +99,7 @@
     top: 0;
   }
 
-  /* --- schedule (rendering JS arrives in the next iteration) --- */
+  /* --- schedule --- */
   .rides { margin: 0; padding: 0; list-style: none; }
   .ride {
     background: var(--foam);
@@ -168,8 +168,8 @@
       <h2 id="rides-heading">Upcoming rides</h2>
       <p class="lede">Easy group rides that end with coffee. Everyone's invited.</p>
 
-      <!-- Schedule area. Populated from events.json by the rendering script
-           added in the next iteration; this static markup is the fallback. -->
+      <!-- Schedule area. Populated from events.json by the script at the
+           bottom of this file; this static markup is the pre-JS state. -->
       <div id="schedule">
         <p class="note">Loading rides…</p>
       </div>
@@ -225,6 +225,83 @@
     <p><a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">RSVP to a ride</a></p>
   </div>
 </footer>
+
+<script>
+(function () {
+  var PARTIFUL = "https://partiful.com/u/Hs47uq5mucZyXLBJZCda";
+  var MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+                "August", "September", "October", "November", "December"];
+  var schedule = document.getElementById("schedule");
+  var updated = document.getElementById("updated");
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) { node.className = cls; }
+    if (text) { node.textContent = text; }
+    return node;
+  }
+
+  function emptyState(message) {
+    schedule.textContent = "";
+    schedule.appendChild(el("p", "note", message));
+    var link = el("a", "btn", "See all rides on Partiful");
+    link.href = PARTIFUL;
+    link.rel = "noopener";
+    schedule.appendChild(link);
+  }
+
+  // events.json timestamps already carry an Eastern offset and the display
+  // strings are precomputed in Python — never re-format with Date(), or
+  // visitors outside Eastern see the wrong time.
+  function stamp(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso || "");
+    if (!m) { return ""; }
+    var hour = parseInt(m[4], 10);
+    var suffix = hour < 12 ? "am" : "pm";
+    var hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return "Last updated " + MONTHS[parseInt(m[2], 10) - 1] + " " +
+           parseInt(m[3], 10) + ", " + m[1] + " at " + hour12 + ":" + m[5] +
+           " " + suffix + " ET.";
+  }
+
+  function rideCard(ev) {
+    var li = el("li", "ride");
+    var when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
+    if (when) { li.appendChild(el("p", "when", when)); }
+    li.appendChild(el("h3", null, ev.title || "Café ride"));
+    if (ev.location) { li.appendChild(el("p", "where", ev.location)); }
+    if (ev.description) { li.appendChild(el("p", null, ev.description)); }
+    var link = el("a", "btn", "RSVP on Partiful");
+    link.href = ev.rsvp_url || PARTIFUL;
+    link.rel = "noopener";
+    li.appendChild(link);
+    return li;
+  }
+
+  function render(data) {
+    var events = (data && data.events) || [];
+    if (!events.length) {
+      emptyState("No rides on the calendar right now — check Partiful for the next one.");
+      return;
+    }
+    var list = el("ul", "rides");
+    events.forEach(function (ev) { list.appendChild(rideCard(ev)); });
+    schedule.textContent = "";
+    schedule.appendChild(list);
+    updated.textContent = stamp(data.updated_at);
+  }
+
+  fetch("events.json", { cache: "no-cache" })
+    .then(function (res) {
+      if (!res.ok) { throw new Error("HTTP " + res.status); }
+      return res.json();
+    })
+    .then(render)
+    .catch(function () {
+      emptyState("Couldn't load the ride schedule just now.");
+    });
+})();
+</script>
 
 </body>
 </html>

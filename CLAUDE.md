@@ -98,14 +98,15 @@ Iteration 3: `scripts/fetch_rides.py` + generated `site/events.json` (2 future
 rides, sorted).
 Iteration 4: `tests/test_fetch_rides.py` — 24 tests, all green, all offline.
 Iteration 5: `site/index.html` — hero, upcoming-rides section (placeholder
-schedule area), "Your first ride", about, links, footer. Next task is the
-schedule rendering JS (see the `site/index.html` section below for the hooks
-it must use).
+schedule area), "Your first ride", about, links, footer.
+Iteration 6: schedule rendering `<script>` in `site/index.html` (ride cards,
+last-updated stamp, empty/error fallback). Next task is
+`.github/workflows/sync.yml`.
 
 ## `site/index.html`
 
-Single file, no build step. Inline `<style>` only so far — the schedule
-rendering `<script>` still needs to be added (next task).
+Single file, no build step: inline `<style>` in `<head>`, one IIFE `<script>`
+just before `</body>`.
 
 - CSS custom properties on `:root` are the warm café palette (`--espresso`,
   `--roast`, `--crema`, `--latte`, `--foam`, `--oat`, `--ink`, `--muted`).
@@ -113,19 +114,25 @@ rendering `<script>` still needs to be added (next task).
 - Layout is mobile-first: `.wrap` (max-width 680px, 20px gutters) and one
   `@media (min-width: 560px)` block that only bumps vertical padding. Verified
   readable at 380px.
-- **Hooks the rendering JS must use:**
-  - `<div id="schedule">` — replace its contents with the ride list. It
-    currently holds `<p class="note">Loading rides…</p>` as the pre-JS state.
-  - `<p class="note" id="updated">` — empty; fill with the "last updated" stamp
-    from `updated_at`.
-  - Card styles already exist: `<ul class="rides"><li class="ride">` with
-    `.when` (date/time), `.where` (location), a `<p>` description, and
-    `<a class="btn">` for "RSVP on Partiful".
-  - Empty/missing `events.json` → link to the Partiful profile URL (it's
-    already hardcoded in the links section and footer).
+- **Rendering script** (bottom of the file): `fetch("events.json")` →
+  `<div id="schedule">` gets a `<ul class="rides">` of `<li class="ride">`
+  cards (`.when` = `date_display · time_display`, `.where` = location, a `<p>`
+  description, `<a class="btn">RSVP on Partiful`), and
+  `<p class="note" id="updated">` gets the "Last updated … ET." stamp.
+  Zero events, a non-OK response, or bad JSON all fall back to a note plus a
+  "See all rides on Partiful" button pointing at the profile URL. A missing
+  `rsvp_url` also falls back to the profile URL.
 - `events.json` display strings (`date_display`, `time_display`) are
   precomputed; the JS must **not** re-format dates with `Date`, or visitors
-  outside Eastern see wrong times.
+  outside Eastern see wrong times. `updated_at` is likewise formatted by
+  **regex-slicing the ISO string** (it already carries the Eastern offset) —
+  keep it that way.
+- The DOM is built with `createElement`/`textContent`, never `innerHTML`, so
+  feed text can't inject markup. Keep that.
+- Verifying the JS: no browser here, but `node` (v25) is installed. Shim a
+  tiny `document`/`fetch`, pull the script out of the HTML with a regex, and
+  `eval` it — that's how the happy path, empty, missing-rsvp and 404 cases
+  were checked this iteration.
 - Sections/ids: `#rides`, `#first-ride`, `#about`, `#links`. The hero CTA
   anchors to `#rides`.
 - Verified well-formed by feeding it through `html.parser` (no unclosed or
