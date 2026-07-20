@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Env / secrets — the real ICS URL lives only in the PARTIFUL_ICS_URL secret
+.env
+*.env
+
+# Ralph loop scratch
+ralph.log
+
+# OS
+.DS_Store
