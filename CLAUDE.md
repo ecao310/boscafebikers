@@ -37,7 +37,13 @@ Tagline: "exploring the city one café at a time".
 
 ## Gotchas
 
-- Git default branch here is `master`; the repo's "main" branch for PRs is `main`.
+- **The default branch is `master`** — both locally and on GitHub
+  (`gh repo view --json defaultBranchRef` → `master`). There is no `main`
+  branch; ignore any tooling that assumes one. Workflows that key on the
+  default branch must say `master`.
+- The remote is named **`boscafebikers`**, not `origin`
+  (`git@github.com:ecao310/boscafebikers.git`). Every `git push`/`git fetch`
+  needs the remote spelled out.
 - `ralph.log` is gitignored loop scratch — do not commit it.
 
 ## `scripts/fetch_rides.py`
@@ -134,7 +140,33 @@ Settings → Calendar Sync → Apple Calendar, `webcal://` → `https://`), sett
 the `PARTIFUL_ICS_URL` secret, GitHub Pages deploy (branch + `/site` folder),
 local dev (`python -m http.server -d site 8000`; the page must be served over
 HTTP, not `file://`, for `fetch("events.json")` to work).
-Iteration 9: end-to-end check — **all backlog tasks complete, nothing broken.**
+Iteration 9: end-to-end check — **phase 1 complete, nothing broken.**
+Iteration 10: phase-2 pre-flight (see "Deployment: pre-flight findings").
+
+### Deployment: pre-flight findings (iteration 10)
+
+State of the repo/GitHub side as of the start of phase 2:
+
+- Default branch `master` (local + GitHub), remote `boscafebikers`, repo is
+  **public** at <https://github.com/ecao310/boscafebikers>. Local `master` was
+  2 commits ahead; pushed, now in sync. Working tree clean.
+- `git grep` over all tracked files for `webcal://`, `partiful.com`,
+  `calendar/ical`, `*.ics`: **no real feed URL anywhere.** Every hit is the
+  public profile URL, a fixture RSVP link, or prose about the `webcal://`
+  scheme. Re-run that grep before any phase-2 commit.
+- A stray `pages-deploy/` git worktree (same commit as `master`, no changes)
+  was left behind by an earlier run; removed with `git worktree remove` +
+  `git branch -D`. If `git status` shows an untracked dir that turns out to be
+  a worktree, that's what it is — check `git worktree list` first.
+- **Pages already exists but is misconfigured**: `gh api repos/:owner/:repo/pages`
+  returns `build_type: "legacy"`, `source: {branch: master, path: "/"}`, i.e.
+  it's publishing the *repo root* (README), not `site/`. Live URL is already
+  allocated: <https://ecao310.github.io/boscafebikers/>. Switching to the
+  Actions source is a `PUT` to that endpoint with `build_type: "workflow"` —
+  the site does **not** need creating, only converting.
+- **`PARTIFUL_ICS_URL` is not set** — `gh secret list` is empty. See
+  "Discovered work" in PLAN.md; the freshness task must account for a sync run
+  that fails at fetch.
 
 ### End-to-end verification (how it was done, iteration 9)
 

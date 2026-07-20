@@ -5,7 +5,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 
 ## Backlog — phase 2: deploy to GitHub Pages
 
-- [ ] Pre-flight: confirm local `master` is pushed to the `boscafebikers` remote
+- [x] Pre-flight: confirm local `master` is pushed to the `boscafebikers` remote
   and is the repo's default branch; `git grep` tracked files for the real ICS
   feed URL; working tree clean. Record the default branch name in CLAUDE.md.
 - [ ] Add `.github/workflows/pages.yml`: `actions/upload-pages-artifact`
@@ -53,3 +53,13 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 ## Discovered work
 
 (append new tasks here as `- [ ]` items; treat them as part of the Backlog)
+
+- [ ] The `PARTIFUL_ICS_URL` secret is **not set** on the repo (`gh secret list`
+  is empty), so any `sync.yml` run fails at the fetch step. Only a human holding
+  the real feed URL can set it — do **not** invent one. The "wire freshness"
+  task must therefore verify the sync→deploy chain some other way (e.g. confirm
+  the deploy job is reached / correctly skipped), and the README should say the
+  secret is a required setup step that is still outstanding.
+- [ ] Pages is currently on the **legacy** source publishing the repo root, so
+  <https://ecao310.github.io/boscafebikers/> serves the README, not the site.
+  Converting it is part of the "switch Pages source" task, not a separate fix.
