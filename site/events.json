@@ -1,16 +1,5 @@
 {
-  "updated_at": "2026-07-20T16:49:13.362655-04:00",
-  "count": 1,
-  "events": [
-    {
-      "uid": "Z50H1Zr8gbbyZtSyH75e",
-      "title": "Boston Cafe Bikers        Ice Cream Crawl | Partiful",
-      "start": "2026-07-25T14:00:00-04:00",
-      "date_display": "Saturday, July 25",
-      "time_display": "2:00 pm",
-      "location": "JP Licks, 659 Centre St, Jamaica Plain, MA",
-      "description": "View this event on Partiful at https://partiful.com/e/Z50H1Zr8gbbyZtSyH75e\n\nCome hungry! We'll start at the original JP Licks and make our way up to Gracie's in Union Square before stopping at Honeycomb on Mass Ave. and ending at the Speedway in Brighton from a Maple Creemee.\n\nUPDATE: Moved to Saturday July 25th",
-      "rsvp_url": null
-    }
-  ]
+  "updated_at": "2026-07-25T15:01:50.001750-04:00",
+  "count": 0,
+  "events": []
 }
