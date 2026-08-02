@@ -1,5 +1,16 @@
 {
-  "updated_at": "2026-07-25T15:01:50.001750-04:00",
-  "count": 0,
-  "events": []
+  "updated_at": "2026-08-01T22:25:31.396521-04:00",
+  "count": 1,
+  "events": [
+    {
+      "uid": "LjbmPGgu1Z3Zc7bJTibI",
+      "title": "Post PMC Celebration!! | Partiful",
+      "start": "2026-08-02T17:00:00-04:00",
+      "date_display": "Sunday, August 2",
+      "time_display": "5:00 pm",
+      "location": "Aeronaut, 14 Tyler St, Somerville, MA",
+      "description": "View this event on Partiful at https://partiful.com/e/LjbmPGgu1Z3Zc7bJTibI\n\nCome celebrate Jude's 50 mile ride for the PMC!",
+      "rsvp_url": null
+    }
+  ]
 }
