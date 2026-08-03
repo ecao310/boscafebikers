@@ -1,17 +1,7 @@
 {
-  "updated_at": "2026-08-02T04:16:19.092450-04:00",
+  "updated_at": "2026-08-02T22:27:40.105214-04:00",
   "count": 2,
   "events": [
-    {
-      "uid": "LjbmPGgu1Z3Zc7bJTibI",
-      "title": "Post PMC Celebration!! | Partiful",
-      "start": "2026-08-02T17:00:00-04:00",
-      "date_display": "Sunday, August 2",
-      "time_display": "5:00 pm",
-      "location": "Aeronaut, 14 Tyler St, Somerville, MA",
-      "description": "View this event on Partiful at https://partiful.com/e/LjbmPGgu1Z3Zc7bJTibI\n\nCome celebrate Jude's 50 mile ride for the PMC!",
-      "rsvp_url": null
-    },
     {
       "uid": "6MBKxp6PQGamcBZsOi2r",
       "title": "Salt Bread and Coffee pop-up | Partiful",
@@ -20,6 +10,16 @@
       "time_display": "10:00 am",
       "location": "Location available once RSVP'd",
       "description": "RSVP at https://partiful.com/e/6MBKxp6PQGamcBZsOi2r\n\nRide with us from the lovely Boston Common to Newbery St. Coffee pop up cafe in Brookline Village. Travel through Fenway and the riverway on this route.",
+      "rsvp_url": null
+    },
+    {
+      "uid": "TskpmnYxmCi7eGn1mb0G",
+      "title": "Too Hot to Handle | Partiful",
+      "start": "2026-08-08T18:00:00-04:00",
+      "date_display": "Saturday, August 8",
+      "time_display": "6:00 pm",
+      "location": "Location available once RSVP'd",
+      "description": "RSVP at https://partiful.com/e/TskpmnYxmCi7eGn1mb0G\n\nYou are cordially invited to an Indian food dinner party at mine! I will be making the mains and apps but please feel free to bring a dish or a drink!. Just showing up for the good food + vibes is totally a valid option!\n\nIf guest count exceeds 8-10 we will move to a nearby park - please keep an eye out for venue changes! 😄",
       "rsvp_url": null
     }
   ]
