@@ -191,6 +191,19 @@
   .note { color: var(--muted); font-size: .9rem; }
   #updated { margin-top: .5rem; }
 
+  /* --- "Sync rides now" --- */
+  .sync-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin-top: 1.25rem;
+  }
+  .sync-bar .btn { padding: 8px 16px; font-size: .9rem; }
+  .sync-bar .btn:disabled { opacity: .6; cursor: default; }
+  #sync-status { margin: 0; }
+  .sync-bar .ghost-note { font-size: .85rem; }
+
   [hidden] { display: none !important; }
 
   /* --- list / calendar view toggle --- */
@@ -335,6 +348,18 @@
       </div>
 
       <p class="note" id="updated"></p>
+
+      <!-- "Sync rides now": re-fetches events.json (cache-busted) so a page
+           left open picks up rides the backend sync has since published. The
+           real ICS re-fetch runs in GitHub Actions — the ghost link jumps to
+           that workflow's "Run workflow" page for anyone with write access. -->
+      <div class="sync-bar">
+        <button type="button" id="sync-now" class="btn btn-ghost">Sync rides now</button>
+        <span class="note" id="sync-status" role="status" aria-live="polite"></span>
+        <a class="note ghost-note"
+           href="https://github.com/ecao310/boscafebikers/actions/workflows/sync.yml"
+           rel="noopener" target="_blank">Run the full sync on GitHub</a>
+      </div>
     </div>
   </section>
 
@@ -678,11 +703,46 @@
     });
   }
 
-  fetch("events.json", { cache: "no-cache" })
-    .then(function (res) {
-      if (!res.ok) { throw new Error("HTTP " + res.status); }
-      return res.json();
-    })
+  function loadData(url) {
+    return fetch(url, { cache: "no-cache" })
+      .then(function (res) {
+        if (!res.ok) { throw new Error("HTTP " + res.status); }
+        return res.json();
+      });
+  }
+
+  // --- "Sync rides now" button ---
+  // Re-fetches events.json with a cache-buster so a page left open picks up
+  // rides the backend sync has since published, and re-renders in place.
+  // The backend ICS re-fetch lives in GitHub Actions (sync.yml); the ghost
+  // link above jumps to that workflow's "Run workflow" page for maintainers.
+  var syncBtn = document.getElementById("sync-now");
+  var syncStatus = document.getElementById("sync-status");
+
+  function syncNow() {
+    syncBtn.disabled = true;
+    syncStatus.textContent = "Checking for updates…";
+    var before = JSON.stringify((currentData && currentData.events) || []);
+    loadData("events.json?_=" + Date.now())
+      .then(function (data) {
+        currentData = data;
+        render();
+        var after = JSON.stringify((data && data.events) || []);
+        syncStatus.textContent = before === after
+          ? "Schedule is up to date."
+          : "Found new rides — schedule refreshed.";
+      })
+      .catch(function () {
+        syncStatus.textContent = "Couldn't reach the schedule just now.";
+      })
+      .then(function () {
+        syncBtn.disabled = false;
+      });
+  }
+
+  syncBtn.addEventListener("click", syncNow);
+
+  loadData("events.json")
     .then(function (data) {
       currentData = data;
       render();

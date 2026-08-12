@@ -16,9 +16,10 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] RSVP on Partiful button should link to actual event, not just the café bikers account page
 - [x] Clean up text imported from Partiful
 - [x] Attempt to include start and end locations from Partiful
-- [ ] Button to trigger calendar sync
+- [x] Button to trigger calendar sync
 - [ ] Move ralph-related filed to the ralph directory. adjust instructions to accomodate.
 - [ ] Research better options for calendar display. Wrap the text. Research and decide on  a suitable open source calendar display solution.
+- [ ] Create a donation section/page. leave it blank/WIP for now. Include navigation to the page, as well as the shopify and meta pages.
 
 ## Backlog — phase 2: deploy to GitHub Pages
 
@@ -90,3 +91,9 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   that task's code (title suffix/whitespace + description cleanup in
   `4f54030`) was complete and 59 tests were green. Restored the marking and
   verified the cleanup end-to-end on the fixture.
+- [ ] README.md's "Deploying" section still says the `PARTIFUL_ICS_URL` secret
+  is **not set** ("This secret is not set yet … It is the one remaining manual
+  setup step"), but `gh secret list` shows it **is** set (since 2026-07-20) and
+  the sync bot commits real feed updates every 6h. The README contradicting
+  CLAUDE.md could mislead a future iteration — fix the wording when this task
+  is picked up.
