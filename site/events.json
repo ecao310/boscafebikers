@@ -1,16 +1,19 @@
 {
-  "updated_at": "2026-08-12T10:10:09.651940-04:00",
+  "updated_at": "2026-08-12T14:20:09.594346-04:00",
   "count": 1,
   "events": [
     {
       "uid": "gRzH7L3EoMRl3q8pl7OS",
-      "title": "The journey is really the best part | Partiful",
+      "title": "The journey is really the best part",
       "start": "2026-08-15T10:00:00-04:00",
+      "end": null,
       "date_display": "Saturday, August 15",
       "time_display": "10:00 am",
       "location": "KoKo Coffee, 226 Causeway St, Boston, MA",
-      "description": "View this event on Partiful at https://partiful.com/e/gRzH7L3EoMRl3q8pl7OS\n\nYippee! Another Saturday, another ride. This time from Lower Allston over to Koko coffee.",
-      "rsvp_url": null
+      "location_hidden": false,
+      "description": "Yippee! Another Saturday, another ride. This time from Lower Allston over to Koko coffee.",
+      "rsvp_url": "https://partiful.com/e/gRzH7L3EoMRl3q8pl7OS",
+      "image": null
     }
   ]
 }

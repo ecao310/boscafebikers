@@ -21,6 +21,7 @@ Tagline: "exploring the city one café at a time".
 | `site/gallery.html` | Ride-photo gallery (empty state → Instagram CTA). |
 | `site/shopify.html` | WIP shop page (placeholder only). |
 | `site/meta-business.html` | WIP Meta Business page (placeholder only). |
+| `site/donate.html` | WIP donate page (placeholder only). |
 | `site/events.json` | Generated ride data (committed; the workflow updates it). |
 | `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch. |
 | `.github/workflows/pages.yml` | Builds `site/` and deploys it to GitHub Pages. |
@@ -87,8 +88,8 @@ Everything below is headless — nothing here needs the GitHub web UI.
     run on Node 24 on the runners — harmless today; a future pass can bump the
     action majors.
 - `PARTIFUL_ICS_URL` is **set** (as of 2026-07-20); the sync bot commits real
-  feed updates every 6h. `site/events.json` currently has `events: []` — no
-  future rides right now, so the live page shows the empty state.
+  feed updates every 6h. `site/events.json` currently has 1 future ride
+  (2026-08-15).
 
 ## `scripts/fetch_rides.py`
 
@@ -232,25 +233,25 @@ offers `/` or `/docs`, and the site lives in `site/`.
 Phase 1 (build) and phase 2 (deploy) are complete — the site is live and the
 sync→deploy freshness chain works. Phase 3 (Backlog 3) is in progress.
 `PARTIFUL_ICS_URL` is set and the sync bot commits real updates every 6h;
-`site/events.json` currently has `events: []` (no future rides), so the live
-page shows the empty state. Historical per-iteration notes were moved to
-`ralph/ralph.log` (gitignored scratch) in iteration 19 to keep this file a
-concise reference; `git log` records what each iteration changed.
+`site/events.json` currently has 1 future ride (2026-08-15). Historical
+per-iteration notes were moved to `ralph/ralph.log` (gitignored scratch) in
+iteration 19 to keep this file a concise reference; `git log` records what
+each iteration changed.
 
 ## `site/index.html`
 
 Single file, no build step: inline `<style>` in `<head>`, one IIFE `<script>`
 just before `</body>`.
 
-- **Shared tab header nav.** All four pages (`index.html`, `gallery.html`,
-  `shopify.html`, `meta-business.html`) carry the same `.nav` — a sticky
-  espresso bar with four relative `.tabs` links (Rides / Gallery / Shop / Meta
-  Business). The current page's link gets `.is-active` + `aria-current="page"`;
-  the others are plain. The CSS is duplicated inline in each page (no shared
-  stylesheet, no build step). Keep links relative — never root-relative — and
-  keep the `.is-active`/`aria-current` on exactly one link per page.
-  `section { scroll-margin-top: 64px }` on the home page keeps the sticky nav
-  from covering in-page anchor targets (`#rides`).
+- **Shared tab header nav.** All five pages (`index.html`, `gallery.html`,
+  `shopify.html`, `meta-business.html`, `donate.html`) carry the same `.nav` —
+  a sticky espresso bar with five relative `.tabs` links (Rides / Gallery /
+  Shop / Meta Business / Donate). The current page's link gets `.is-active` +
+  `aria-current="page"`; the others are plain. The CSS is duplicated inline in
+  each page (no shared stylesheet, no build step). Keep links relative — never
+  root-relative — and keep the `.is-active`/`aria-current` on exactly one link
+  per page. `section { scroll-margin-top: 64px }` on the home page keeps the
+  sticky nav from covering in-page anchor targets (`#rides`).
 - CSS custom properties on `:root` are the warm café palette (`--espresso`,
   `--roast`, `--crema`, `--latte`, `--foam`, `--oat`, `--ink`, `--muted`).
   Reuse them; don't introduce new hex values.

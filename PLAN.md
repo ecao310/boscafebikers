@@ -18,8 +18,11 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Attempt to include start and end locations from Partiful
 - [x] Button to trigger calendar sync
 - [x] Move ralph-related filed to the ralph directory. adjust instructions to accomodate.
-- [x] Research better options for calendar display. Wrap the text. Research and decide on  a suitable open source calendar display solution.
-- [ ] Create a donation section/page. leave it blank/WIP for now. Include navigation to the page, as well as the shopify and meta pages.
+- [ ] Research better options for calendar display. Wrap the text. Research and decide on  a suitable open source calendar display solution.
+- [x] Create a donation section/page. leave it blank/WIP for now. Include navigation to the page, as well as the shopify and meta pages.
+- [x] The RSVP on Partiful button still links to the profile page instead of the event page. Extract event link from the description in events.json. 
+- [x] Clean up the events description. Remove the rsvp link from the description, but keep the button and the link in the button.
+- [ ] Clean up htmls. Consider creating a unified style sheet.
 
 ## Backlog — phase 2: deploy to GitHub Pages
 
@@ -97,3 +100,14 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   the sync bot commits real feed updates every 6h. The README contradicting
   CLAUDE.md could mislead a future iteration — fix the wording when this task
   is picked up.
+- [x] The sync bot's last `events.json` commit (`63c17d6`, 2026-08-12 14:10 UTC)
+  was generated **before** the text-cleanup / RSVP-link code landed on `master`
+  (committed ~18:11 UTC the same day), so the deployed data was stale: the ride
+  title kept its ` | Partiful` suffix, the description still carried the
+  "View this event on Partiful at …" invite line, and `rsvp_url` was `null`
+  (the RSVP button fell back to the group profile). The code was always
+  correct — the fixture exercises all three — so this iteration regenerated
+  `site/events.json` by re-running the committed cleaning pipeline over the raw
+  fields already in the file (no live-feed access). `rsvp_url` now points at
+  the actual event page and the invite line is stripped. The next scheduled
+  sync reconciles with the live feed either way.
