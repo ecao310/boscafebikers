@@ -14,10 +14,11 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Ability to add images to rides
 - [x] ICS download for each event
 - [x] RSVP on Partiful button should link to actual event, not just the café bikers account page
-- [x] Clean up text imported from Partiful
-- [ ] Attempt to include start and end locations from Partiful
+- [ ] Clean up text imported from Partiful
+- [x] Attempt to include start and end locations from Partiful
 - [ ] Button to trigger calendar sync
 - [ ] Move ralph-related filed to the ralph directory. adjust instructions to accomodate.
+- [ ] Research better options for calendar display. Wrap the text. Research and decide on  a suitable open source calendar display solution.
 
 ## Backlog — phase 2: deploy to GitHub Pages
 

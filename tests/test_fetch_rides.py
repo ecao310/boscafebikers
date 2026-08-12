@@ -247,6 +247,53 @@ def test_fixture_title_suffix_stripped(rides):
     assert charles["title"].endswith("Partiful") is False
 
 
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        ("Location available once RSVP'd", ("", True)),
+        ("location available once rsvp'd", ("", True)),  # case-insensitive
+        ("Location available after RSVP", ("", True)),   # variant wording
+        (
+            "Tatte Bakery & Café, 1003 Beacon St, Brookline, MA 02446",
+            ("Tatte Bakery & Café, 1003 Beacon St, Brookline, MA 02446", False),
+        ),
+        ("   ", ("", False)),
+        ("", ("", False)),
+    ],
+)
+def test_clean_location(raw, expected):
+    assert fetch_rides._clean_location(raw) == expected
+
+
+def test_hidden_placeholder_cleaned_from_fixture(rides):
+    """Partiful hides some addresses until RSVP; the placeholder must not leak."""
+    charles, minuteman = rides
+    assert charles["location"] == "Tatte Bakery & Café, 1003 Beacon St, Brookline, MA 02446"
+    assert charles["location_hidden"] is False
+    assert minuteman["location"] is None
+    assert minuteman["location_hidden"] is True
+    # The placeholder text never reaches events.json / the site.
+    assert all("RSVP'd" not in (ride["location"] or "") for ride in rides)
+
+
+def test_real_partiful_hidden_location():
+    """A hidden address exports as the placeholder; parse it to null + flag."""
+    data = (
+        b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+        b"BEGIN:VEVENT\r\nUID:HddenL0c8Zc7bJTibI\r\n"
+        b"DTSTART;TZID=America/New_York:20300808T180000\r\n"
+        b"SUMMARY:Salt Bread and Coffee pop-up\r\n"
+        b"LOCATION:Location available once RSVP'd\r\n"
+        b"DESCRIPTION:RSVP at https://partiful.com/e/HddenL0c8Zc7bJTibI\\n\\n"
+        b"Ride with us from Boston Common.\r\n"
+        b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    rides = fetch_rides.parse_events(data, now=datetime(2029, 1, 1, tzinfo=EASTERN))
+    assert len(rides) == 1
+    assert rides[0]["location"] is None
+    assert rides[0]["location_hidden"] is True
+
+
 def test_missing_dtend_yields_null_end():
     """A feed event with no DTEND must still parse, with `end` null."""
     data = (
@@ -271,7 +318,7 @@ def test_display_strings_are_precomputed(rides):
 
 def test_non_ascii_survives_the_round_trip(rides):
     assert "→" in rides[0]["title"]
-    assert "Café" in rides[1]["location"]
+    assert "Café" in rides[0]["location"]
 
 
 def test_now_boundary_keeps_events_starting_exactly_now(feed_bytes):

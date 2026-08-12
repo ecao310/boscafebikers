@@ -138,10 +138,32 @@ def _strip_rsvp(description: str) -> str:
 # whitespace ("Boston Cafe Bikers        Ice Cream Crawl"), so tidy those too.
 TITLE_SUFFIX_RE = re.compile(r"\s*\|\s*Partiful\s*$", re.IGNORECASE)
 
+# Partiful hides the event address until guests RSVP; its ICS export then
+# substitutes this placeholder for the real LOCATION value. It is not an
+# address, so don't surface it verbatim — the site shows a friendly note
+# instead and the .ics download omits it.
+HIDDEN_LOCATION_RE = re.compile(
+    r"^location\s+available\s+(?:once|after)\s+rsvp", re.IGNORECASE
+)
+
 
 def _clean_title(title: str) -> str:
     """Strip Partiful's ' | Partiful' title suffix and collapse whitespace."""
     return re.sub(r"\s+", " ", TITLE_SUFFIX_RE.sub("", title)).strip()
+
+
+def _clean_location(value: str) -> tuple[str, bool]:
+    """Return (location, hidden).
+
+    ``location`` is the cleaned address ("" when Partiful's hidden-address
+    placeholder is present); ``hidden`` is True exactly in that case. Partiful
+    events have a single location field, so there is no start/end split to
+    pull out of the feed.
+    """
+    value = value.strip()
+    if HIDDEN_LOCATION_RE.match(value):
+        return "", True
+    return value, False
 
 
 def _clean_description(description: str) -> str:
@@ -193,6 +215,7 @@ def parse_events(
         uid = _text(component, "UID")
         description = _text(component, "DESCRIPTION")
         dtend = component.get("DTEND")
+        location, location_hidden = _clean_location(_text(component, "LOCATION"))
         rides.append(
             {
                 "uid": uid,
@@ -203,7 +226,10 @@ def parse_events(
                 "end": _as_local_datetime(dtend.dt).isoformat() if dtend is not None else None,
                 "date_display": f"{start:%A, %B} {start.day}",
                 "time_display": f"{start:%-I:%M %p}".replace("AM", "am").replace("PM", "pm"),
-                "location": _text(component, "LOCATION"),
+                # True when Partiful exported its 'Location available once
+                # RSVP'd' placeholder instead of a real address.
+                "location": location or None,
+                "location_hidden": location_hidden,
                 "description": _clean_description(description),
                 "rsvp_url": extract_rsvp_url(description) or derive_partiful_url(uid),
                 "image": images.get(uid),

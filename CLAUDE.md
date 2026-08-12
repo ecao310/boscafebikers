@@ -111,11 +111,11 @@ Run it on the fixture (never the live feed) with:
   `scrub()` strips URLs from any other text that gets surfaced.
 - Output shape: `{"updated_at", "count", "events": [...]}`; each event has
   `uid, title, start (ISO+offset), end (ISO+offset, may be null), date_display,
-  time_display, location, description (RSVP/invite line stripped), rsvp_url (may be
-  null), image (may be null)`. `end` comes from the feed's `DTEND` (absent →
-  null); the site's "add to calendar" ICS uses it so the invite blocks the whole
-  ride. Display strings are precomputed in Python so the page doesn't render in
-  the visitor's tz.
+  time_display, location (may be null), location_hidden (bool), description
+  (RSVP/invite line stripped), rsvp_url (may be null), image (may be null)`.
+  `end` comes from the feed's `DTEND` (absent → null); the site's "add to
+  calendar" ICS uses it so the invite blocks the whole ride. Display strings
+  are precomputed in Python so the page doesn't render in the visitor's tz.
 - **`rsvp_url` from the feed text:** Partiful descriptions carry the event page in
   any of three phrasings — `RSVP: <url>`, `RSVP at <url>`, or
   `View this event on Partiful at <url>` — and the URL is line-folded across the
@@ -133,9 +133,18 @@ Run it on the fixture (never the live feed) with:
   the site shows the organizer's real name. `_clean_description` (which wraps
   `_strip_rsvp`) additionally trims every line and collapses runs of 3+
   newlines into a single paragraph break — Partiful prose is plain paragraphs,
-  and the RSVP-line removal can leave a ragged blank gap. Locations are left
-  alone (the `Location available once RSVP'd` placeholder is a "start and end
-  locations" task, not a text-cleanup one).
+  and the RSVP-line removal can leave a ragged blank gap. Locations are
+  otherwise left alone — see the hidden-location note below.
+- **Start/end locations (attempted, not available):** Partiful's event model has
+  a **single** optional Location field — there is no separate start/end location
+  in the app or its ICS export (the ride's meeting point vs. café lives in the
+  prose DESCRIPTION instead). So `location` stays the one `LOCATION` value; the
+  "start and end locations" backlog task's finding is that there is nothing else
+  to extract. What *did* need fixing: when the organizer hides the address until
+  RSVP, the export substitutes the placeholder `Location available once RSVP'd`.
+  `_clean_location` detects it (`HIDDEN_LOCATION_RE`) and emits `location: null`
+  with `location_hidden: true`; the site renders "Location shared after you
+  RSVP" instead of the template junk, and the `.ics` download omits `LOCATION`.
 - **Ride photos:** the ICS feed carries no images, so `image` comes from the
   optional sidecar `scripts/ride_images.json` — a JSON object mapping event UID
   → photo URL (e.g. `"<partiful-id>@partiful.com": "https://…/a.jpg"`). The
@@ -165,7 +174,10 @@ included, so `icalendar` returns tz-aware datetimes directly).
 - Future dates are in **2030** on purpose, so the fixture doesn't rot.
 - The Charles River title carries the ` | Partiful` suffix real exports append
   (and the Minuteman title does not), so the shared `rides` fixture exercises
-  `_clean_title` end-to-end.
+  `_clean_title` end-to-end. Minuteman's LOCATION is the real-world
+  `Location available once RSVP'd` placeholder (its address is hidden until
+  RSVP) while Charles carries a public address — so the shared `rides` fixture
+  exercises `_clean_location` both ways.
 - RSVP links live at the end of DESCRIPTION as `RSVP: https://partiful.com/e/<id>`,
   after a `\n\n`, and are **line-folded** across the `RSVP:` / URL boundary — the
   parser must work on the unfolded value (`str(event['DESCRIPTION'])`), never on
@@ -245,7 +257,8 @@ just before `</body>`.
   readable at 380px.
 - **Rendering script** (bottom of the file): `fetch("events.json")` →
   `<div id="schedule">` gets a `<ul class="rides">` of `<li class="ride">`
-  cards (`.when` = `date_display · time_display`, `.where` = location, a `<p>`
+  cards (`.when` = `date_display · time_display`, `.where` = location or the
+  friendly "Location shared after you RSVP" note when `location_hidden`, a `<p>`
   description, `<a class="btn">RSVP on Partiful`), and
   `<p class="note" id="updated">` gets the "Last updated … ET." stamp.
   Zero events, a non-OK response, or bad JSON all fall back to a note plus a
@@ -303,7 +316,7 @@ just before `</body>`.
 
 ## `tests/test_fetch_rides.py`
 
-Run with `.venv/bin/python -m pytest tests/ -q` (51 passing). Notes:
+Run with `.venv/bin/python -m pytest tests/ -q` (59 passing). Notes:
 
 - There is no `conftest.py` / packaging; the test file puts `scripts/` on
   `sys.path` itself and does `import fetch_rides`.
@@ -314,7 +327,8 @@ Run with `.venv/bin/python -m pytest tests/ -q` (51 passing). Notes:
   strings, non-ASCII round-trip, `now` boundary (`>=` keeps an event starting
   exactly now), empty result, malformed feed → `FeedError`, `main()` exit codes
   (0 happy path, 1 for broken feed / missing file / unset env var), `end`
-  extraction (fixture DTEND → ISO, missing DTEND → null), and two leak tests
+  extraction (fixture DTEND → ISO, missing DTEND → null), hidden-location
+  placeholder → `location: null` + `location_hidden: true`, and two leak tests
   asserting the feed URL never reaches an error message.
 - The suite passes under any system timezone (verified with `TZ=Asia/Tokyo`) —
   keep it that way; assert on explicit offsets, not on local time.

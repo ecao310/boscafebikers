@@ -460,7 +460,13 @@
     var when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
     if (when) { li.appendChild(el("p", "when", when)); }
     li.appendChild(el("h3", null, ev.title || "Café ride"));
-    if (ev.location) { li.appendChild(el("p", "where", ev.location)); }
+    if (ev.location) {
+      li.appendChild(el("p", "where", ev.location));
+    } else if (ev.location_hidden) {
+      // Partiful hides the address until RSVP; show a friendly note instead
+      // of the feed's "Location available once RSVP'd" template text.
+      li.appendChild(el("p", "where", "Location shared after you RSVP"));
+    }
     if (ev.description) { li.appendChild(el("p", null, ev.description)); }
     var actions = el("div", "ride-actions");
     var link = el("a", "btn", "RSVP on Partiful");
