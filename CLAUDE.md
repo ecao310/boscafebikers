@@ -45,7 +45,8 @@ Tagline: "exploring the city one café at a time".
 - The remote is named **`boscafebikers`**, not `origin`
   (`git@github.com:ecao310/boscafebikers.git`). Every `git push`/`git fetch`
   needs the remote spelled out.
-- `ralph.log` is gitignored loop scratch — do not commit it.
+- `ralph.log` is gitignored loop scratch — do not commit it. Historical
+  per-iteration notes live there; keep CLAUDE.md concise.
 
 ## Deployment
 
@@ -70,12 +71,18 @@ Everything below is headless — nothing here needs the GitHub web UI.
   `gh run watch <id> --exit-status`. Takes ~15s.
 - **Never use root-relative (`/…`) URLs in `site/`** — the site is served from
   the `/boscafebikers/` project subpath, so a leading slash 404s.
-- **Still outstanding (needs a human):** the `PARTIFUL_ICS_URL` secret is unset,
-  so every scheduled sync fails at fetch and no deploy is chained. The site
-  serves the committed fixture-derived `events.json` until then.
-
-Details per iteration: "Deployment: pre-flight findings", "Deployment: live",
-"Deployment: live verification", "Freshness chain: sync → deploy" below.
+- **Sync→deploy gotchas (easy to break, keep them):**
+  - `pages.yml`'s checkout must pass `ref: ${{ github.ref }}`. Without it, a
+    `workflow_call` from sync.yml checks out the pre-bot-commit SHA and would
+    deploy stale rides.
+  - The reusable-workflow caller declares the callee's permissions: sync's
+    `deploy` job carries `contents: read / pages: write / id-token: write`.
+  - The actions (`actions/checkout@v4` et al.) target deprecated Node 20 and
+    run on Node 24 on the runners — harmless today; a future pass can bump the
+    action majors.
+- `PARTIFUL_ICS_URL` is **set** (as of 2026-07-20); the sync bot commits real
+  feed updates every 6h. `site/events.json` currently has `events: []` — no
+  future rides right now, so the live page shows the empty state.
 
 ## `scripts/fetch_rides.py`
 
@@ -130,8 +137,9 @@ included, so `icalendar` returns tz-aware datetimes directly).
 ## `.github/workflows/sync.yml`
 
 Cron `0 */6 * * *` (UTC) + `workflow_dispatch`. Ubuntu, Python 3.11, pip cache
-keyed on `requirements.txt`, `permissions: contents: write`, and a
-`concurrency: sync-rides` group so two runs can't race a push.
+keyed on `requirements.txt`, and a `concurrency: sync-rides` group so two runs
+can't race a push. `sync` job carries `permissions: contents: write` (job-level);
+the `deploy` job (see Deployment) carries the Pages permissions.
 
 - **The commit-if-changed guard needs `promote_events.py`.** `build_payload()`
   stamps a fresh `updated_at` on every run, so `git diff` on `site/events.json`
@@ -151,221 +159,26 @@ keyed on `requirements.txt`, `permissions: contents: write`, and a
 - No `yaml` module in the venv; validate the workflow with
   `ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load_file(".github/workflows/sync.yml"))'`.
 
+## `.github/workflows/pages.yml`
+
+`checkout` (with `ref: ${{ github.ref }}`) → `actions/configure-pages@v5` →
+`actions/upload-pages-artifact@v3` (`path: site`) → `actions/deploy-pages@v4`,
+with `permissions: contents: read / pages: write / id-token: write`,
+`concurrency: pages` (`cancel-in-progress: false`), and the `github-pages`
+environment carrying the deploy URL. Triggers: `push` on **`master`** (the
+default branch — there is no `main`), `workflow_dispatch`, and `workflow_call`
+(from sync.yml). Why Actions and not "deploy from a branch": that source only
+offers `/` or `/docs`, and the site lives in `site/`.
+
 ## Status
 
-Iteration 1: repo scaffolding (`.gitignore`, `PLAN.md`, `CLAUDE.md`,
-`requirements.txt`).
-Iteration 2: `tests/fixtures/sample.ics` (see table above); verified it parses
-with `icalendar` and yields the expected 4 events.
-Iteration 3: `scripts/fetch_rides.py` + generated `site/events.json` (2 future
-rides, sorted).
-Iteration 4: `tests/test_fetch_rides.py` — 24 tests, all green, all offline.
-Iteration 5: `site/index.html` — hero, upcoming-rides section (placeholder
-schedule area), "Your first ride", about, links, footer.
-Iteration 6: schedule rendering `<script>` in `site/index.html` (ride cards,
-last-updated stamp, empty/error fallback).
-Iteration 7: `.github/workflows/sync.yml` + `scripts/promote_events.py` (see
-above).
-Iteration 8: `README.md` — how it works, getting the ICS URL (Partiful
-Settings → Calendar Sync → Apple Calendar, `webcal://` → `https://`), setting
-the `PARTIFUL_ICS_URL` secret, GitHub Pages deploy (branch + `/site` folder),
-local dev (`python -m http.server -d site 8000`; the page must be served over
-HTTP, not `file://`, for `fetch("events.json")` to work).
-Iteration 9: end-to-end check — **phase 1 complete, nothing broken.**
-Iteration 10: phase-2 pre-flight (see "Deployment: pre-flight findings").
-Iteration 11: `.github/workflows/pages.yml`.
-Iteration 12: Pages source switched to Actions, pushed, first deploy green —
-**the site is live** (see "Deployment: live").
-Iteration 13: live-deploy verification (see "Deployment: live verification").
-Iteration 14: freshness chain — `sync.yml` calls `pages.yml` via `workflow_call`
-(see "Freshness chain").
-Iteration 15: README rewritten for the real deploy — the impossible
-"folder `/site`" instructions are gone, replaced by the Actions source (+ the
-`gh api -X PUT … build_type=workflow` headless form), the live URL, the manual
-`gh workflow run pages.yml` redeploy, why the sync→deploy chain uses
-`workflow_call`, the no-root-relative-paths rule, and `site/CNAME` for a future
-custom domain. Also added a callout that `PARTIFUL_ICS_URL` is still unset, and
-listed `pages.yml` in the repo-layout table.
-Iteration 16: final CLAUDE.md pass — added the consolidated "## Deployment"
-section above (Pages source, all three trigger paths, manual redeploy, the
-subpath rule, the outstanding secret) and ran the phase-2 end-to-end check.
-**Phase 2 complete.** Evidence: `pytest tests/ -q` 24 passed; working tree
-clean; fetch-on-fixture → `promote_events.py` → "Rides unchanged" and
-`git diff --quiet -- site/events.json` clean (so the chain correctly skips the
-deploy on a no-op sync); `gh workflow run pages.yml` run 29715268132 green in
-14s; live `/` and `/events.json` both 200 and the served `events` byte-equal to
-the committed `site/events.json`. (The runners now warn that `actions/checkout@v4`
-et al. target the deprecated Node 20 and are forced onto Node 24 — harmless
-today, but a future iteration should bump the action majors.)
-Iteration 17: **phase 3 (Backlog 3) begins.** Added a `#contact` section to
-`site/index.html` (last section before the footer, `aria-labelledby` pattern as
-the others) so cities/orgs can reach out — the lede speaks to starting a café
-bike club elsewhere or partnering, and the only CTA is a "DM us on Instagram"
-link, since the group has no public email. PLAN.md restored at the repo root
-with the Backlog 3 list (topmost unchecked items are the site features:
-Shopify/meta WIP pages, list/calendar toggle, gallery, tab nav, ride images,
-per-event ICS download, per-event RSVP URLs, Partiful text cleanup, start/end
-locations). NOTE: `PARTIFUL_ICS_URL` is now **set** (the sync bot has been
-committing real "Sync rides from Partiful feed" updates, last one d5477dd
-→ `events: []`, no future rides right now) — the "secret unset" notes elsewhere
-in this file are stale and should be cleaned up in a future pass.
-Iteration 18: **Backlog 3: list/calendar view toggle.** `#rides` gained a
-`#view-toggle` (List/Calendar buttons, `hidden` until the script has rides).
-Calendar view renders one month-grid per month with rides; day cells carry
-`.ride-chip` links to each ride's RSVP URL. Weekday placement derives from the
-Eastern offset already in `start` via the UTC-component trick (see the
-`site/index.html` section), so non-Eastern visitors see the right day without
-re-formatting display times. Verified with the node DOM-shim render check (33
-checks): list default → calendar → list; June/July 2030 grids with correct
-alignment (June 1 = Sat, July 1 = Mon), leading/trailing `.empty` cells, chip
-titles + RSVP hrefs, missing-`rsvp_url` chip fallback, empty state (toggle
-hidden, CTA to profile), fetch-failure state. `pytest` 24 passed; HTML
-well-formed; served `/` + `/events.json` 200/200. Committed as `a937fb7`.
-NOTE: `site/events.json` currently has `events: []` (real feed has no future
-rides right now), so the live page shows the empty state with the toggle hidden.
-
-### Deployment: pre-flight findings (iteration 10)
-
-State of the repo/GitHub side as of the start of phase 2:
-
-- Default branch `master` (local + GitHub), remote `boscafebikers`, repo is
-  **public** at <https://github.com/ecao310/boscafebikers>. Local `master` was
-  2 commits ahead; pushed, now in sync. Working tree clean.
-- `git grep` over all tracked files for `webcal://`, `partiful.com`,
-  `calendar/ical`, `*.ics`: **no real feed URL anywhere.** Every hit is the
-  public profile URL, a fixture RSVP link, or prose about the `webcal://`
-  scheme. Re-run that grep before any phase-2 commit.
-- A stray `pages-deploy/` git worktree (same commit as `master`, no changes)
-  was left behind by an earlier run; removed with `git worktree remove` +
-  `git branch -D`. If `git status` shows an untracked dir that turns out to be
-  a worktree, that's what it is — check `git worktree list` first.
-- **Pages already exists but is misconfigured**: `gh api repos/:owner/:repo/pages`
-  returns `build_type: "legacy"`, `source: {branch: master, path: "/"}`, i.e.
-  it's publishing the *repo root* (README), not `site/`. Live URL is already
-  allocated: <https://ecao310.github.io/boscafebikers/>. Switching to the
-  Actions source is a `PUT` to that endpoint with `build_type: "workflow"` —
-  the site does **not** need creating, only converting.
-- **`PARTIFUL_ICS_URL` is not set** — `gh secret list` is empty. See
-  "Discovered work" in PLAN.md; the freshness task must account for a sync run
-  that fails at fetch.
-
-## `.github/workflows/pages.yml` (iteration 11)
-
-`checkout` → `actions/configure-pages@v5` → `actions/upload-pages-artifact@v3`
-(`path: site`) → `actions/deploy-pages@v4`, with `permissions: contents: read /
-pages: write / id-token: write`, `concurrency: pages` (`cancel-in-progress:
-false`), and the `github-pages` environment carrying the deploy URL.
-
-- Triggers so far: `push` on **`master`** (the default branch — there is no
-  `main`) and `workflow_dispatch`. The sync→deploy chain is *not* wired yet;
-  that's the "wire freshness" backlog task, and it must not rely on `push`
-  because `GITHUB_TOKEN` commits don't fire `push` triggers.
-- Why Actions and not "deploy from a branch": that source only offers `/` or
-  `/docs`, and the site lives in `site/`.
-- Pushed in iteration 12, after the Pages source was flipped to Actions (see
-  "Deployment: live" below).
-- Validated with `ruby -ryaml -rjson -e '…'` (parses; the `on:` key shows up as
-  `true` in the Ruby dump — YAML 1.1 boolean coercion, harmless).
-
-### Deployment: live (iteration 12)
-
-**The site is live at <https://ecao310.github.io/boscafebikers/>**, served from
-`site/` by `pages.yml` (Actions source).
-
-- Flipping the source is headless:
-  `gh api -X PUT repos/:owner/:repo/pages -f build_type=workflow`. Confirm with
-  `gh api repos/:owner/:repo/pages` → `build_type: "workflow"`, `status: "built"`.
-  (`source: {branch: master, path: "/"}` is left over from the legacy config and
-  is ignored once `build_type` is `workflow` — don't try to "fix" it to `/site`;
-  that value is not accepted.)
-- **Gotcha:** right after the flip, the legacy `pages-build-deployment`
-  workflow can still have a run queued, and it holds the `github-pages`
-  environment, so the new "Deploy site to Pages" run sits `queued` for many
-  minutes. Cancel the stale legacy run (`gh run cancel <id>`) and the Actions
-  deploy starts within seconds (job itself takes ~15s).
-- Verified live: `curl -o /dev/null -w '%{http_code}'` on `/` and
-  `/events.json` = 200/200; the page `<title>` is the real one and
-  `events.json` decodes to the 2 fixture rides (Charles River Loop → Tatte,
-  Minuteman Bikeway to Lexington).
-- Redeploy by hand: `gh workflow run pages.yml --ref master` (then
-  `gh run watch <id>`).
-
-### Deployment: live verification (iteration 13)
-
-Checked against the real URL, not the local files:
-
-- `curl` on `/` and `/events.json` → **200 / 200**. The served `events.json`
-  parses and is byte-for-byte equal to the committed `site/events.json`
-  (same `events`, same `updated_at`); the served `index.html` is identical to
-  `site/index.html`.
-- **No project-subpath breakage.** Nothing in the page uses a root-relative
-  (`/…`) URL: the only refs are `href="#rides"`, two absolute
-  `https://partiful.com/…` / instagram links, a `data:` favicon, and the
-  relative `fetch("events.json", {cache:"no-cache"})`. Keep it that way — the
-  site is served from `/boscafebikers/`, so any leading-slash path would 404.
-- Rendering re-verified against the **live** page with the node shim trick from
-  iteration 9 (`/tmp/render_check.mjs`: fetch the live HTML, regex out the last
-  `<script>`, `eval` it against a fake `document` whose `innerHTML` setter
-  throws, and a `fetch` rebased on the live base URL). Both ride cards rendered
-  with `.when`/`.where`/description/RSVP hrefs, plus the "Last updated … ET."
-  stamp.
-
-### Freshness chain: sync → deploy (iteration 14)
-
-`sync.yml` **calls** `pages.yml` instead of relying on `push`:
-
-- `pages.yml` gained a `workflow_call:` trigger. `sync.yml`'s `sync` job now
-  exports `outputs.changed` (set to `true`/`false` by the commit step via
-  `$GITHUB_OUTPUT`), and a second job
-  `deploy: {needs: sync, if: needs.sync.outputs.changed == 'true', uses:
-  ./.github/workflows/pages.yml}` redeploys only when a commit was actually
-  pushed.
-- **Why not `push`:** commits pushed with `GITHUB_TOKEN` don't fire `push`
-  triggers, so the sync bot's commit would never redeploy the site. `workflow_run`
-  would also work but fires on *every* sync, changed or not.
-- **Permissions moved to job level.** `sync.yml` no longer has a top-level
-  `permissions:` block: `sync` gets `contents: write`, `deploy` gets
-  `contents: read / pages: write / id-token: write`. A reusable-workflow caller
-  must declare the callee's permissions on the calling job.
-- **Gotcha:** `pages.yml`'s checkout now passes `ref: ${{ github.ref }}`.
-  Without it, checkout uses `github.sha` — which, in a workflow_call from
-  sync.yml, is the commit from *before* the bot pushed the new
-  `site/events.json`, so the deploy would publish stale rides. Keep that `with:`.
-- Verified: a temporary `chain-test.yml` (workflow_dispatch → `uses:
-  ./.github/workflows/pages.yml`, same shape as sync's deploy job) ran green —
-  run 29715148012, all steps ✓ — proving `pages.yml` is callable and deploys;
-  it was then deleted. Dispatching `sync.yml` (run 29715178013) failed at
-  "Fetch rides" because `PARTIFUL_ICS_URL` is unset, and `deploy` correctly
-  reported `skipped`. Live URL re-checked after: `/` and `/events.json` 200/200,
-  served `events` byte-equal to the committed file.
-- Still outstanding (not fixable here): the `PARTIFUL_ICS_URL` secret. Until a
-  human sets it, every scheduled sync fails at fetch and no deploy is chained.
-
-### End-to-end verification (how it was done, iteration 9)
-
-Fresh-clone simulation in `/tmp`, everything offline:
-
-1. `git clone` the repo → fresh `python3 -m venv .venv` + `pip install -r
-   requirements.txt` → `pytest tests/ -q` = 24 passed.
-2. Deleted `site/events.json`, regenerated it with `scripts/fetch_rides.py
-   --ics-file tests/fixtures/sample.ics` → exit 0, exactly the 2 future 2030
-   rides, sorted.
-3. Served with `python -m http.server -d site 8765`; `/` and `/events.json`
-   both 200.
-4. Rendering was checked against the **served** page (not the file on disk):
-   a small node script fetches `/`, regex-extracts the inline `<script>`,
-   `eval`s it against a shim `document` (whose `innerHTML` setter *throws*, so
-   the no-`innerHTML` rule is enforced) and a `fetch` rebased on the server
-   URL, then dumps the DOM. Both ride cards, `.when`/`.where`/description/RSVP
-   hrefs and the "Last updated … ET." stamp all rendered. Re-ran with an empty
-   `events` array and with `events.json` deleted (real 404) → both fell back to
-   a note plus the Partiful-profile button.
-5. Workflow guard: fetch to a temp file → `promote_events.py` → "Rides
-   unchanged", `git diff --quiet` clean (no bot commit). Repeated with an
-   edited title → "Rides changed", diff dirty (would commit). Both correct.
-6. `git grep` for feed-URL patterns in tracked files: only prose/code mentions
-   of the `webcal://` scheme, no real URL. HTML re-validated with
-   `html.parser` (no unclosed/mismatched tags).
+Phase 1 (build) and phase 2 (deploy) are complete — the site is live and the
+sync→deploy freshness chain works. Phase 3 (Backlog 3) is in progress.
+`PARTIFUL_ICS_URL` is set and the sync bot commits real updates every 6h;
+`site/events.json` currently has `events: []` (no future rides), so the live
+page shows the empty state. Historical per-iteration notes were moved to
+`ralph.log` (gitignored scratch) in iteration 19 to keep this file a concise
+reference; `git log` records what each iteration changed.
 
 ## `site/index.html`
 
@@ -419,7 +232,7 @@ just before `</body>`.
 - Verifying the JS: no browser here, but `node` (v25) is installed. Shim a
   tiny `document`/`fetch`, pull the script out of the HTML with a regex, and
   `eval` it — that's how the happy path, empty, missing-rsvp and 404 cases
-  were checked this iteration.
+  were checked.
 - Sections/ids: `#rides`, `#first-ride`, `#about`, `#links`, `#contact`. The
   hero CTA anchors to `#rides`.
 - Verified well-formed by feeding it through `html.parser` (no unclosed or
