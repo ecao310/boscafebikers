@@ -1,0 +1,144 @@
+/* Boston Café Bikers — shared stylesheet
+   Linked from every page (index.html, gallery.html, shopify.html,
+   meta-business.html, donate.html) via <link rel="stylesheet" href="styles.css">.
+   Page-specific rules live in a small inline <style> on each page. Keep the
+   café palette custom properties here — do not introduce new hex values. */
+
+:root {
+  --espresso: #2e1d13;
+  --roast:    #4a2c1a;
+  --crema:    #b07a4a;
+  --latte:    #f6ece0;
+  --foam:     #fffaf4;
+  --oat:      #e6d5c2;
+  --ink:      #33261d;
+  --muted:    #7a685a;
+  --radius:   14px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--latte);
+  color: var(--ink);
+  font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+h1, h2, h3 {
+  font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  line-height: 1.2;
+  margin: 0 0 .5rem;
+}
+
+a { color: var(--roast); }
+
+/* --- hero --- */
+.hero {
+  background: linear-gradient(160deg, var(--roast) 0%, var(--espresso) 100%);
+  color: var(--foam);
+  padding: 56px 0 48px;
+  text-align: center;
+}
+.hero h1 { font-size: clamp(2rem, 9vw, 3rem); letter-spacing: -.01em; }
+.hero .tagline {
+  font-size: 1.1rem;
+  color: var(--oat);
+  margin: 0;
+}
+.hero .mark { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+.hero a { color: var(--foam); }
+
+/* --- buttons --- */
+.btn {
+  display: inline-block;
+  background: var(--crema);
+  color: #2b1a10;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 0;
+}
+.btn:hover, .btn:focus { background: #c68f5d; }
+
+/* --- tab header nav --- */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--espresso);
+  border-bottom: 1px solid rgba(246, 236, 224, .15);
+}
+.nav .wrap {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.nav .tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nav .tabs a {
+  display: block;
+  color: var(--oat);
+  text-decoration: none;
+  font-size: .85rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.nav .tabs a:hover,
+.nav .tabs a:focus { color: var(--foam); background: rgba(246, 236, 224, .1); }
+.nav .tabs a.is-active {
+  background: var(--crema);
+  color: #2b1a10;
+}
+
+/* --- sections --- */
+section { padding: 40px 0; }
+section + section { border-top: 1px solid var(--oat); }
+section h2 { font-size: 1.6rem; }
+.lede { color: var(--muted); margin-top: 0; }
+
+/* --- WIP placeholder badge --- */
+.wip {
+  display: inline-block;
+  background: var(--foam);
+  border: 2px dashed var(--crema);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  margin: 0 0 1rem;
+  font-weight: 600;
+  color: var(--roast);
+}
+
+footer {
+  background: var(--espresso);
+  color: var(--oat);
+  text-align: center;
+  padding: 28px 0;
+  font-size: .9rem;
+}
+footer a { color: var(--oat); }
+
+@media (min-width: 560px) {
+  .hero { padding: 80px 0 64px; }
+  section { padding: 56px 0; }
+}

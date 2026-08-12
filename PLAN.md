@@ -22,8 +22,10 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Create a donation section/page. leave it blank/WIP for now. Include navigation to the page, as well as the shopify and meta pages.
 - [x] The RSVP on Partiful button still links to the profile page instead of the event page. Extract event link from the description in events.json. 
 - [x] Clean up the events description. Remove the rsvp link from the description, but keep the button and the link in the button.
-- [ ] Clean up htmls. Consider creating a unified style sheet.
+- [x] Clean up htmls. Consider creating a unified style sheet. (Created `site/styles.css` holding the shared café palette + base/nav/hero/footer styles; every page now `<link>`s it and keeps only its page-specific rules in a small inline `<style>`. Verified rule-for-rule that no original CSS declaration was lost, HTML stays well-formed, 59 tests pass.)
 - [ ] Research how https://bostoncyclistsunion.org/events/month/ handles event details and display. Consider incorporating their method.
+- [ ] Remove list of events option. Instead, show the next event in one section near the top, and the existing section becomes calendar only.
+- [ ] On calendar, clicking on an event should show the event details in a modal or popup. 
 
 ## Backlog — phase 2: deploy to GitHub Pages
 

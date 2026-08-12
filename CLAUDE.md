@@ -17,7 +17,8 @@ Tagline: "exploring the city one café at a time".
 | `scripts/ride_images.json` | Optional sidecar: ride UID → image URL, merged into each event as `image`. |
 | `tests/fixtures/sample.ics` | Offline fixture (2 future, 1 past, 1 cancelled). See table below. |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
-| `site/index.html` | Home: rides list/calendar, inline CSS/JS, no build step. |
+| `site/styles.css` | Shared stylesheet: café palette + base/nav/hero/footer styles, linked by every page. |
+| `site/index.html` | Home: rides list/calendar, page-specific inline CSS + shared `styles.css`, JS. |
 | `site/gallery.html` | Ride-photo gallery (empty state → Instagram CTA). |
 | `site/shopify.html` | WIP shop page (placeholder only). |
 | `site/meta-business.html` | WIP Meta Business page (placeholder only). |
@@ -34,11 +35,13 @@ Tagline: "exploring the city one café at a time".
   inside error messages — strip URLs from exception text).
 - **Tests never hit the network.** Always parse `tests/fixtures/sample.ics`.
 - Timezone for all displayed times: `America/New_York` (use `zoneinfo`).
-- `site/` is plain static: single `index.html`, inline `<style>`/`<script>`,
-  no bundler, no build step. Mobile-first, warm café palette, readable at 380px.
-  The **one** exception to "no frameworks": the calendar view adopts FullCalendar 6
-  (MIT) from a CDN with `defer` — see the calendar bullet below for the trade-off
-  and the graceful fallback.
+- `site/` is plain static: no bundler, no build step. CSS is split between the
+  shared `site/styles.css` (palette + base/nav/hero/footer — the single source
+  for the café custom properties) and a small page-specific inline `<style>` on
+  each page. Mobile-first, warm café palette, readable at 380px. The **one**
+  exception to "no frameworks": the calendar view adopts FullCalendar 6 (MIT)
+  from a CDN with `defer` — see the calendar bullet below for the trade-off and
+  the graceful fallback.
 - Public Partiful profile (safe to commit, used as empty-state fallback):
   `https://partiful.com/u/Hs47uq5mucZyXLBJZCda`
 - Instagram: `@bostoncafebikers`.
@@ -243,18 +246,22 @@ each iteration changed.
 
 ## `site/index.html`
 
-Single file, no build step: inline `<style>` in `<head>`, one IIFE `<script>`
-just before `</body>`.
+No build step: `site/styles.css` linked in `<head>` (the shared base — palette,
+nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
+`<script>` just before `</body>`.
 
 - **Shared tab header nav.** All five pages (`index.html`, `gallery.html`,
   `shopify.html`, `meta-business.html`, `donate.html`) carry the same `.nav` —
   a sticky espresso bar with five relative `.tabs` links (Rides / Gallery /
   Shop / Meta Business / Donate). The current page's link gets `.is-active` +
-  `aria-current="page"`; the others are plain. The CSS is duplicated inline in
-  each page (no shared stylesheet, no build step). Keep links relative — never
-  root-relative — and keep the `.is-active`/`aria-current` on exactly one link
-  per page. `section { scroll-margin-top: 64px }` on the home page keeps the
-  sticky nav from covering in-page anchor targets (`#rides`).
+  `aria-current="page"`; the others are plain. The nav CSS lives once in
+  `site/styles.css` (linked by all five pages); each page keeps only its
+  page-specific rules (rides/calendar on `index.html`, gallery grid, the
+  `.btn { margin-top: 1rem }` CTA spacing on the sub-pages) in a small inline
+  `<style>`. Keep links relative — never root-relative — and keep the
+  `.is-active`/`aria-current` on exactly one link per page. `section {
+  scroll-margin-top: 64px }` on the home page keeps the sticky nav from covering
+  in-page anchor targets (`#rides`).
 - CSS custom properties on `:root` are the warm café palette (`--espresso`,
   `--roast`, `--crema`, `--latte`, `--foam`, `--oat`, `--ink`, `--muted`).
   Reuse them; don't introduce new hex values.

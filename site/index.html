@@ -10,75 +10,17 @@
 <meta property="og:description" content="Exploring the city one café at a time.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
 <style>
-  :root {
-    --espresso: #2e1d13;
-    --roast:    #4a2c1a;
-    --crema:    #b07a4a;
-    --latte:    #f6ece0;
-    --foam:     #fffaf4;
-    --oat:      #e6d5c2;
-    --ink:      #33261d;
-    --muted:    #7a685a;
-    --radius:   14px;
-  }
+  /* --- index-specific styles (shared base lives in styles.css) --- */
 
-  * { box-sizing: border-box; }
+  /* The hero CTA button sits right under the tagline; styles.css gives
+     .hero .tagline margin: 0, so restore the original gap here. */
+  .hero .tagline { margin-bottom: 1.5rem; }
 
-  html { -webkit-text-size-adjust: 100%; }
+  /* In-page anchor targets (#rides) need clearance below the sticky nav. */
+  section { scroll-margin-top: 64px; }
 
-  body {
-    margin: 0;
-    background: var(--latte);
-    color: var(--ink);
-    font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-  }
-
-  .wrap {
-    width: 100%;
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 0 20px;
-  }
-
-  h1, h2, h3 {
-    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
-    line-height: 1.2;
-    margin: 0 0 .5rem;
-  }
-
-  a { color: var(--roast); }
-
-  /* --- hero --- */
-  .hero {
-    background: linear-gradient(160deg, var(--roast) 0%, var(--espresso) 100%);
-    color: var(--foam);
-    padding: 56px 0 48px;
-    text-align: center;
-  }
-  .hero h1 {
-    font-size: clamp(2rem, 9vw, 3rem);
-    letter-spacing: -.01em;
-  }
-  .hero .tagline {
-    font-size: 1.1rem;
-    color: var(--oat);
-    margin: 0 0 1.5rem;
-  }
-  .hero .mark { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
-  .hero a { color: var(--foam); }
-
-  .btn {
-    display: inline-block;
-    background: var(--crema);
-    color: #2b1a10;
-    text-decoration: none;
-    font-weight: 600;
-    padding: 12px 22px;
-    border-radius: 999px;
-    border: 0;
-  }
-  .btn:hover, .btn:focus { background: #c68f5d; }
   .btn-ghost {
     background: transparent;
     border: 1.5px solid var(--crema);
@@ -88,52 +30,6 @@
     cursor: pointer;
   }
   .btn-ghost:hover, .btn-ghost:focus { background: var(--latte); }
-
-  /* --- tab header nav --- */
-  .nav {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: var(--espresso);
-    border-bottom: 1px solid rgba(246, 236, 224, .15);
-  }
-  .nav .wrap {
-    display: flex;
-    justify-content: center;
-    padding-top: 8px;
-    padding-bottom: 8px;
-  }
-  .nav .tabs {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 4px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .nav .tabs a {
-    display: block;
-    color: var(--oat);
-    text-decoration: none;
-    font-size: .85rem;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 999px;
-    white-space: nowrap;
-  }
-  .nav .tabs a:hover,
-  .nav .tabs a:focus { color: var(--foam); background: rgba(246, 236, 224, .1); }
-  .nav .tabs a.is-active {
-    background: var(--crema);
-    color: #2b1a10;
-  }
-
-  /* --- sections --- */
-  section { padding: 40px 0; scroll-margin-top: 64px; }
-  section + section { border-top: 1px solid var(--oat); }
-  section h2 { font-size: 1.6rem; }
-  .lede { color: var(--muted); margin-top: 0; }
 
   ul.checks { list-style: none; padding: 0; margin: 1rem 0 0; }
   ul.checks li {
@@ -291,20 +187,6 @@
     font-weight: 600;
   }
   .links a:hover, .links a:focus { border-color: var(--crema); }
-
-  footer {
-    background: var(--espresso);
-    color: var(--oat);
-    text-align: center;
-    padding: 28px 0;
-    font-size: .9rem;
-  }
-  footer a { color: var(--oat); }
-
-  @media (min-width: 560px) {
-    .hero { padding: 80px 0 64px; }
-    section { padding: 56px 0; }
-  }
 
   /* --- FullCalendar (dayGridMonth) café-palette overrides --- */
   /* FullCalendar 6 injects its own <style> at runtime (from the deferred
