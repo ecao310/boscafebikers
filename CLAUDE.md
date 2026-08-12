@@ -287,7 +287,17 @@ just before `</body>`.
   free. Each `.cal-grid` is 7 weekday columns (`.cal-dow` headers); a day cell
   has a `.num` plus one `.ride-chip` `<a>` per ride (href = `rsvp_url`, falling
   back to the profile URL). Cells outside the month get the `.empty` class.
-  `.cal-day.has-ride` tints days that have rides.
+  `.cal-day.has-ride` tints days that have rides. Ride titles **wrap** inside
+  their day cell (`overflow-wrap: anywhere`) rather than ellipsis-truncating,
+  so a long title stays fully visible at 380px.
+- **Calendar display decision (2026-08-12):** the month grid stays hand-rolled
+  vanilla. Evaluated FullCalendar (40–60KB, premium views need a commercial
+  license, bundler/CDN-oriented), TOAST UI Calendar (dormant since 2023, needs
+  a build), and vanilla-calendar / vanilla-js-calendar (date *pickers*, not
+  ride-display calendars, and need external CSS/JS). None fits the
+  single-file / no-framework / no-bundler constraint; the zero-dependency grid
+  already meets the need (a handful of read-only rides on their Eastern-tz
+  weekday, each linking to its RSVP page). Research notes: `ralph/ralph.log`.
 - **Calendar weekday math is the exception to the no-`Date` rule.** The
   calendar must not call `new Date(start)` in the visitor's local tz — a
   near-midnight ride would land on the wrong weekday for non-Eastern visitors.

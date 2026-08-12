@@ -272,9 +272,10 @@
     margin-top: 3px;
     font-size: .68rem;
     line-height: 1.25;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    /* Long ride titles wrap inside the narrow cell instead of being
+       ellipsis-truncated; "anywhere" also breaks an unbroken token (a long
+       café name) that would otherwise overflow a 1fr column at 380px. */
+    overflow-wrap: anywhere;
   }
   .cal-day .ride-chip:hover, .cal-day .ride-chip:focus { background: #c68f5d; }
 
