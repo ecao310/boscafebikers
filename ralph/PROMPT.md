@@ -1,6 +1,6 @@
 You are one iteration of a loop. Each run: pick exactly ONE unchecked task from the
-Backlog below (topmost first), complete it fully, verify it, mark it `[x]` in this
-file's copy at PLAN.md in the repo root, commit, and exit. Do not attempt more
+Backlog below (topmost first), complete it fully, verify it, mark it `[x]` in
+`ralph/PLAN.md`, commit, and exit. Do not attempt more
 than one task per run.
 
 ## Project spec
@@ -49,8 +49,8 @@ Two hard constraints that rule out the obvious approach:
   `PARTIFUL_ICS_URL` GitHub secret / env var, never in a file, a log, or a CLI
   argument.
 - If you find a bug from a previous iteration, fixing it IS your task this
-  iteration: fix it, note it under "Discovered work" in PLAN.md, exit.
-- If a task is blocked, mark it `[blocked: reason]` in PLAN.md and pick the next
+  iteration: fix it, note it under "Discovered work" in `ralph/PLAN.md`, exit.
+- If a task is blocked, mark it `[blocked: reason]` in `ralph/PLAN.md` and pick the next
   task instead. Anything needing a human click in the GitHub web UI is blocked —
   but check first whether `gh api` can do it headlessly (it usually can, e.g.
   `gh api -X POST repos/:owner/:repo/pages`).
