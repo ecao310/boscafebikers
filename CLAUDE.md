@@ -102,19 +102,30 @@ Run it on the fixture (never the live feed) with:
   `PARTIFUL_ICS_URL`, rewriting a leading `webcal://` to `https://`.
 - Importable API for tests: `parse_events(data: bytes, now=None, images=None)
   -> list[dict]`, `extract_rsvp_url(description)`,
-  `load_ride_images(path=None) -> dict`, `build_payload(rides, now=None)`,
-  `write_events(payload, path)`, `main(argv) -> int`, and `FeedError`.
+  `derive_partiful_url(uid) -> str | None`, `load_ride_images(path=None) -> dict`,
+  `build_payload(rides, now=None)`, `write_events(payload, path)`,
+  `main(argv) -> int`, and `FeedError`.
   Injecting `now` is how the tests pin "future" without depending on the clock.
 - **Never echo `requests` exception text** — it embeds the request URL. The
   fetch path reports only `type(exc).__name__` (+ HTTP status when present).
   `scrub()` strips URLs from any other text that gets surfaced.
 - Output shape: `{"updated_at", "count", "events": [...]}`; each event has
   `uid, title, start (ISO+offset), end (ISO+offset, may be null), date_display,
-  time_display, location, description (RSVP line stripped), rsvp_url (may be
+  time_display, location, description (RSVP/invite line stripped), rsvp_url (may be
   null), image (may be null)`. `end` comes from the feed's `DTEND` (absent →
   null); the site's "add to calendar" ICS uses it so the invite blocks the whole
   ride. Display strings are precomputed in Python so the page doesn't render in
   the visitor's tz.
+- **`rsvp_url` from the feed text:** Partiful descriptions carry the event page in
+  any of three phrasings — `RSVP: <url>`, `RSVP at <url>`, or
+  `View this event on Partiful at <url>` — and the URL is line-folded across the
+  phrase / URL boundary. `extract_rsvp_url` matches all three (on the unfolded
+  `str(event['DESCRIPTION'])`), and `_strip_rsvp` drops the whole invite line from
+  the displayed description. If the text has no link at all, `derive_partiful_url`
+  falls back to `https://partiful.com/e/<uid>` **only** for a bare UID (no `@` —
+  real Partiful exports use the bare event id; descriptive `<name>@partiful.com`
+  UIDs are never treated as ids). This is what makes the site's "RSVP on Partiful"
+  button link to the actual event instead of the group profile page.
 - **Ride photos:** the ICS feed carries no images, so `image` comes from the
   optional sidecar `scripts/ride_images.json` — a JSON object mapping event UID
   → photo URL (e.g. `"<partiful-id>@partiful.com": "https://…/a.jpg"`). The
@@ -145,7 +156,9 @@ included, so `icalendar` returns tz-aware datetimes directly).
 - RSVP links live at the end of DESCRIPTION as `RSVP: https://partiful.com/e/<id>`,
   after a `\n\n`, and are **line-folded** across the `RSVP:` / URL boundary — the
   parser must work on the unfolded value (`str(event['DESCRIPTION'])`), never on
-  raw lines.
+  raw lines. (Real Partiful exports say `RSVP at <url>` or
+  `View this event on Partiful at <url>` instead; `extract_rsvp_url` handles all
+  three — see the fetch-script section.)
 - Descriptions/locations contain non-ASCII (`é`, `☕`, `→`, `—`) and escaped
   commas — read the file as bytes and let `icalendar` decode.
 - Local venv for verification: `python3 -m venv .venv && .venv/bin/pip install -r

@@ -72,12 +72,29 @@ def test_rsvp_line_stripped_from_description(rides):
         ("Ride then coffee.\n\nRSVP: https://partiful.com/e/abc123", "https://partiful.com/e/abc123"),
         ("rsvp:   https://partiful.com/e/abc123", "https://partiful.com/e/abc123"),
         ("See you there (RSVP: https://partiful.com/e/abc123).", "https://partiful.com/e/abc123"),
+        ("RSVP at https://partiful.com/e/abc123", "https://partiful.com/e/abc123"),
+        ("View this event on Partiful at https://partiful.com/e/abc123\n\nCome!", "https://partiful.com/e/abc123"),
         ("No link here at all.", None),
         ("", None),
     ],
 )
 def test_extract_rsvp_url(description, expected):
     assert fetch_rides.extract_rsvp_url(description) == expected
+
+
+@pytest.mark.parametrize(
+    "uid, expected",
+    [
+        ("TskpmnYxmCi7eGn1mb0G", "https://partiful.com/e/TskpmnYxmCi7eGn1mb0G"),
+        ("evt-future-charles-loop@partiful.com", None),
+        ("noend@example.com", None),
+        ("https://partiful.com/e/abc123", None),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_derive_partiful_url(uid, expected):
+    assert fetch_rides.derive_partiful_url(uid) == expected
 
 
 def test_timezone_is_eastern_with_correct_offsets(rides):
@@ -94,6 +111,78 @@ def test_end_time_extracted(rides):
     assert charles["end"] == "2030-06-22T12:00:00-04:00"
     assert minuteman["end"] == "2030-07-06T14:00:00-04:00"
     assert datetime.fromisoformat(charles["end"]).utcoffset().total_seconds() == -4 * 3600
+
+
+def _real_feed(data: bytes):
+    """Parse an inline feed at a fixed 'now', like the sync bot would."""
+    return fetch_rides.parse_events(data, now=datetime(2025, 1, 1, tzinfo=EASTERN))
+
+
+def test_real_partiful_rsvp_at_phrasing():
+    """Current Partiful exports say 'RSVP at <url>' and use a bare UID."""
+    data = (
+        b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+        b"BEGIN:VEVENT\r\nUID:TskpmnYxmCi7eGn1mb0G\r\n"
+        b"DTSTART;TZID=America/New_York:20300808T180000\r\n"
+        b"SUMMARY:Dinner Party\r\n"
+        b"DESCRIPTION:RSVP at https://partiful.com/e/TskpmnYxmCi7eGn1mb0G\\n\\n"
+        b"You are cordially invited. Just showing up for the food is valid!\r\n"
+        b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    rides = _real_feed(data)
+    assert len(rides) == 1
+    assert rides[0]["rsvp_url"] == "https://partiful.com/e/TskpmnYxmCi7eGn1mb0G"
+    assert "RSVP at" not in rides[0]["description"]
+    assert "partiful.com" not in rides[0]["description"]
+    assert rides[0]["description"].startswith("You are cordially invited.")
+
+
+def test_real_partiful_view_event_phrasing():
+    """Some Partiful exports say 'View this event on Partiful at <url>'."""
+    data = (
+        b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+        b"BEGIN:VEVENT\r\nUID:LjbmPGgu1Z3Zc7bJTibI\r\n"
+        b"DTSTART;TZID=America/New_York:20300622T093000\r\n"
+        b"SUMMARY:Celebration\r\n"
+        b"DESCRIPTION:View this event on Partiful at https://partiful.com/e/LjbmPGgu1Z3Zc7bJTibI\\n\\n"
+        b"Come celebrate with us.\r\n"
+        b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    rides = _real_feed(data)
+    assert len(rides) == 1
+    assert rides[0]["rsvp_url"] == "https://partiful.com/e/LjbmPGgu1Z3Zc7bJTibI"
+    assert "Partiful at" not in rides[0]["description"]
+    assert rides[0]["description"].startswith("Come celebrate with us.")
+
+
+def test_rsvp_url_derived_from_bare_uid_without_link():
+    """No link in the text at all → a bare Partiful UID still yields the page."""
+    data = (
+        b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+        b"BEGIN:VEVENT\r\nUID:Z50H1Zr8gbbyZtSyH75e\r\n"
+        b"DTSTART;TZID=America/New_York:20300622T093000\r\n"
+        b"SUMMARY:No link here\r\n"
+        b"DESCRIPTION:Just ride details. See you at the start.\r\n"
+        b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    rides = _real_feed(data)
+    assert len(rides) == 1
+    assert rides[0]["rsvp_url"] == "https://partiful.com/e/Z50H1Zr8gbbyZtSyH75e"
+
+
+def test_rsvp_url_not_derived_from_suffixed_uid():
+    """A descriptive '<name>@partiful.com' UID must not be treated as an id."""
+    data = (
+        b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+        b"BEGIN:VEVENT\r\nUID:evt-future-charles-loop@partiful.com\r\n"
+        b"DTSTART;TZID=America/New_York:20300622T093000\r\n"
+        b"SUMMARY:No RSVP line\r\n"
+        b"DESCRIPTION:No link anywhere here.\r\n"
+        b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    rides = _real_feed(data)
+    assert len(rides) == 1
+    assert rides[0]["rsvp_url"] is None
 
 
 def test_missing_dtend_yields_null_end():

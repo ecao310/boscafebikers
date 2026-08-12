@@ -33,8 +33,16 @@ DEFAULT_OUTPUT = REPO_ROOT / "site" / "events.json"
 RIDE_IMAGES_PATH = REPO_ROOT / "scripts" / "ride_images.json"
 FETCH_TIMEOUT_SECONDS = 30
 
-# RSVP links sit at the end of DESCRIPTION as "RSVP: https://partiful.com/e/<id>".
-RSVP_RE = re.compile(r"RSVP:\s*(https?://\S+)", re.IGNORECASE)
+# RSVP links sit in DESCRIPTION in one of three phrasings — "RSVP: <url>",
+# "RSVP at <url>", or "View this event on Partiful at <url>" — and are
+# line-folded across the phrase / URL boundary. Capture the URL regardless.
+RSVP_RE = re.compile(
+    r"(?:RSVP\s*(?::|\bat\b)|View this event on Partiful at)\s*(https?://\S+)",
+    re.IGNORECASE,
+)
+# Partiful's ICS export uses the bare event id as the UID; the event's page is
+# https://partiful.com/e/<id>. Used as a fallback when no link is in the text.
+PARTIFUL_EVENT_URL = "https://partiful.com/e/"
 # Anything that looks like a URL, so it can be scrubbed from error text.
 URL_RE = re.compile(r"\b(?:webcal|https?)://\S+", re.IGNORECASE)
 
@@ -94,6 +102,18 @@ def extract_rsvp_url(description: str) -> str | None:
     return match.group(1).rstrip(".,);") if match else None
 
 
+def derive_partiful_url(uid: str) -> str | None:
+    """Build the Partiful event URL from a bare UID.
+
+    Partiful's ICS export uses the event id as a bare UID (no ``@…``). Leave
+    descriptive or suffixed UIDs (e.g. ``evt-…@partiful.com``) alone — those
+    aren't event ids, and a description usually carries the link anyway.
+    """
+    if not uid or "@" in uid or uid.startswith(("http://", "https://", "webcal://")):
+        return None
+    return PARTIFUL_EVENT_URL + uid
+
+
 def load_ride_images(path: Path | None = None) -> dict:
     """Read the optional UID → image-URL sidecar. A missing file means "{}"."""
     path = Path(path) if path is not None else RIDE_IMAGES_PATH
@@ -109,7 +129,7 @@ def load_ride_images(path: Path | None = None) -> dict:
 
 
 def _strip_rsvp(description: str) -> str:
-    """The blurb without the trailing 'RSVP: <url>' line."""
+    """The blurb without the RSVP/invite line (any of the three phrasings)."""
     return RSVP_RE.sub("", description).strip()
 
 
@@ -153,7 +173,7 @@ def parse_events(
                 "time_display": f"{start:%-I:%M %p}".replace("AM", "am").replace("PM", "pm"),
                 "location": _text(component, "LOCATION"),
                 "description": _strip_rsvp(description),
-                "rsvp_url": extract_rsvp_url(description),
+                "rsvp_url": extract_rsvp_url(description) or derive_partiful_url(uid),
                 "image": images.get(uid),
             }
         )
