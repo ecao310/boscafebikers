@@ -157,7 +157,15 @@
     border-radius: 6px;
     padding: 1px 4px;
     margin-top: 3px;
+    /* Chips are <button>s (they open the ride-detail modal) — reset the UA
+       button look (font, border, centered text, cursor) while keeping the
+       shared chip styling above. */
+    font: inherit;
     font-size: .68rem;
+    border: 0;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
     line-height: 1.25;
     /* Long ride titles wrap inside the narrow cell instead of being
        ellipsis-truncated; "anywhere" also breaks an unbroken token (a long
@@ -165,6 +173,55 @@
     overflow-wrap: anywhere;
   }
   .cal-day .ride-chip:hover, .cal-day .ride-chip:focus { background: #c68f5d; }
+
+  /* --- ride detail modal (calendar event click) --- */
+  /* Opened by clicking a calendar event; reuses the rideCard builder. The
+     [hidden] rule (display:none !important) wins over this display:flex, so
+     the overlay stays out of the way until JS unhides it. */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(46, 29, 19, .55); /* espresso, translucent */
+  }
+  .modal-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    max-height: 88vh;
+    overflow-y: auto;
+    background: var(--foam);
+    border: 1px solid var(--oat);
+    border-radius: var(--radius);
+    padding: 24px 22px 22px;
+    box-shadow: 0 18px 50px rgba(46, 29, 19, .35);
+  }
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--latte);
+    color: var(--roast);
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .modal-close:hover, .modal-close:focus { background: var(--oat); }
+  /* The rideCard inside the modal supplies its own box; drop the card chrome
+     so the dialog is the single container. */
+  .modal .ride { border: 0; background: transparent; padding: 0; margin: 0; }
 
   .links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 1rem; }
   .links a {
@@ -347,6 +404,18 @@
     <p><a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">RSVP to a ride</a></p>
   </div>
 </footer>
+
+<!-- Ride detail modal — opened by clicking a calendar event. Content is
+     built by the same rideCard builder as the featured next-ride card, so
+     the details and the add-to-calendar exports can't drift. Hidden with the
+     [hidden] attribute; .modal's display:flex only applies once unhidden. -->
+<div id="ride-modal" class="modal" hidden>
+  <div class="modal-backdrop"></div>
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-label="Ride details">
+    <button type="button" class="modal-close" aria-label="Close ride details">&times;</button>
+    <div id="ride-modal-content"></div>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -554,6 +623,50 @@
     return "https://calendar.google.com/calendar/render?" + parts.join("&");
   }
 
+  // --- ride detail modal ---
+  // Clicking a calendar event (FullCalendar or the fallback grid) opens this
+  // instead of navigating straight to the RSVP page — the BCU detail-page
+  // pattern adapted for a static site. The content reuses the rideCard
+  // builder, so details and the add-to-calendar exports match the featured
+  // next-ride card exactly.
+  var rideModal = document.getElementById("ride-modal");
+  var rideModalContent = document.getElementById("ride-modal-content");
+  var rideModalDialog = rideModal ? rideModal.querySelector(".modal-dialog") : null;
+  var lastFocused = null;
+
+  function openRideModal(ev) {
+    lastFocused = document.activeElement;
+    rideModalContent.textContent = "";
+    rideModalContent.appendChild(rideCard(ev, "modal-ride"));
+    if (rideModalDialog) {
+      rideModalDialog.setAttribute("aria-label", ev.title || "Ride details");
+    }
+    rideModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    var close = rideModal.querySelector(".modal-close");
+    if (close) { close.focus(); }
+  }
+
+  function closeRideModal() {
+    if (!rideModal || rideModal.hidden) { return; }
+    rideModal.hidden = true;
+    document.body.style.overflow = "";
+    if (lastFocused && lastFocused.focus) { lastFocused.focus(); }
+    lastFocused = null;
+  }
+
+  if (rideModal) {
+    var modalCloseBtn = rideModal.querySelector(".modal-close");
+    if (modalCloseBtn) { modalCloseBtn.addEventListener("click", closeRideModal); }
+    // Clicking the backdrop (or anywhere outside the dialog) closes it.
+    rideModal.addEventListener("click", function (e) {
+      if (!e.target.closest(".modal-dialog")) { closeRideModal(); }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !rideModal.hidden) { closeRideModal(); }
+    });
+  }
+
   // --- calendar view ---
   // The start ISO string carries the Eastern offset, so its Y-M-D prefix IS
   // the Eastern wall-clock date. Building a Date whose UTC components equal
@@ -613,9 +726,12 @@
       if (byDay[dayNum]) {
         cell.classList.add("has-ride");
         byDay[dayNum].forEach(function (ev) {
-          var chip = el("a", "ride-chip", ev.title);
-          chip.href = ev.rsvp_url || PARTIFUL;
-          chip.rel = "noopener";
+          // A button (not a link) so clicking shows the detail modal; the
+          // modal carries the RSVP / add-to-calendar actions.
+          var chip = el("button", "ride-chip", ev.title);
+          chip.type = "button";
+          chip.setAttribute("aria-label", "View details for " + (ev.title || "this ride"));
+          chip.addEventListener("click", function () { openRideModal(ev); });
           cell.appendChild(chip);
         });
       }
@@ -649,7 +765,8 @@
     var first = events[0];
     var initial = first && easternParts(first.start);
     var fcEvents = events.map(function (ev) {
-      var out = { title: ev.title || "Café ride", start: ev.start, url: ev.rsvp_url || PARTIFUL };
+      // extendedProps carries the full event so eventClick can open the modal.
+      var out = { title: ev.title || "Café ride", start: ev.start, url: ev.rsvp_url || PARTIFUL, extendedProps: { data: ev } };
       if (ev.end) { out.end = ev.end; }
       return out;
     });
@@ -662,7 +779,14 @@
       height: "auto",
       dayMaxEvents: 3,
       eventDisplay: "block",
-      events: fcEvents
+      events: fcEvents,
+      // Left-click shows the ride detail modal instead of jumping straight to
+      // the RSVP page. Keep the event's url so middle-click / ctrl-click still
+      // opens the RSVP target in a new tab (native anchor behavior).
+      eventClick: function (info) {
+        info.jsEvent.preventDefault();
+        openRideModal(info.event.extendedProps.data);
+      }
     });
     currentCalendar.render();
   }

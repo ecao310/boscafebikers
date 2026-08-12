@@ -307,9 +307,22 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
     to +1h via `icsDateTimePlusHour` (Date.UTC arithmetic so a near-midnight
     ride rolls into the next day). Like `buildIcs`, the details field appends
     `RSVP: <url>` when `rsvp_url` is present. This came out of the BCU research
-    task — see the decision note under "Research" in ralph.log; the "modal on
-    calendar click" task is the BCU detail-page pattern, deferred to its own
-    backlog item.
+    task — see the decision note under "Research" in ralph.log.
+  - The **ride-detail modal** (`#ride-modal`, a `.modal` overlay with
+    `.modal-backdrop` + `.modal-dialog`) is the BCU detail-page pattern adapted
+    for the single page: clicking a calendar event (FullCalendar `eventClick`
+    or a fallback-grid `.ride-chip`) opens it instead of navigating straight to
+    the RSVP page. Content is built by the *same* `rideCard(ev, "modal-ride")`
+    builder as the featured next-ride card, so the details and the
+    add-to-calendar exports can't drift; `.modal .ride` drops the card chrome
+    so the dialog is the single container. `openRideModal(ev)` stores
+    `document.activeElement`, sets the dialog's `aria-label` to the ride title,
+    hides body scroll (`document.body.style.overflow = "hidden"`), and focuses
+    the close button. `closeRideModal()` restores focus to the opener. Closing:
+    the `×` button, Escape (a `keydown` listener), or clicking the backdrop
+    (any click in the overlay whose target isn't inside `.modal-dialog`). The
+    modal sits at `z-index: 100` (above the sticky nav's 10) and relies on the
+    `[hidden]` rule to beat its `display: flex`.
 - **Calendar view** (the schedule section's only renderer — the list view was
   removed). The **primary renderer is FullCalendar 6** (`dayGridMonth`): when
   `window.FullCalendar` is defined, `renderCalendarFull()` builds a
@@ -317,17 +330,25 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
   "America/New_York"`, `initialDate` = first ride's Eastern date, `height:
   "auto"`, `dayMaxEvents: 3`, `eventDisplay: "block"`, header nav
   (prev/next + month title), and one event per ride (`title`, `start`, `end`,
-  `url` = `rsvp_url` falling back to the profile URL). `render()` calls
+  `url` = `rsvp_url` falling back to the profile URL, `extendedProps.data` =
+  the full event). `eventClick` intercepts the left-click and opens the ride
+  detail modal (see the rendering-script bullet) instead of navigating to the
+  RSVP page; the event keeps its `url` so middle-click / ctrl-click still opens
+  the RSVP target in a new tab (native anchor behavior). `render()` calls
   `destroyCalendar()` first so a stale instance can't leak when syncing or
   re-rendering. **Fallback:** if the CDN script hasn't loaded (slow network /
   blocked), `typeof FullCalendar` is undefined and the hand-rolled month grid
   takes over — one `.calendar` block per month that has rides, built by
   `groupByMonth()` / `monthGrid()` (7 `.cal-dow` weekday columns, a `.num` per
-  day cell, one `.ride-chip` `<a>` per ride; `.cal-day.has-ride` tints days).
-  Ride titles **wrap** in both renderers (`overflow-wrap: anywhere`) rather
-  than ellipsis-truncating, so a long title stays fully visible at 380px. The
-  FullCalendar CDN script has `defer`; a tiny hook listens for its `load` event
-  and re-renders if it lands after an earlier fallback render.
+  day cell, one `.ride-chip` `<button>` per ride that opens the same modal;
+  `.cal-day.has-ride` tints days). The chip is a `<button>` — clicking it is an
+  action (show details), not a navigation — so CSS resets the UA button look
+  (`font: inherit`, `border: 0`, `text-align: left`, `cursor: pointer`, plus
+  `width: 100%`) on top of the shared chip styling. Ride titles **wrap** in
+  both renderers (`overflow-wrap: anywhere`) rather than ellipsis-truncating,
+  so a long title stays fully visible at 380px. The FullCalendar CDN script has
+  `defer`; a tiny hook listens for its `load` event and re-renders if it lands
+  after an earlier fallback render.
 - **Calendar display decision (2026-08-12, revised):** the calendar view adopts
   **FullCalendar 6.1.15** (MIT, actively maintained, industry standard) via
   CDN — a single `defer`'d script tag; its CSS is embedded in the JS and
@@ -364,10 +385,12 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
   feed text can't inject markup. Keep that.
 - Verifying the JS: no browser here, but `node` (v25) is installed. Shim a
   tiny `document`/`fetch`, pull the script out of the HTML with a regex, and
-  `eval` it — that's how the happy path, empty, missing-rsvp and 404 cases
-  were checked.
+  `eval` it — that's how the happy path, empty, missing-rsvp, 404, and the
+  ride-detail modal (open via chip / FullCalendar `eventClick`, close via
+  backdrop / Escape / `×`, re-render-destroys) cases were checked.
 - Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#links`,
-  `#contact`. The hero CTA anchors to `#next-ride`.
+  `#contact`; the ride-detail overlay is `#ride-modal` (not a `<section>`).
+  The hero CTA anchors to `#next-ride`.
 - Verified well-formed by feeding it through `html.parser` (no unclosed or
   mismatched tags).
 
