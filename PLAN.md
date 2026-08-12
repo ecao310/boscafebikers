@@ -14,7 +14,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Ability to add images to rides
 - [x] ICS download for each event
 - [x] RSVP on Partiful button should link to actual event, not just the café bikers account page
-- [ ] Clean up text imported from Partiful
+- [x] Clean up text imported from Partiful
 - [x] Attempt to include start and end locations from Partiful
 - [ ] Button to trigger calendar sync
 - [ ] Move ralph-related filed to the ralph directory. adjust instructions to accomodate.
@@ -85,3 +85,8 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   Converting it is part of the "switch Pages source" task, not a separate fix.
   (Done in iteration 12: `build_type: workflow`, run 29714522817 deployed
   `site/`; the live URL now serves `index.html`.)
+- [x] Commit `562f184` (hidden-location placeholder) accidentally reverted the
+  `[x]` on "Clean up text imported from Partiful" back to `[ ]`, even though
+  that task's code (title suffix/whitespace + description cleanup in
+  `4f54030`) was complete and 59 tests were green. Restored the marking and
+  verified the cleanup end-to-end on the fixture.
