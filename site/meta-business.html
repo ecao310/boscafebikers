@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meta Business — Boston Café Bikers</title>
+<meta name="description" content="Business and partnership tools for Boston Café Bikers — coming soon.">
+<meta name="theme-color" content="#7a4a2b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --espresso: #2e1d13;
+    --roast:    #4a2c1a;
+    --crema:    #b07a4a;
+    --latte:    #f6ece0;
+    --foam:     #fffaf4;
+    --oat:      #e6d5c2;
+    --ink:      #33261d;
+    --muted:    #7a685a;
+    --radius:   14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--latte);
+    color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  h1, h2, h3 {
+    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    line-height: 1.2;
+    margin: 0 0 .5rem;
+  }
+
+  a { color: var(--roast); }
+
+  .hero {
+    background: linear-gradient(160deg, var(--roast) 0%, var(--espresso) 100%);
+    color: var(--foam);
+    padding: 56px 0 48px;
+    text-align: center;
+  }
+  .hero h1 { font-size: clamp(2rem, 9vw, 3rem); letter-spacing: -.01em; }
+  .hero .tagline {
+    font-size: 1.1rem;
+    color: var(--oat);
+    margin: 0;
+  }
+  .hero .mark { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+
+  section { padding: 40px 0; }
+  section + section { border-top: 1px solid var(--oat); }
+  section h2 { font-size: 1.6rem; }
+  .lede { color: var(--muted); margin-top: 0; }
+
+  .wip {
+    display: inline-block;
+    background: var(--foam);
+    border: 2px dashed var(--crema);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    margin: 0 0 1rem;
+    font-weight: 600;
+    color: var(--roast);
+  }
+
+  .btn {
+    display: inline-block;
+    background: var(--crema);
+    color: #2b1a10;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: 0;
+    margin-top: 1rem;
+  }
+  .btn:hover, .btn:focus { background: #c68f5d; }
+
+  footer {
+    background: var(--espresso);
+    color: var(--oat);
+    text-align: center;
+    padding: 28px 0;
+    font-size: .9rem;
+  }
+  footer a { color: var(--oat); }
+
+  @media (min-width: 560px) {
+    .hero { padding: 80px 0 64px; }
+    section { padding: 56px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="mark" aria-hidden="true">☕🚲</span>
+    <h1>Meta Business</h1>
+    <p class="tagline">Partnerships and business tools — coming soon.</p>
+  </div>
+</header>
+
+<main>
+  <section aria-labelledby="wip-heading">
+    <div class="wrap">
+      <p class="wip">🚧 Work in progress — nothing to see here yet.</p>
+      <h2 id="wip-heading">Under construction</h2>
+      <p class="lede">This page is a placeholder for the Meta Business side of
+      things. We're looking at the tools that let local cafés and partners work
+      with the group — business messaging, collaborations, that sort of thing.</p>
+      <p>No forms, no tracking, no login — just a WIP sign while we figure out
+      what actually makes sense.</p>
+      <a class="btn" href="index.html">← Back to the ride page</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Boston Café Bikers — exploring the city one café at a time.</p>
+    <p><a href="index.html">Home</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

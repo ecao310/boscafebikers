@@ -6,7 +6,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 ## Backlog 3
 
 - [x] Include "Contact Us" section for cities/orgs to reach out
-- [ ] New blank pages for Shopify integration and meta business integration. leave as separate pages and just put a WIP sign. no functionality.
+- [x] New blank pages for Shopify integration and meta business integration. leave as separate pages and just put a WIP sign. no functionality.
 - [ ] Toggle between list and calendar view of future rides
 - [ ] Add gallery page
 - [ ] Tab header navigation
