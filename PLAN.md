@@ -23,7 +23,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] The RSVP on Partiful button still links to the profile page instead of the event page. Extract event link from the description in events.json. 
 - [x] Clean up the events description. Remove the rsvp link from the description, but keep the button and the link in the button.
 - [x] Clean up htmls. Consider creating a unified style sheet. (Created `site/styles.css` holding the shared café palette + base/nav/hero/footer styles; every page now `<link>`s it and keeps only its page-specific rules in a small inline `<style>`. Verified rule-for-rule that no original CSS declaration was lost, HTML stays well-formed, 59 tests pass.)
-- [ ] Research how https://bostoncyclistsunion.org/events/month/ handles event details and display. Consider incorporating their method.
+- [x] Research how https://bostoncyclistsunion.org/events/month/ handles event details and display. Consider incorporating their method. (BCU uses a month grid with a repeated list below + dedicated `/event/{slug}/` detail pages via WordPress/The Events Calendar. Decision: keep FullCalendar month grid; their click-for-details is exactly the "modal on calendar click" task below; incorporated their add-to-calendar exports now as a "Google Calendar" link beside each ride's `.ics` download. Findings + sizes in ralph.log.)
 - [ ] Remove list of events option. Instead, show the next event in one section near the top, and the existing section becomes calendar only.
 - [ ] On calendar, clicking on an event should show the event details in a modal or popup. 
 

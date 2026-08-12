@@ -431,6 +431,11 @@
     ics.setAttribute("aria-label", "Download .ics for " + (ev.title || "this ride"));
     ics.addEventListener("click", function () { downloadIcs(ev); });
     actions.appendChild(ics);
+    var gcal = el("a", "btn btn-ghost", "Google Calendar");
+    gcal.href = googleCalUrl(ev);
+    gcal.target = "_blank";
+    gcal.rel = "noopener";
+    actions.appendChild(gcal);
     li.appendChild(actions);
     return li;
   }
@@ -516,6 +521,42 @@
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+  }
+
+  // "Add to Google Calendar" link — mirrors the calendar export BCU offers on
+  // its event detail pages, but as a static-site-friendly TEMPLATE URL. Like
+  // buildIcs, it reuses the precomputed Eastern wall-clock fields (never new
+  // Date(start) — see the calendar note), and ctz makes Google interpret the
+  // naive times in America/New_York. end is null when the feed omits DTEND, so
+  // default the block to an hour.
+  function icsDateTimePlusHour(iso) {
+    var dt = icsDateTime(iso);
+    if (!dt) { return null; }
+    // dt is YYYYMMDDTHHMMSS (Eastern wall-clock). Add an hour with Date.UTC
+    // arithmetic so a near-midnight ride rolls into the next day correctly;
+    // the result is still treated as a naive Eastern time by Google's ctz.
+    var y = +dt.slice(0, 4), mo = +dt.slice(4, 6), d = +dt.slice(6, 8);
+    var h = +dt.slice(9, 11), mi = +dt.slice(11, 13), s = dt.slice(13, 15);
+    var date = new Date(Date.UTC(y, mo - 1, d, h + 1, mi));
+    return date.getUTCFullYear() + pad2(date.getUTCMonth() + 1) + pad2(date.getUTCDate()) +
+           "T" + pad2(date.getUTCHours()) + pad2(date.getUTCMinutes()) + s;
+  }
+  function googleCalUrl(ev) {
+    var parts = [];
+    function add(key, value) {
+      if (value) { parts.push(key + "=" + encodeURIComponent(value)); }
+    }
+    add("action", "TEMPLATE");
+    add("text", ev.title || "Café ride");
+    var start = icsDateTime(ev.start);
+    var end = ev.end ? icsDateTime(ev.end) : icsDateTimePlusHour(ev.start);
+    add("dates", start && end ? start + "/" + end : start);
+    add("location", ev.location);
+    var desc = ev.description || "";
+    if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
+    add("details", desc);
+    add("ctz", "America/New_York");
+    return "https://calendar.google.com/calendar/render?" + parts.join("&");
   }
 
   // --- calendar view ---

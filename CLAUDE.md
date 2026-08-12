@@ -287,7 +287,16 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
   become `DTSTART;TZID=America/New_York:…` with no `new Date(start)`. Long
   lines are folded per RFC 5545 (`foldIcsLine`), text is escaped
   (`icsEscape`), and the RSVP URL is appended to the description + emitted as a
-  `URL:` property.
+  `URL:` property. A second `btn btn-ghost` "Google Calendar" `<a>` (opened in
+  a new tab) mirrors the BCU add-to-calendar export: `googleCalUrl(ev)` builds a
+  `calendar.google.com/calendar/render?action=TEMPLATE` URL from the same
+  precomputed Eastern wall-clock fields (`icsDateTime`, no `new Date(start)`),
+  `ctz=America/New_York`, and `end` null → the block defaults to +1h via
+  `icsDateTimePlusHour` (Date.UTC arithmetic so a near-midnight ride rolls into
+  the next day). Like `buildIcs`, the details field appends `RSVP: <url>` when
+  `rsvp_url` is present. This came out of the BCU research task — see the
+  decision note under "Research" in ralph.log; the "modal on calendar click"
+  task is the BCU detail-page pattern, deferred to its own backlog item.
 - **List/calendar toggle** (`#view-toggle`, static markup but `hidden` until
   the script has rides): two `.view-btn` buttons (`data-view="list|calendar"`,
   `.is-active` + `aria-pressed` mark the chosen view) switch `#schedule`
