@@ -10,13 +10,14 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Toggle between list and calendar view of future rides
 - [x] Move notes from claude.md to ralph.log
 - [x] Add gallery page
-- [ ] Tab header navigation
+- [x] Tab header navigation
 - [ ] Ability to add images to rides
 - [ ] ICS download for each event
 - [ ] RSVP on Partiful button should link to actual event, not just the café bikers account page
 - [ ] Clean up text imported from Partiful
 - [ ] Attempt to include start and end locations from Partiful
 - [ ] Button to trigger calendar sync
+- [ ] Move ralph-related filed to the ralph directory. adjust instructions to accomodate.
 
 ## Backlog — phase 2: deploy to GitHub Pages
 

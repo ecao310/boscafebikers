@@ -15,7 +15,10 @@ Tagline: "exploring the city one café at a time".
 | `scripts/promote_events.py` | Copies fetched JSON over the committed one only if `events` differ. |
 | `tests/fixtures/sample.ics` | Offline fixture (2 future, 1 past, 1 cancelled). See table below. |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
-| `site/index.html` | The whole site: one page, inline CSS/JS, no build step. |
+| `site/index.html` | Home: rides list/calendar, inline CSS/JS, no build step. |
+| `site/gallery.html` | Ride-photo gallery (empty state → Instagram CTA). |
+| `site/shopify.html` | WIP shop page (placeholder only). |
+| `site/meta-business.html` | WIP Meta Business page (placeholder only). |
 | `site/events.json` | Generated ride data (committed; the workflow updates it). |
 | `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch. |
 | `.github/workflows/pages.yml` | Builds `site/` and deploys it to GitHub Pages. |
@@ -185,6 +188,15 @@ reference; `git log` records what each iteration changed.
 Single file, no build step: inline `<style>` in `<head>`, one IIFE `<script>`
 just before `</body>`.
 
+- **Shared tab header nav.** All four pages (`index.html`, `gallery.html`,
+  `shopify.html`, `meta-business.html`) carry the same `.nav` — a sticky
+  espresso bar with four relative `.tabs` links (Rides / Gallery / Shop / Meta
+  Business). The current page's link gets `.is-active` + `aria-current="page"`;
+  the others are plain. The CSS is duplicated inline in each page (no shared
+  stylesheet, no build step). Keep links relative — never root-relative — and
+  keep the `.is-active`/`aria-current` on exactly one link per page.
+  `section { scroll-margin-top: 64px }` on the home page keeps the sticky nav
+  from covering in-page anchor targets (`#rides`).
 - CSS custom properties on `:root` are the warm café palette (`--espresso`,
   `--roast`, `--crema`, `--latte`, `--foam`, `--oat`, `--ink`, `--muted`).
   Reuse them; don't introduce new hex values.

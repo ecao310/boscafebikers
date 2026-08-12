@@ -78,6 +78,46 @@
   }
   .btn:hover, .btn:focus { background: #c68f5d; }
 
+  /* --- tab header nav --- */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--espresso);
+    border-bottom: 1px solid rgba(246, 236, 224, .15);
+  }
+  .nav .wrap {
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .nav .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .nav .tabs a {
+    display: block;
+    color: var(--oat);
+    text-decoration: none;
+    font-size: .85rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .nav .tabs a:hover,
+  .nav .tabs a:focus { color: var(--foam); background: rgba(246, 236, 224, .1); }
+  .nav .tabs a.is-active {
+    background: var(--crema);
+    color: #2b1a10;
+  }
+
   /* --- gallery grid --- */
   .gallery-grid {
     display: grid;
@@ -115,6 +155,17 @@
 </style>
 </head>
 <body>
+
+<nav class="nav" aria-label="Site">
+  <div class="wrap">
+    <ul class="tabs">
+      <li><a href="index.html">Rides</a></li>
+      <li><a href="gallery.html" class="is-active" aria-current="page">Gallery</a></li>
+      <li><a href="shopify.html">Shop</a></li>
+      <li><a href="meta-business.html">Meta Business</a></li>
+    </ul>
+  </div>
+</nav>
 
 <header class="hero">
   <div class="wrap">
