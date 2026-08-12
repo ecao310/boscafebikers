@@ -1,894 +1,1027 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Boston Café Bikers — exploring the city one café at a time</title>
-<meta name="description" content="A casual Boston cycling group that rides to cafés. No-drop, all levels, BlueBikes welcome.">
-<meta name="theme-color" content="#7a4a2b">
-<meta property="og:title" content="Boston Café Bikers">
-<meta property="og:description" content="Exploring the city one café at a time.">
-<meta property="og:type" content="website">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="styles.css">
-<style>
-  /* --- index-specific styles (shared base lives in styles.css) --- */
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Boston Café Bikers — exploring the city one café at a time</title>
+  <meta name="description"
+    content="A casual Boston cycling group that rides to cafés. No-drop, all levels, BlueBikes welcome.">
+  <meta name="theme-color" content="#7a4a2b">
+  <meta property="og:title" content="Boston Café Bikers">
+  <meta property="og:description" content="Exploring the city one café at a time.">
+  <meta property="og:type" content="website">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* --- index-specific styles (shared base lives in styles.css) --- */
 
-  /* The hero CTA button sits right under the tagline; styles.css gives
+    /* The hero CTA button sits right under the tagline; styles.css gives
      .hero .tagline margin: 0, so restore the original gap here. */
-  .hero .tagline { margin-bottom: 1.5rem; }
+    .hero .tagline {
+      margin-bottom: 1.5rem;
+    }
 
-  /* In-page anchor targets (#rides) need clearance below the sticky nav. */
-  section { scroll-margin-top: 64px; }
+    /* In-page anchor targets (#rides) need clearance below the sticky nav. */
+    section {
+      scroll-margin-top: 64px;
+    }
 
-  .btn-ghost {
-    background: transparent;
-    border: 1.5px solid var(--crema);
-    color: var(--roast);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .btn-ghost:hover, .btn-ghost:focus { background: var(--latte); }
+    .btn-ghost {
+      background: transparent;
+      border: 1.5px solid var(--crema);
+      color: var(--roast);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
 
-  ul.checks { list-style: none; padding: 0; margin: 1rem 0 0; }
-  ul.checks li {
-    position: relative;
-    padding-left: 1.9rem;
-    margin-bottom: .75rem;
-  }
-  ul.checks li::before {
-    content: "☕";
-    position: absolute;
-    left: 0;
-    top: 0;
-  }
+    .btn-ghost:hover,
+    .btn-ghost:focus {
+      background: var(--latte);
+    }
 
-  /* --- ride card (used for the "next ride" feature) --- */
-  .ride {
-    background: var(--foam);
-    border: 1px solid var(--oat);
-    border-radius: var(--radius);
-    padding: 18px;
-    margin-bottom: 16px;
-  }
-  .ride h3 { font-size: 1.2rem; }
-  .ride .when {
-    font-weight: 600;
-    color: var(--roast);
-    text-transform: uppercase;
-    font-size: .82rem;
-    letter-spacing: .06em;
-  }
-  .ride .where { color: var(--muted); margin: .4rem 0; }
-  .ride p { margin: .4rem 0 1rem; }
-  /* Featured treatment for the single next-ride card: warm oat fill, thicker
+    ul.checks {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0;
+    }
+
+    ul.checks li {
+      position: relative;
+      padding-left: 1.9rem;
+      margin-bottom: .75rem;
+    }
+
+    ul.checks li::before {
+      content: "☕";
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    /* --- ride card (used for the "next ride" feature) --- */
+    .ride {
+      background: var(--foam);
+      border: 1px solid var(--oat);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .ride h3 {
+      font-size: 1.2rem;
+    }
+
+    .ride .when {
+      font-weight: 600;
+      color: var(--roast);
+      text-transform: uppercase;
+      font-size: .82rem;
+      letter-spacing: .06em;
+    }
+
+    .ride .where {
+      color: var(--muted);
+      margin: .4rem 0;
+    }
+
+    .ride p {
+      margin: .4rem 0 1rem;
+    }
+
+    /* Featured treatment for the single next-ride card: warm oat fill, thicker
      crema border, larger type. Buttons stay readable — their crema fill and
      ghost border still contrast against oat. */
-  .ride.next-ride {
-    background: var(--oat);
-    border: 2px solid var(--crema);
-    padding: 22px;
-    margin-bottom: 0;
-  }
-  .ride.next-ride h3 { font-size: 1.5rem; }
-  .ride.next-ride .when { font-size: .9rem; }
-  .ride-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 2px;
-  }
-  .ride-actions .btn { padding: 10px 18px; font-size: .9rem; }
-  .ride-img-link {
-    display: block;
-    margin-bottom: 12px;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .ride-img {
-    display: block;
-    width: 100%;
-    height: auto;
-    max-height: 220px;
-    object-fit: cover;
-  }
+    .ride.next-ride {
+      background: var(--oat);
+      border: 2px solid var(--crema);
+      padding: 22px;
+      margin-bottom: 0;
+    }
 
-  .note { color: var(--muted); font-size: .9rem; }
-  #updated { margin-top: .5rem; }
+    .ride.next-ride h3 {
+      font-size: 1.5rem;
+    }
 
-  /* --- "Sync rides now" --- */
-  .sync-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 12px;
-    margin-top: 1.25rem;
-  }
-  .sync-bar .btn { padding: 8px 16px; font-size: .9rem; }
-  .sync-bar .btn:disabled { opacity: .6; cursor: default; }
-  #sync-status { margin: 0; }
-  .sync-bar .ghost-note { font-size: .85rem; }
+    .ride.next-ride .when {
+      font-size: .9rem;
+    }
 
-  [hidden] { display: none !important; }
+    .ride-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 2px;
+    }
 
-  /* --- calendar --- */
-  .calendar { margin: 0 0 1.5rem; }
-  .calendar h3 { font-size: 1.1rem; }
-  .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    background: var(--foam);
-    border: 1px solid var(--oat);
-    border-radius: var(--radius);
-    padding: 8px;
-  }
-  .cal-dow {
-    text-align: center;
-    font-size: .68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    color: var(--muted);
-    padding: 2px 0 4px;
-  }
-  .cal-day {
-    min-height: 46px;
-    border-radius: 8px;
-    padding: 4px 6px;
-    font-size: .78rem;
-    line-height: 1.25;
-  }
-  .cal-day.empty { visibility: hidden; }
-  .cal-day .num {
-    display: block;
-    font-weight: 700;
-    color: var(--muted);
-    font-size: .72rem;
-    line-height: 1;
-  }
-  .cal-day.has-ride { background: var(--oat); }
-  .cal-day .ride-chip {
-    display: block;
-    background: var(--crema);
-    color: #2b1a10;
-    text-decoration: none;
-    border-radius: 6px;
-    padding: 1px 4px;
-    margin-top: 3px;
-    /* Chips are <button>s (they open the ride-detail modal) — reset the UA
+    .ride-actions .btn {
+      padding: 10px 18px;
+      font-size: .9rem;
+    }
+
+    .ride-img-link {
+      display: block;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .ride-img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 220px;
+      object-fit: cover;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    #updated {
+      margin-top: .5rem;
+    }
+
+    /* --- "Sync rides now" --- */
+    .sync-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 12px;
+      margin-top: 1.25rem;
+    }
+
+    .sync-bar .btn {
+      padding: 8px 16px;
+      font-size: .9rem;
+    }
+
+    .sync-bar .btn:disabled {
+      opacity: .6;
+      cursor: default;
+    }
+
+    #sync-status {
+      margin: 0;
+    }
+
+    .sync-bar .ghost-note {
+      font-size: .85rem;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    /* --- calendar --- */
+    .calendar {
+      margin: 0 0 1.5rem;
+    }
+
+    .calendar h3 {
+      font-size: 1.1rem;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      background: var(--foam);
+      border: 1px solid var(--oat);
+      border-radius: var(--radius);
+      padding: 8px;
+    }
+
+    .cal-dow {
+      text-align: center;
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--muted);
+      padding: 2px 0 4px;
+    }
+
+    .cal-day {
+      min-height: 46px;
+      border-radius: 8px;
+      padding: 4px 6px;
+      font-size: .78rem;
+      line-height: 1.25;
+    }
+
+    .cal-day.empty {
+      visibility: hidden;
+    }
+
+    .cal-day .num {
+      display: block;
+      font-weight: 700;
+      color: var(--muted);
+      font-size: .72rem;
+      line-height: 1;
+    }
+
+    .cal-day.has-ride {
+      background: var(--oat);
+    }
+
+    .cal-day .ride-chip {
+      display: block;
+      background: var(--crema);
+      color: #2b1a10;
+      text-decoration: none;
+      border-radius: 6px;
+      padding: 1px 4px;
+      margin-top: 3px;
+      /* Chips are <button>s (they open the ride-detail modal) — reset the UA
        button look (font, border, centered text, cursor) while keeping the
        shared chip styling above. */
-    font: inherit;
-    font-size: .68rem;
-    border: 0;
-    text-align: left;
-    width: 100%;
-    cursor: pointer;
-    line-height: 1.25;
-    /* Long ride titles wrap inside the narrow cell instead of being
+      font: inherit;
+      font-size: .68rem;
+      border: 0;
+      text-align: left;
+      width: 100%;
+      cursor: pointer;
+      line-height: 1.25;
+      /* Long ride titles wrap inside the narrow cell instead of being
        ellipsis-truncated; "anywhere" also breaks an unbroken token (a long
        café name) that would otherwise overflow a 1fr column at 380px. */
-    overflow-wrap: anywhere;
-  }
-  .cal-day .ride-chip:hover, .cal-day .ride-chip:focus { background: #c68f5d; }
+      overflow-wrap: anywhere;
+    }
 
-  /* --- ride detail modal (calendar event click) --- */
-  /* Opened by clicking a calendar event; reuses the rideCard builder. The
+    .cal-day .ride-chip:hover,
+    .cal-day .ride-chip:focus {
+      background: #c68f5d;
+    }
+
+    /* --- ride detail modal (calendar event click) --- */
+    /* Opened by clicking a calendar event; reuses the rideCard builder. The
      [hidden] rule (display:none !important) wins over this display:flex, so
      the overlay stays out of the way until JS unhides it. */
-  .modal {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .modal-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(46, 29, 19, .55); /* espresso, translucent */
-  }
-  .modal-dialog {
-    position: relative;
-    width: 100%;
-    max-width: 460px;
-    max-height: 88vh;
-    overflow-y: auto;
-    background: var(--foam);
-    border: 1px solid var(--oat);
-    border-radius: var(--radius);
-    padding: 24px 22px 22px;
-    box-shadow: 0 18px 50px rgba(46, 29, 19, .35);
-  }
-  .modal-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 32px;
-    height: 32px;
-    border: 0;
-    border-radius: 50%;
-    background: var(--latte);
-    color: var(--roast);
-    font-size: 1.15rem;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .modal-close:hover, .modal-close:focus { background: var(--oat); }
-  /* The rideCard inside the modal supplies its own box; drop the card chrome
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(46, 29, 19, .55);
+      /* espresso, translucent */
+    }
+
+    .modal-dialog {
+      position: relative;
+      width: 100%;
+      max-width: 460px;
+      max-height: 88vh;
+      overflow-y: auto;
+      background: var(--foam);
+      border: 1px solid var(--oat);
+      border-radius: var(--radius);
+      padding: 24px 22px 22px;
+      box-shadow: 0 18px 50px rgba(46, 29, 19, .35);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--latte);
+      color: var(--roast);
+      font-size: 1.15rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .modal-close:hover,
+    .modal-close:focus {
+      background: var(--oat);
+    }
+
+    /* The rideCard inside the modal supplies its own box; drop the card chrome
      so the dialog is the single container. */
-  .modal .ride { border: 0; background: transparent; padding: 0; margin: 0; }
+    .modal .ride {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+    }
 
-  .links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 1rem; }
-  .links a {
-    flex: 1 1 auto;
-    text-align: center;
-    background: var(--foam);
-    border: 1px solid var(--oat);
-    border-radius: var(--radius);
-    padding: 14px 18px;
-    text-decoration: none;
-    font-weight: 600;
-  }
-  .links a:hover, .links a:focus { border-color: var(--crema); }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 1rem;
+    }
 
-  /* --- FullCalendar (dayGridMonth) café-palette overrides --- */
-  /* FullCalendar 6 injects its own <style> at runtime (from the deferred
+    .links a {
+      flex: 1 1 auto;
+      text-align: center;
+      background: var(--foam);
+      border: 1px solid var(--oat);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .links a:hover,
+    .links a:focus {
+      border-color: var(--crema);
+    }
+
+    /* --- FullCalendar (dayGridMonth) café-palette overrides --- */
+    /* FullCalendar 6 injects its own <style> at runtime (from the deferred
      CDN script), which lands after this block, so these rules use
      !important to win the cascade. The library themes itself through the
      --fc-* custom properties on .fc, so overriding those rethemes it. */
-  .fc {
-    --fc-border-color: var(--oat) !important;
-    --fc-page-bg-color: var(--foam) !important;
-    --fc-neutral-bg-color: var(--latte) !important;
-    --fc-today-bg-color: var(--oat) !important;
-    --fc-event-bg-color: var(--crema) !important;
-    --fc-event-border-color: var(--crema) !important;
-    --fc-event-text-color: #2b1a10 !important;
-    --fc-button-bg-color: var(--crema) !important;
-    --fc-button-border-color: var(--crema) !important;
-    --fc-button-text-color: #2b1a10 !important;
-    --fc-button-hover-bg-color: #c68f5d !important;
-    --fc-button-hover-border-color: #c68f5d !important;
-    --fc-button-active-bg-color: var(--roast) !important;
-    --fc-button-active-border-color: var(--roast) !important;
-    --fc-now-indicator-color: var(--crema) !important;
-    font-size: .78rem;
-  }
-  .fc .fc-toolbar-title {
-    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
-    font-size: 1.05rem !important;
-    color: var(--ink);
-  }
-  .fc .fc-col-header-cell-cushion {
-    padding: 4px 2px !important;
-    color: var(--muted) !important;
-    font-size: .64rem !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-  }
-  .fc .fc-daygrid-day-number { font-size: .72rem !important; font-weight: 700; color: var(--muted) !important; }
-  .fc .fc-daygrid-event { border-radius: 6px; padding: 1px 4px; margin-top: 2px; }
-  .fc .fc-event-title { overflow-wrap: anywhere; white-space: normal; }
-  .fc .fc-daygrid-more-link { font-size: .66rem !important; font-weight: 600; color: var(--roast); }
-  .fc .fc-button { font-size: .78rem !important; padding: 4px 8px !important; border-radius: 8px; }
-</style>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
+    .fc {
+      --fc-border-color: var(--oat) !important;
+      --fc-page-bg-color: var(--foam) !important;
+      --fc-neutral-bg-color: var(--latte) !important;
+      --fc-today-bg-color: var(--oat) !important;
+      --fc-event-bg-color: var(--crema) !important;
+      --fc-event-border-color: var(--crema) !important;
+      --fc-event-text-color: #2b1a10 !important;
+      --fc-button-bg-color: var(--crema) !important;
+      --fc-button-border-color: var(--crema) !important;
+      --fc-button-text-color: #2b1a10 !important;
+      --fc-button-hover-bg-color: #c68f5d !important;
+      --fc-button-hover-border-color: #c68f5d !important;
+      --fc-button-active-bg-color: var(--roast) !important;
+      --fc-button-active-border-color: var(--roast) !important;
+      --fc-now-indicator-color: var(--crema) !important;
+      font-size: .78rem;
+    }
+
+    .fc .fc-toolbar-title {
+      font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+      font-size: 1.05rem !important;
+      color: var(--ink);
+    }
+
+    .fc .fc-col-header-cell-cushion {
+      padding: 4px 2px !important;
+      color: var(--muted) !important;
+      font-size: .64rem !important;
+      font-weight: 700 !important;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .fc .fc-daygrid-day-number {
+      font-size: .72rem !important;
+      font-weight: 700;
+      color: var(--muted) !important;
+    }
+
+    .fc .fc-daygrid-event {
+      border-radius: 6px;
+      padding: 1px 4px;
+      margin-top: 2px;
+    }
+
+    .fc .fc-event-title {
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .fc .fc-daygrid-more-link {
+      font-size: .66rem !important;
+      font-weight: 600;
+      color: var(--roast);
+    }
+
+    .fc .fc-button {
+      font-size: .78rem !important;
+      padding: 4px 8px !important;
+      border-radius: 8px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
 </head>
+
 <body>
 
-<nav class="nav" aria-label="Site">
-  <div class="wrap">
-    <ul class="tabs">
-      <li><a href="index.html" class="is-active" aria-current="page">Rides</a></li>
-      <li><a href="gallery.html">Gallery</a></li>
-      <li><a href="shopify.html">Shop</a></li>
-      <li><a href="meta-business.html">Meta Business</a></li>
-      <li><a href="donate.html">Donate</a></li>
-    </ul>
-  </div>
-</nav>
-
-<header class="hero">
-  <div class="wrap">
-    <span class="mark" aria-hidden="true">☕🚲</span>
-    <h1>Boston Café Bikers</h1>
-    <p class="tagline">Exploring the city one café at a time.</p>
-    <a class="btn" href="#next-ride">See the next ride</a>
-  </div>
-</header>
-
-<main>
-
-  <section id="next-ride" aria-labelledby="next-ride-heading">
+  <nav class="nav" aria-label="Site">
     <div class="wrap">
-      <h2 id="next-ride-heading">Next ride</h2>
-      <!-- Featured card for the nearest upcoming ride. Populated by the script
-           at the bottom of this file; this static markup is the pre-JS state. -->
-      <div id="next-ride-card">
-        <p class="note">Loading next ride…</p>
-      </div>
+      <ul class="tabs">
+        <li><a href="index.html" class="is-active" aria-current="page">Rides</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="shopify.html">Shop</a></li>
+        <li><a href="meta-business.html">Meta Business</a></li>
+        <li><a href="donate.html">Donate</a></li>
+      </ul>
     </div>
-  </section>
+  </nav>
 
-  <section id="rides" aria-labelledby="rides-heading">
+  <header class="hero">
     <div class="wrap">
-      <h2 id="rides-heading">Upcoming rides</h2>
-      <p class="lede">Every upcoming ride on one calendar.</p>
+      <span class="mark" aria-hidden="true">☕🚲</span>
+      <h1>Boston Café Bikers</h1>
+      <p class="tagline">Exploring the city one café at a time.</p>
+    </div>
+  </header>
 
-      <!-- Calendar area. Populated from events.json by the script at the
-           bottom of this file; this static markup is the pre-JS state. -->
-      <div id="schedule">
-        <p class="note">Loading rides…</p>
+  <main>
+
+    <section id="next-ride" aria-labelledby="next-ride-heading">
+      <div class="wrap">
+        <h2 id="next-ride-heading">Next ride</h2>
+        <!-- Featured card for the nearest upcoming ride. Populated by the script
+           at the bottom of this file; this static markup is the pre-JS state. -->
+        <div id="next-ride-card">
+          <p class="note">Loading next ride…</p>
+        </div>
       </div>
+    </section>
 
-      <p class="note" id="updated"></p>
+    <section id="rides" aria-labelledby="rides-heading">
+      <div class="wrap">
+        <h2 id="rides-heading">Upcoming rides</h2>
+        <p class="lede">Every upcoming ride on one calendar.</p>
 
-      <!-- "Sync rides now": re-fetches events.json (cache-busted) so a page
+        <!-- Calendar area. Populated from events.json by the script at the
+           bottom of this file; this static markup is the pre-JS state. -->
+        <div id="schedule">
+          <p class="note">Loading rides…</p>
+        </div>
+
+        <p class="note" id="updated"></p>
+
+        <!-- "Sync rides now": re-fetches events.json (cache-busted) so a page
            left open picks up rides the backend sync has since published. The
            real ICS re-fetch runs in GitHub Actions — the ghost link jumps to
            that workflow's "Run workflow" page for anyone with write access. -->
-      <div class="sync-bar">
-        <button type="button" id="sync-now" class="btn btn-ghost">Sync rides now</button>
-        <span class="note" id="sync-status" role="status" aria-live="polite"></span>
-        <a class="note ghost-note"
-           href="https://github.com/ecao310/boscafebikers/actions/workflows/sync.yml"
-           rel="noopener" target="_blank">Run the full sync on GitHub</a>
+        <div class="sync-bar">
+          <button type="button" id="sync-now" class="btn btn-ghost">Sync rides now</button>
+          <span class="note" id="sync-status" role="status" aria-live="polite"></span>
+          <a class="note ghost-note" href="https://github.com/ecao310/boscafebikers/actions/workflows/sync.yml"
+            rel="noopener" target="_blank">Run the full sync on GitHub</a>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="first-ride" aria-labelledby="first-ride-heading">
-    <div class="wrap">
-      <h2 id="first-ride-heading">Your first ride</h2>
-      <p class="lede">Never ridden with a group before? This is the one to start with.</p>
-      <ul class="checks">
-        <li><strong>No-drop, always.</strong> We regroup at every light, bridge and hill. Nobody gets left behind.</li>
-        <li><strong>All levels welcome.</strong> Most rides are 10–20 flat-ish miles at a conversational pace.</li>
-        <li><strong>BlueBikes are perfect.</strong> Plenty of us ride them. Any bike that rolls is the right bike.</li>
-        <li><strong>Bring a lock</strong>, a water bottle, and enough cash or card for a coffee.</li>
-        <li><strong>Helmets encouraged</strong>, lights required if we're out near sunset.</li>
-      </ul>
-    </div>
-  </section>
-
-  <section id="about" aria-labelledby="about-heading">
-    <div class="wrap">
-      <h2 id="about-heading">About us</h2>
-      <p>Boston Café Bikers is a casual cycling group built around the two best
-      things about this city: the riding and the coffee. We meet up somewhere
-      reachable by T or bike, roll out together, and finish at a café worth the
-      detour — Somerville, Brookline, the Charles paths, the Minuteman, and
-      wherever else looks good that week.</p>
-      <p>There's no membership, no dues, and no drop. Just show up, say hi, and
-      order something warm at the end.</p>
-    </div>
-  </section>
-
-  <section id="links" aria-labelledby="links-heading">
-    <div class="wrap">
-      <h2 id="links-heading">Find us</h2>
-      <p class="lede">Ride announcements go out on Partiful. Photos and route
-      teasers go on Instagram.</p>
-      <div class="links">
-        <a href="https://instagram.com/bostoncafebikers" rel="noopener">Instagram — @bostoncafebikers</a>
-        <a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">Partiful — all our events</a>
+    <section id="first-ride" aria-labelledby="first-ride-heading">
+      <div class="wrap">
+        <h2 id="first-ride-heading">Your first ride</h2>
+        <p class="lede">Never ridden with a group before? This is the one to start with.</p>
+        <ul class="checks">
+          <li><strong>No-drop, always.</strong> Nobody gets left behind.</li>
+          <li><strong>All levels welcome.</strong> Most rides are 3-5 flat-ish miles at a conversational pace.</li>
+          <li><strong>BlueBikes are perfect.</strong> Any bike that rolls is the right bike. Some Bluebikes coupons
+            available.</li>
+          <li><strong>Bring a lock</strong>, a water bottle, and enough cash or card for a coffee.</li>
+          <li><strong>Helmets encouraged</strong>, lights required if we're out near sunset.</li>
+        </ul>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="contact" aria-labelledby="contact-heading">
-    <div class="wrap">
-      <h2 id="contact-heading">Contact us</h2>
-      <p class="lede">Starting a café bike club in your own city? Want to team
-      up or partner with ours? Say hi.</p>
-      <p>We're run by volunteers, so the fastest way to reach us is a DM —
-      send a note to @bostoncafebikers on Instagram. Or roll out with us on a
-      ride and talk over coffee at the end.</p>
-      <div class="links">
-        <a href="https://instagram.com/bostoncafebikers" rel="noopener">DM us on Instagram</a>
+    <section id="about" aria-labelledby="about-heading">
+      <div class="wrap">
+        <h2 id="about-heading">About us</h2>
+        <p>Boston Café Bikers is a casual cycling group built around the two best
+          things about this city: the riding and the coffee. We meet up somewhere
+          reachable by T or bike, roll out together, and finish at a café.</p>
+        <p>There's no membership, no dues, and no drop. Just show up, say hi, and
+          order something warm at the end.</p>
       </div>
+    </section>
+
+    <section id="links" aria-labelledby="links-heading">
+      <div class="wrap">
+        <h2 id="links-heading">Find us</h2>
+        <p class="lede">Ride announcements go out on Partiful. Photos and route
+          teasers go on Instagram.</p>
+        <div class="links">
+          <a href="https://instagram.com/bostoncafebikers" rel="noopener">Instagram — @bostoncafebikers</a>
+          <a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">Partiful — all our events</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" aria-labelledby="contact-heading">
+      <div class="wrap">
+        <h2 id="contact-heading">Contact us</h2>
+        <p class="lede">Starting a café bike club in your own city? Want to team
+          up or partner with ours? Say hi.</p>
+        <p>We're run by volunteers, so the fastest way to reach us is a DM —
+          send a note to @bostoncafebikers on Instagram. Or roll out with us on a
+          ride and talk over coffee at the end.</p>
+        <div class="links">
+          <a href="https://instagram.com/bostoncafebikers" rel="noopener">DM us on Instagram</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p>Boston Café Bikers — exploring the city one café at a time.</p>
+      <p><a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">RSVP to a ride</a></p>
     </div>
-  </section>
+  </footer>
 
-</main>
-
-<footer>
-  <div class="wrap">
-    <p>Boston Café Bikers — exploring the city one café at a time.</p>
-    <p><a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">RSVP to a ride</a></p>
-  </div>
-</footer>
-
-<!-- Ride detail modal — opened by clicking a calendar event. Content is
+  <!-- Ride detail modal — opened by clicking a calendar event. Content is
      built by the same rideCard builder as the featured next-ride card, so
      the details and the add-to-calendar exports can't drift. Hidden with the
      [hidden] attribute; .modal's display:flex only applies once unhidden. -->
-<div id="ride-modal" class="modal" hidden>
-  <div class="modal-backdrop"></div>
-  <div class="modal-dialog" role="dialog" aria-modal="true" aria-label="Ride details">
-    <button type="button" class="modal-close" aria-label="Close ride details">&times;</button>
-    <div id="ride-modal-content"></div>
+  <div id="ride-modal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-label="Ride details">
+      <button type="button" class="modal-close" aria-label="Close ride details">&times;</button>
+      <div id="ride-modal-content"></div>
+    </div>
   </div>
-</div>
 
-<script>
-(function () {
-  var PARTIFUL = "https://partiful.com/u/Hs47uq5mucZyXLBJZCda";
-  var MONTHS = ["January", "February", "March", "April", "May", "June", "July",
-                "August", "September", "October", "November", "December"];
-  var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  var schedule = document.getElementById("schedule");
-  var updated = document.getElementById("updated");
-  var nextRideCard = document.getElementById("next-ride-card");
+  <script>
+    (function () {
+      var PARTIFUL = "https://partiful.com/u/Hs47uq5mucZyXLBJZCda";
+      var MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+        "August", "September", "October", "November", "December"];
+      var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      var schedule = document.getElementById("schedule");
+      var updated = document.getElementById("updated");
+      var nextRideCard = document.getElementById("next-ride-card");
 
-  var currentData = null;
-  var currentCalendar = null;
+      var currentData = null;
+      var currentCalendar = null;
 
-  function el(tag, cls, text) {
-    var node = document.createElement(tag);
-    if (cls) { node.className = cls; }
-    if (text) { node.textContent = text; }
-    return node;
-  }
-
-  function emptyState(message) {
-    schedule.textContent = "";
-    schedule.appendChild(el("p", "note", message));
-    var link = el("a", "btn", "See all rides on Partiful");
-    link.href = PARTIFUL;
-    link.rel = "noopener";
-    schedule.appendChild(link);
-  }
-
-  // events.json timestamps already carry an Eastern offset and the display
-  // strings are precomputed in Python — never re-format with Date(), or
-  // visitors outside Eastern see the wrong time.
-  function stamp(iso) {
-    var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso || "");
-    if (!m) { return ""; }
-    var hour = parseInt(m[4], 10);
-    var suffix = hour < 12 ? "am" : "pm";
-    var hour12 = hour % 12 === 0 ? 12 : hour % 12;
-    return "Last updated " + MONTHS[parseInt(m[2], 10) - 1] + " " +
-           parseInt(m[3], 10) + ", " + m[1] + " at " + hour12 + ":" + m[5] +
-           " " + suffix + " ET.";
-  }
-
-  function rideCard(ev, extraClass) {
-    var card = el("div", "ride" + (extraClass ? " " + extraClass : ""));
-    if (ev.image) {
-      // Photo banner, linked to the same RSVP target as the button below.
-      var imgLink = el("a", "ride-img-link");
-      imgLink.href = ev.rsvp_url || PARTIFUL;
-      imgLink.rel = "noopener";
-      var img = el("img", "ride-img");
-      img.src = ev.image;
-      img.alt = ev.title || "Café ride";
-      img.loading = "lazy";
-      imgLink.appendChild(img);
-      card.appendChild(imgLink);
-    }
-    var when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
-    if (when) { card.appendChild(el("p", "when", when)); }
-    card.appendChild(el("h3", null, ev.title || "Café ride"));
-    if (ev.location) {
-      card.appendChild(el("p", "where", ev.location));
-    } else if (ev.location_hidden) {
-      // Partiful hides the address until RSVP; show a friendly note instead
-      // of the feed's "Location available once RSVP'd" template text.
-      card.appendChild(el("p", "where", "Location shared after you RSVP"));
-    }
-    if (ev.description) { card.appendChild(el("p", null, ev.description)); }
-    var actions = el("div", "ride-actions");
-    var link = el("a", "btn", "RSVP on Partiful");
-    link.href = ev.rsvp_url || PARTIFUL;
-    link.rel = "noopener";
-    actions.appendChild(link);
-    var ics = el("button", "btn btn-ghost", "Add to calendar");
-    ics.type = "button";
-    ics.setAttribute("aria-label", "Download .ics for " + (ev.title || "this ride"));
-    ics.addEventListener("click", function () { downloadIcs(ev); });
-    actions.appendChild(ics);
-    var gcal = el("a", "btn btn-ghost", "Google Calendar");
-    gcal.href = googleCalUrl(ev);
-    gcal.target = "_blank";
-    gcal.rel = "noopener";
-    actions.appendChild(gcal);
-    card.appendChild(actions);
-    return card;
-  }
-
-  // --- per-event .ics download ---
-  // Generated in the browser from the precomputed events.json data. The start
-  // ISO string already carries the Eastern offset, so its Y-M-DTHH:MM prefix IS
-  // the Eastern wall-clock time — never new Date(start), mirroring the calendar.
-  function icsEscape(text) {
-    return String(text == null ? "" : text)
-      .replace(/\\/g, "\\\\")
-      .replace(/;/g, "\\;")
-      .replace(/,/g, "\\,")
-      .replace(/\r?\n/g, "\\n");
-  }
-  function foldIcsLine(line) {
-    // RFC 5545: fold at 75 chars, continuation lines lead with a space. Avoid
-    // splitting a surrogate pair (emoji in a café name, say).
-    var out = [];
-    while (line.length > 75) {
-      var cut = 75;
-      var c = line.charCodeAt(cut);
-      if (c >= 0xD800 && c <= 0xDBFF) { cut -= 1; }
-      out.push(line.slice(0, cut));
-      line = " " + line.slice(cut);
-    }
-    out.push(line);
-    return out.join("\r\n");
-  }
-  function pad2(n) { return n < 10 ? "0" + n : String(n); }
-  function icsDateTime(iso) {
-    var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/.exec(iso || "");
-    if (!m) { return null; }
-    return m[1] + m[2] + m[3] + "T" + m[4] + m[5] + (m[6] || "00");
-  }
-  function utcStamp() {
-    var now = new Date();
-    return now.getUTCFullYear() + pad2(now.getUTCMonth() + 1) + pad2(now.getUTCDate()) +
-           "T" + pad2(now.getUTCHours()) + pad2(now.getUTCMinutes()) +
-           pad2(now.getUTCSeconds()) + "Z";
-  }
-  function icsFilename(title) {
-    var safe = String(title || "").toLowerCase()
-      .replace(/[^\w\- ]+/g, "")
-      .trim().replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
-    return (safe || "cafe-ride") + ".ics";
-  }
-  function fallbackUid(ev) {
-    return "boscafebikers-" + (icsDateTime(ev.start) || "undated") + "-" +
-           String(ev.title || "ride").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  }
-  function buildIcs(ev) {
-    var lines = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//Boston Café Bikers//boscafebikers//EN",
-      "CALSCALE:GREGORIAN",
-      "METHOD:PUBLISH",
-      "BEGIN:VEVENT",
-      "UID:" + icsEscape(ev.uid || fallbackUid(ev)),
-      "DTSTAMP:" + utcStamp()
-    ];
-    var start = icsDateTime(ev.start);
-    if (start) { lines.push("DTSTART;TZID=America/New_York:" + start); }
-    var end = icsDateTime(ev.end);
-    if (end) { lines.push("DTEND;TZID=America/New_York:" + end); }
-    lines.push("SUMMARY:" + icsEscape(ev.title || "Café ride"));
-    if (ev.location) { lines.push("LOCATION:" + icsEscape(ev.location)); }
-    var desc = ev.description || "";
-    if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
-    if (desc) { lines.push("DESCRIPTION:" + icsEscape(desc)); }
-    if (ev.rsvp_url) { lines.push("URL:" + ev.rsvp_url); }
-    lines.push("END:VEVENT", "END:VCALENDAR");
-    return lines.map(foldIcsLine).join("\r\n") + "\r\n";
-  }
-  function downloadIcs(ev) {
-    var blob = new Blob([buildIcs(ev)], { type: "text/calendar;charset=utf-8" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = icsFilename(ev.title);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 0);
-  }
-
-  // "Add to Google Calendar" link — mirrors the calendar export BCU offers on
-  // its event detail pages, but as a static-site-friendly TEMPLATE URL. Like
-  // buildIcs, it reuses the precomputed Eastern wall-clock fields (never new
-  // Date(start) — see the calendar note), and ctz makes Google interpret the
-  // naive times in America/New_York. end is null when the feed omits DTEND, so
-  // default the block to an hour.
-  function icsDateTimePlusHour(iso) {
-    var dt = icsDateTime(iso);
-    if (!dt) { return null; }
-    // dt is YYYYMMDDTHHMMSS (Eastern wall-clock). Add an hour with Date.UTC
-    // arithmetic so a near-midnight ride rolls into the next day correctly;
-    // the result is still treated as a naive Eastern time by Google's ctz.
-    var y = +dt.slice(0, 4), mo = +dt.slice(4, 6), d = +dt.slice(6, 8);
-    var h = +dt.slice(9, 11), mi = +dt.slice(11, 13), s = dt.slice(13, 15);
-    var date = new Date(Date.UTC(y, mo - 1, d, h + 1, mi));
-    return date.getUTCFullYear() + pad2(date.getUTCMonth() + 1) + pad2(date.getUTCDate()) +
-           "T" + pad2(date.getUTCHours()) + pad2(date.getUTCMinutes()) + s;
-  }
-  function googleCalUrl(ev) {
-    var parts = [];
-    function add(key, value) {
-      if (value) { parts.push(key + "=" + encodeURIComponent(value)); }
-    }
-    add("action", "TEMPLATE");
-    add("text", ev.title || "Café ride");
-    var start = icsDateTime(ev.start);
-    var end = ev.end ? icsDateTime(ev.end) : icsDateTimePlusHour(ev.start);
-    add("dates", start && end ? start + "/" + end : start);
-    add("location", ev.location);
-    var desc = ev.description || "";
-    if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
-    add("details", desc);
-    add("ctz", "America/New_York");
-    return "https://calendar.google.com/calendar/render?" + parts.join("&");
-  }
-
-  // --- ride detail modal ---
-  // Clicking a calendar event (FullCalendar or the fallback grid) opens this
-  // instead of navigating straight to the RSVP page — the BCU detail-page
-  // pattern adapted for a static site. The content reuses the rideCard
-  // builder, so details and the add-to-calendar exports match the featured
-  // next-ride card exactly.
-  var rideModal = document.getElementById("ride-modal");
-  var rideModalContent = document.getElementById("ride-modal-content");
-  var rideModalDialog = rideModal ? rideModal.querySelector(".modal-dialog") : null;
-  var lastFocused = null;
-
-  function openRideModal(ev) {
-    lastFocused = document.activeElement;
-    rideModalContent.textContent = "";
-    rideModalContent.appendChild(rideCard(ev, "modal-ride"));
-    if (rideModalDialog) {
-      rideModalDialog.setAttribute("aria-label", ev.title || "Ride details");
-    }
-    rideModal.hidden = false;
-    document.body.style.overflow = "hidden";
-    var close = rideModal.querySelector(".modal-close");
-    if (close) { close.focus(); }
-  }
-
-  function closeRideModal() {
-    if (!rideModal || rideModal.hidden) { return; }
-    rideModal.hidden = true;
-    document.body.style.overflow = "";
-    if (lastFocused && lastFocused.focus) { lastFocused.focus(); }
-    lastFocused = null;
-  }
-
-  if (rideModal) {
-    var modalCloseBtn = rideModal.querySelector(".modal-close");
-    if (modalCloseBtn) { modalCloseBtn.addEventListener("click", closeRideModal); }
-    // Clicking the backdrop (or anywhere outside the dialog) closes it.
-    rideModal.addEventListener("click", function (e) {
-      if (!e.target.closest(".modal-dialog")) { closeRideModal(); }
-    });
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !rideModal.hidden) { closeRideModal(); }
-    });
-  }
-
-  // --- calendar view ---
-  // The start ISO string carries the Eastern offset, so its Y-M-D prefix IS
-  // the Eastern wall-clock date. Building a Date whose UTC components equal
-  // that date makes getUTC*() report the weekday / month length the ride
-  // falls on in America/New_York, independent of the visitor's timezone.
-  function easternParts(startIso) {
-    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(startIso || "");
-    if (!m) { return null; }
-    return { y: parseInt(m[1], 10), m: parseInt(m[2], 10), d: parseInt(m[3], 10) };
-  }
-  function easternWeekday(y, m, d) {
-    return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  }
-  function daysInMonth(y, m) {
-    return new Date(Date.UTC(y, m, 0)).getUTCDate();
-  }
-
-  function groupByMonth(events) {
-    // events.json is already sorted by start, so both the month order and the
-    // order of events inside each month come out chronological for free.
-    var months = {};
-    var order = [];
-    events.forEach(function (ev) {
-      var p = easternParts(ev.start);
-      if (!p) { return; }
-      var key = p.y + "-" + p.m;
-      if (!months[key]) {
-        months[key] = { y: p.y, m: p.m, events: [] };
-        order.push(key);
+      function el(tag, cls, text) {
+        var node = document.createElement(tag);
+        if (cls) { node.className = cls; }
+        if (text) { node.textContent = text; }
+        return node;
       }
-      months[key].events.push(ev);
-    });
-    return order.map(function (key) { return months[key]; });
-  }
 
-  function monthGrid(month) {
-    var firstDow = easternWeekday(month.y, month.m, 1);
-    var days = daysInMonth(month.y, month.m);
-    var byDay = {};
-    month.events.forEach(function (ev) {
-      var p = easternParts(ev.start);
-      if (!p) { return; }
-      (byDay[p.d] = byDay[p.d] || []).push(ev);
-    });
-
-    var grid = el("div", "cal-grid");
-    DOW.forEach(function (name) { grid.appendChild(el("div", "cal-dow", name)); });
-    var cellCount = Math.ceil((firstDow + days) / 7) * 7;
-    for (var i = 0; i < cellCount; i++) {
-      var dayNum = i - firstDow + 1;
-      if (dayNum < 1 || dayNum > days) {
-        grid.appendChild(el("div", "cal-day empty"));
-        continue;
+      function emptyState(message) {
+        schedule.textContent = "";
+        schedule.appendChild(el("p", "note", message));
+        var link = el("a", "btn", "See all rides on Partiful");
+        link.href = PARTIFUL;
+        link.rel = "noopener";
+        schedule.appendChild(link);
       }
-      var cell = el("div", "cal-day");
-      cell.appendChild(el("span", "num", String(dayNum)));
-      if (byDay[dayNum]) {
-        cell.classList.add("has-ride");
-        byDay[dayNum].forEach(function (ev) {
-          // A button (not a link) so clicking shows the detail modal; the
-          // modal carries the RSVP / add-to-calendar actions.
-          var chip = el("button", "ride-chip", ev.title);
-          chip.type = "button";
-          chip.setAttribute("aria-label", "View details for " + (ev.title || "this ride"));
-          chip.addEventListener("click", function () { openRideModal(ev); });
-          cell.appendChild(chip);
+
+      // events.json timestamps already carry an Eastern offset and the display
+      // strings are precomputed in Python — never re-format with Date(), or
+      // visitors outside Eastern see the wrong time.
+      function stamp(iso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso || "");
+        if (!m) { return ""; }
+        var hour = parseInt(m[4], 10);
+        var suffix = hour < 12 ? "am" : "pm";
+        var hour12 = hour % 12 === 0 ? 12 : hour % 12;
+        return "Last updated " + MONTHS[parseInt(m[2], 10) - 1] + " " +
+          parseInt(m[3], 10) + ", " + m[1] + " at " + hour12 + ":" + m[5] +
+          " " + suffix + " ET.";
+      }
+
+      function rideCard(ev, extraClass) {
+        var card = el("div", "ride" + (extraClass ? " " + extraClass : ""));
+        if (ev.image) {
+          // Photo banner, linked to the same RSVP target as the button below.
+          var imgLink = el("a", "ride-img-link");
+          imgLink.href = ev.rsvp_url || PARTIFUL;
+          imgLink.rel = "noopener";
+          var img = el("img", "ride-img");
+          img.src = ev.image;
+          img.alt = ev.title || "Café ride";
+          img.loading = "lazy";
+          imgLink.appendChild(img);
+          card.appendChild(imgLink);
+        }
+        var when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
+        if (when) { card.appendChild(el("p", "when", when)); }
+        card.appendChild(el("h3", null, ev.title || "Café ride"));
+        if (ev.location) {
+          card.appendChild(el("p", "where", ev.location));
+        } else if (ev.location_hidden) {
+          // Partiful hides the address until RSVP; show a friendly note instead
+          // of the feed's "Location available once RSVP'd" template text.
+          card.appendChild(el("p", "where", "Location shared after you RSVP"));
+        }
+        if (ev.description) { card.appendChild(el("p", null, ev.description)); }
+        var actions = el("div", "ride-actions");
+        var link = el("a", "btn", "RSVP on Partiful");
+        link.href = ev.rsvp_url || PARTIFUL;
+        link.rel = "noopener";
+        actions.appendChild(link);
+        var ics = el("button", "btn btn-ghost", "Add to calendar");
+        ics.type = "button";
+        ics.setAttribute("aria-label", "Download .ics for " + (ev.title || "this ride"));
+        ics.addEventListener("click", function () { downloadIcs(ev); });
+        actions.appendChild(ics);
+        var gcal = el("a", "btn btn-ghost", "Google Calendar");
+        gcal.href = googleCalUrl(ev);
+        gcal.target = "_blank";
+        gcal.rel = "noopener";
+        actions.appendChild(gcal);
+        card.appendChild(actions);
+        return card;
+      }
+
+      // --- per-event .ics download ---
+      // Generated in the browser from the precomputed events.json data. The start
+      // ISO string already carries the Eastern offset, so its Y-M-DTHH:MM prefix IS
+      // the Eastern wall-clock time — never new Date(start), mirroring the calendar.
+      function icsEscape(text) {
+        return String(text == null ? "" : text)
+          .replace(/\\/g, "\\\\")
+          .replace(/;/g, "\\;")
+          .replace(/,/g, "\\,")
+          .replace(/\r?\n/g, "\\n");
+      }
+      function foldIcsLine(line) {
+        // RFC 5545: fold at 75 chars, continuation lines lead with a space. Avoid
+        // splitting a surrogate pair (emoji in a café name, say).
+        var out = [];
+        while (line.length > 75) {
+          var cut = 75;
+          var c = line.charCodeAt(cut);
+          if (c >= 0xD800 && c <= 0xDBFF) { cut -= 1; }
+          out.push(line.slice(0, cut));
+          line = " " + line.slice(cut);
+        }
+        out.push(line);
+        return out.join("\r\n");
+      }
+      function pad2(n) { return n < 10 ? "0" + n : String(n); }
+      function icsDateTime(iso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/.exec(iso || "");
+        if (!m) { return null; }
+        return m[1] + m[2] + m[3] + "T" + m[4] + m[5] + (m[6] || "00");
+      }
+      function utcStamp() {
+        var now = new Date();
+        return now.getUTCFullYear() + pad2(now.getUTCMonth() + 1) + pad2(now.getUTCDate()) +
+          "T" + pad2(now.getUTCHours()) + pad2(now.getUTCMinutes()) +
+          pad2(now.getUTCSeconds()) + "Z";
+      }
+      function icsFilename(title) {
+        var safe = String(title || "").toLowerCase()
+          .replace(/[^\w\- ]+/g, "")
+          .trim().replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
+        return (safe || "cafe-ride") + ".ics";
+      }
+      function fallbackUid(ev) {
+        return "boscafebikers-" + (icsDateTime(ev.start) || "undated") + "-" +
+          String(ev.title || "ride").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      }
+      function buildIcs(ev) {
+        var lines = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//Boston Café Bikers//boscafebikers//EN",
+          "CALSCALE:GREGORIAN",
+          "METHOD:PUBLISH",
+          "BEGIN:VEVENT",
+          "UID:" + icsEscape(ev.uid || fallbackUid(ev)),
+          "DTSTAMP:" + utcStamp()
+        ];
+        var start = icsDateTime(ev.start);
+        if (start) { lines.push("DTSTART;TZID=America/New_York:" + start); }
+        var end = icsDateTime(ev.end);
+        if (end) { lines.push("DTEND;TZID=America/New_York:" + end); }
+        lines.push("SUMMARY:" + icsEscape(ev.title || "Café ride"));
+        if (ev.location) { lines.push("LOCATION:" + icsEscape(ev.location)); }
+        var desc = ev.description || "";
+        if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
+        if (desc) { lines.push("DESCRIPTION:" + icsEscape(desc)); }
+        if (ev.rsvp_url) { lines.push("URL:" + ev.rsvp_url); }
+        lines.push("END:VEVENT", "END:VCALENDAR");
+        return lines.map(foldIcsLine).join("\r\n") + "\r\n";
+      }
+      function downloadIcs(ev) {
+        var blob = new Blob([buildIcs(ev)], { type: "text/calendar;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = icsFilename(ev.title);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+      }
+
+      // "Add to Google Calendar" link — mirrors the calendar export BCU offers on
+      // its event detail pages, but as a static-site-friendly TEMPLATE URL. Like
+      // buildIcs, it reuses the precomputed Eastern wall-clock fields (never new
+      // Date(start) — see the calendar note), and ctz makes Google interpret the
+      // naive times in America/New_York. end is null when the feed omits DTEND, so
+      // default the block to an hour.
+      function icsDateTimePlusHour(iso) {
+        var dt = icsDateTime(iso);
+        if (!dt) { return null; }
+        // dt is YYYYMMDDTHHMMSS (Eastern wall-clock). Add an hour with Date.UTC
+        // arithmetic so a near-midnight ride rolls into the next day correctly;
+        // the result is still treated as a naive Eastern time by Google's ctz.
+        var y = +dt.slice(0, 4), mo = +dt.slice(4, 6), d = +dt.slice(6, 8);
+        var h = +dt.slice(9, 11), mi = +dt.slice(11, 13), s = dt.slice(13, 15);
+        var date = new Date(Date.UTC(y, mo - 1, d, h + 1, mi));
+        return date.getUTCFullYear() + pad2(date.getUTCMonth() + 1) + pad2(date.getUTCDate()) +
+          "T" + pad2(date.getUTCHours()) + pad2(date.getUTCMinutes()) + s;
+      }
+      function googleCalUrl(ev) {
+        var parts = [];
+        function add(key, value) {
+          if (value) { parts.push(key + "=" + encodeURIComponent(value)); }
+        }
+        add("action", "TEMPLATE");
+        add("text", ev.title || "Café ride");
+        var start = icsDateTime(ev.start);
+        var end = ev.end ? icsDateTime(ev.end) : icsDateTimePlusHour(ev.start);
+        add("dates", start && end ? start + "/" + end : start);
+        add("location", ev.location);
+        var desc = ev.description || "";
+        if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
+        add("details", desc);
+        add("ctz", "America/New_York");
+        return "https://calendar.google.com/calendar/render?" + parts.join("&");
+      }
+
+      // --- ride detail modal ---
+      // Clicking a calendar event (FullCalendar or the fallback grid) opens this
+      // instead of navigating straight to the RSVP page — the BCU detail-page
+      // pattern adapted for a static site. The content reuses the rideCard
+      // builder, so details and the add-to-calendar exports match the featured
+      // next-ride card exactly.
+      var rideModal = document.getElementById("ride-modal");
+      var rideModalContent = document.getElementById("ride-modal-content");
+      var rideModalDialog = rideModal ? rideModal.querySelector(".modal-dialog") : null;
+      var lastFocused = null;
+
+      function openRideModal(ev) {
+        lastFocused = document.activeElement;
+        rideModalContent.textContent = "";
+        rideModalContent.appendChild(rideCard(ev, "modal-ride"));
+        if (rideModalDialog) {
+          rideModalDialog.setAttribute("aria-label", ev.title || "Ride details");
+        }
+        rideModal.hidden = false;
+        document.body.style.overflow = "hidden";
+        var close = rideModal.querySelector(".modal-close");
+        if (close) { close.focus(); }
+      }
+
+      function closeRideModal() {
+        if (!rideModal || rideModal.hidden) { return; }
+        rideModal.hidden = true;
+        document.body.style.overflow = "";
+        if (lastFocused && lastFocused.focus) { lastFocused.focus(); }
+        lastFocused = null;
+      }
+
+      if (rideModal) {
+        var modalCloseBtn = rideModal.querySelector(".modal-close");
+        if (modalCloseBtn) { modalCloseBtn.addEventListener("click", closeRideModal); }
+        // Clicking the backdrop (or anywhere outside the dialog) closes it.
+        rideModal.addEventListener("click", function (e) {
+          if (!e.target.closest(".modal-dialog")) { closeRideModal(); }
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && !rideModal.hidden) { closeRideModal(); }
         });
       }
-      grid.appendChild(cell);
-    }
 
-    var wrap = el("div", "calendar");
-    wrap.appendChild(el("h3", null, MONTHS[month.m - 1] + " " + month.y));
-    wrap.appendChild(grid);
-    return wrap;
-  }
-
-  function destroyCalendar() {
-    if (currentCalendar) {
-      currentCalendar.destroy();
-      currentCalendar = null;
-    }
-  }
-
-  // Adopted open-source calendar view: FullCalendar 6 (dayGridMonth) loaded
-  // from a CDN with `defer`. It themes itself from the --fc-* custom props
-  // overridden in <head>. If the CDN script hasn't run yet (or is blocked),
-  // render() falls back to the hand-rolled month grid above.
-  function renderCalendarFull(events) {
-    var box = el("div", "calendar");
-    var holder = document.createElement("div");
-    holder.id = "ride-calendar";
-    box.appendChild(holder);
-    schedule.appendChild(box);
-
-    var first = events[0];
-    var initial = first && easternParts(first.start);
-    var fcEvents = events.map(function (ev) {
-      // extendedProps carries the full event so eventClick can open the modal.
-      var out = { title: ev.title || "Café ride", start: ev.start, url: ev.rsvp_url || PARTIFUL, extendedProps: { data: ev } };
-      if (ev.end) { out.end = ev.end; }
-      return out;
-    });
-
-    currentCalendar = new FullCalendar.Calendar(holder, {
-      initialView: "dayGridMonth",
-      timeZone: "America/New_York",
-      initialDate: initial ? initial.y + "-" + pad2(initial.m) + "-" + pad2(initial.d) : undefined,
-      headerToolbar: { left: "prev,next", center: "title", right: "" },
-      height: "auto",
-      dayMaxEvents: 3,
-      eventDisplay: "block",
-      events: fcEvents,
-      // Left-click shows the ride detail modal instead of jumping straight to
-      // the RSVP page. Keep the event's url so middle-click / ctrl-click still
-      // opens the RSVP target in a new tab (native anchor behavior).
-      eventClick: function (info) {
-        info.jsEvent.preventDefault();
-        openRideModal(info.event.extendedProps.data);
+      // --- calendar view ---
+      // The start ISO string carries the Eastern offset, so its Y-M-D prefix IS
+      // the Eastern wall-clock date. Building a Date whose UTC components equal
+      // that date makes getUTC*() report the weekday / month length the ride
+      // falls on in America/New_York, independent of the visitor's timezone.
+      function easternParts(startIso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(startIso || "");
+        if (!m) { return null; }
+        return { y: parseInt(m[1], 10), m: parseInt(m[2], 10), d: parseInt(m[3], 10) };
       }
-    });
-    currentCalendar.render();
-  }
+      function easternWeekday(y, m, d) {
+        return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+      }
+      function daysInMonth(y, m) {
+        return new Date(Date.UTC(y, m, 0)).getUTCDate();
+      }
 
-  // The next-ride section always shows events[0] (events.json is sorted by
-  // start, and the sync filters to future rides), or an empty-state with a
-  // Partiful fallback link when the calendar has nothing upcoming.
-  function setNextRide(events) {
-    nextRideCard.textContent = "";
-    if (!events.length) {
-      nextRideCard.appendChild(el("p", "note", "No rides scheduled yet — check Partiful for the next one."));
-      var link = el("a", "btn", "See all rides on Partiful");
-      link.href = PARTIFUL;
-      link.rel = "noopener";
-      nextRideCard.appendChild(link);
-      return;
-    }
-    nextRideCard.appendChild(rideCard(events[0], "next-ride"));
-  }
+      function groupByMonth(events) {
+        // events.json is already sorted by start, so both the month order and the
+        // order of events inside each month come out chronological for free.
+        var months = {};
+        var order = [];
+        events.forEach(function (ev) {
+          var p = easternParts(ev.start);
+          if (!p) { return; }
+          var key = p.y + "-" + p.m;
+          if (!months[key]) {
+            months[key] = { y: p.y, m: p.m, events: [] };
+            order.push(key);
+          }
+          months[key].events.push(ev);
+        });
+        return order.map(function (key) { return months[key]; });
+      }
 
-  // The schedule section is calendar-only now: FullCalendar 6 when its CDN
-  // script has loaded, otherwise the hand-rolled month grid. The list view
-  // was removed in favor of the featured next-ride card above.
-  function render() {
-    destroyCalendar();
-    var events = (currentData && currentData.events) || [];
-    schedule.textContent = "";
-    if (!events.length) {
-      emptyState("No rides on the calendar right now — check Partiful for the next one.");
-    } else if (typeof FullCalendar !== "undefined") {
-      renderCalendarFull(events);
-    } else {
-      groupByMonth(events).forEach(function (month) {
-        schedule.appendChild(monthGrid(month));
-      });
-    }
-    setNextRide(events);
-    updated.textContent = stamp(currentData && currentData.updated_at);
-  }
+      function monthGrid(month) {
+        var firstDow = easternWeekday(month.y, month.m, 1);
+        var days = daysInMonth(month.y, month.m);
+        var byDay = {};
+        month.events.forEach(function (ev) {
+          var p = easternParts(ev.start);
+          if (!p) { return; }
+          (byDay[p.d] = byDay[p.d] || []).push(ev);
+        });
 
-  // The deferred FullCalendar script usually finishes before the events fetch
-  // resolves, so the first render already uses it. This hook covers the edge
-  // case where the CDN script lands after an earlier fallback render.
-  if (typeof FullCalendar === "undefined") {
-    var fcScript = document.querySelector('script[src*="fullcalendar"]');
-    if (fcScript && fcScript.addEventListener) {
-      fcScript.addEventListener("load", function () {
-        if (currentData) { render(); }
-      });
-    }
-  }
+        var grid = el("div", "cal-grid");
+        DOW.forEach(function (name) { grid.appendChild(el("div", "cal-dow", name)); });
+        var cellCount = Math.ceil((firstDow + days) / 7) * 7;
+        for (var i = 0; i < cellCount; i++) {
+          var dayNum = i - firstDow + 1;
+          if (dayNum < 1 || dayNum > days) {
+            grid.appendChild(el("div", "cal-day empty"));
+            continue;
+          }
+          var cell = el("div", "cal-day");
+          cell.appendChild(el("span", "num", String(dayNum)));
+          if (byDay[dayNum]) {
+            cell.classList.add("has-ride");
+            byDay[dayNum].forEach(function (ev) {
+              // A button (not a link) so clicking shows the detail modal; the
+              // modal carries the RSVP / add-to-calendar actions.
+              var chip = el("button", "ride-chip", ev.title);
+              chip.type = "button";
+              chip.setAttribute("aria-label", "View details for " + (ev.title || "this ride"));
+              chip.addEventListener("click", function () { openRideModal(ev); });
+              cell.appendChild(chip);
+            });
+          }
+          grid.appendChild(cell);
+        }
 
-  function loadData(url) {
-    return fetch(url, { cache: "no-cache" })
-      .then(function (res) {
-        if (!res.ok) { throw new Error("HTTP " + res.status); }
-        return res.json();
-      });
-  }
+        var wrap = el("div", "calendar");
+        wrap.appendChild(el("h3", null, MONTHS[month.m - 1] + " " + month.y));
+        wrap.appendChild(grid);
+        return wrap;
+      }
 
-  // --- "Sync rides now" button ---
-  // Re-fetches events.json with a cache-buster so a page left open picks up
-  // rides the backend sync has since published, and re-renders in place.
-  // The backend ICS re-fetch lives in GitHub Actions (sync.yml); the ghost
-  // link above jumps to that workflow's "Run workflow" page for maintainers.
-  var syncBtn = document.getElementById("sync-now");
-  var syncStatus = document.getElementById("sync-status");
+      function destroyCalendar() {
+        if (currentCalendar) {
+          currentCalendar.destroy();
+          currentCalendar = null;
+        }
+      }
 
-  function syncNow() {
-    syncBtn.disabled = true;
-    syncStatus.textContent = "Checking for updates…";
-    var before = JSON.stringify((currentData && currentData.events) || []);
-    loadData("events.json?_=" + Date.now())
-      .then(function (data) {
-        currentData = data;
-        render();
-        var after = JSON.stringify((data && data.events) || []);
-        syncStatus.textContent = before === after
-          ? "Schedule is up to date."
-          : "Found new rides — schedule refreshed.";
-      })
-      .catch(function () {
-        syncStatus.textContent = "Couldn't reach the schedule just now.";
-      })
-      .then(function () {
-        syncBtn.disabled = false;
-      });
-  }
+      // Adopted open-source calendar view: FullCalendar 6 (dayGridMonth) loaded
+      // from a CDN with `defer`. It themes itself from the --fc-* custom props
+      // overridden in <head>. If the CDN script hasn't run yet (or is blocked),
+      // render() falls back to the hand-rolled month grid above.
+      function renderCalendarFull(events) {
+        var box = el("div", "calendar");
+        var holder = document.createElement("div");
+        holder.id = "ride-calendar";
+        box.appendChild(holder);
+        schedule.appendChild(box);
 
-  syncBtn.addEventListener("click", syncNow);
+        var first = events[0];
+        var initial = first && easternParts(first.start);
+        var fcEvents = events.map(function (ev) {
+          // extendedProps carries the full event so eventClick can open the modal.
+          var out = { title: ev.title || "Café ride", start: ev.start, url: ev.rsvp_url || PARTIFUL, extendedProps: { data: ev } };
+          if (ev.end) { out.end = ev.end; }
+          return out;
+        });
 
-  loadData("events.json")
-    .then(function (data) {
-      currentData = data;
-      render();
-    })
-    .catch(function () {
-      setNextRide([]);
-      emptyState("Couldn't load the ride schedule just now.");
-    });
-})();
-</script>
+        currentCalendar = new FullCalendar.Calendar(holder, {
+          initialView: "dayGridMonth",
+          timeZone: "America/New_York",
+          initialDate: initial ? initial.y + "-" + pad2(initial.m) + "-" + pad2(initial.d) : undefined,
+          headerToolbar: { left: "prev,next", center: "title", right: "" },
+          height: "auto",
+          dayMaxEvents: 3,
+          eventDisplay: "block",
+          events: fcEvents,
+          // Left-click shows the ride detail modal instead of jumping straight to
+          // the RSVP page. Keep the event's url so middle-click / ctrl-click still
+          // opens the RSVP target in a new tab (native anchor behavior).
+          eventClick: function (info) {
+            info.jsEvent.preventDefault();
+            openRideModal(info.event.extendedProps.data);
+          }
+        });
+        currentCalendar.render();
+      }
+
+      // The next-ride section always shows events[0] (events.json is sorted by
+      // start, and the sync filters to future rides), or an empty-state with a
+      // Partiful fallback link when the calendar has nothing upcoming.
+      function setNextRide(events) {
+        nextRideCard.textContent = "";
+        if (!events.length) {
+          nextRideCard.appendChild(el("p", "note", "No rides scheduled yet — check Partiful for the next one."));
+          var link = el("a", "btn", "See all rides on Partiful");
+          link.href = PARTIFUL;
+          link.rel = "noopener";
+          nextRideCard.appendChild(link);
+          return;
+        }
+        nextRideCard.appendChild(rideCard(events[0], "next-ride"));
+      }
+
+      // The schedule section is calendar-only now: FullCalendar 6 when its CDN
+      // script has loaded, otherwise the hand-rolled month grid. The list view
+      // was removed in favor of the featured next-ride card above.
+      function render() {
+        destroyCalendar();
+        var events = (currentData && currentData.events) || [];
+        schedule.textContent = "";
+        if (!events.length) {
+          emptyState("No rides on the calendar right now — check Partiful for the next one.");
+        } else if (typeof FullCalendar !== "undefined") {
+          renderCalendarFull(events);
+        } else {
+          groupByMonth(events).forEach(function (month) {
+            schedule.appendChild(monthGrid(month));
+          });
+        }
+        setNextRide(events);
+        updated.textContent = stamp(currentData && currentData.updated_at);
+      }
+
+      // The deferred FullCalendar script usually finishes before the events fetch
+      // resolves, so the first render already uses it. This hook covers the edge
+      // case where the CDN script lands after an earlier fallback render.
+      if (typeof FullCalendar === "undefined") {
+        var fcScript = document.querySelector('script[src*="fullcalendar"]');
+        if (fcScript && fcScript.addEventListener) {
+          fcScript.addEventListener("load", function () {
+            if (currentData) { render(); }
+          });
+        }
+      }
+
+      function loadData(url) {
+        return fetch(url, { cache: "no-cache" })
+          .then(function (res) {
+            if (!res.ok) { throw new Error("HTTP " + res.status); }
+            return res.json();
+          });
+      }
+
+      // --- "Sync rides now" button ---
+      // Re-fetches events.json with a cache-buster so a page left open picks up
+      // rides the backend sync has since published, and re-renders in place.
+      // The backend ICS re-fetch lives in GitHub Actions (sync.yml); the ghost
+      // link above jumps to that workflow's "Run workflow" page for maintainers.
+      var syncBtn = document.getElementById("sync-now");
+      var syncStatus = document.getElementById("sync-status");
+
+      function syncNow() {
+        syncBtn.disabled = true;
+        syncStatus.textContent = "Checking for updates…";
+        var before = JSON.stringify((currentData && currentData.events) || []);
+        loadData("events.json?_=" + Date.now())
+          .then(function (data) {
+            currentData = data;
+            render();
+            var after = JSON.stringify((data && data.events) || []);
+            syncStatus.textContent = before === after
+              ? "Schedule is up to date."
+              : "Found new rides — schedule refreshed.";
+          })
+          .catch(function () {
+            syncStatus.textContent = "Couldn't reach the schedule just now.";
+          })
+          .then(function () {
+            syncBtn.disabled = false;
+          });
+      }
+
+      syncBtn.addEventListener("click", syncNow);
+
+      loadData("events.json")
+        .then(function (data) {
+          currentData = data;
+          render();
+        })
+        .catch(function () {
+          setNextRide([]);
+          emptyState("Couldn't load the ride schedule just now.");
+        });
+    })();
+  </script>
 
 </body>
+
 </html>

@@ -3,6 +3,12 @@
 Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
+## Backlog 4
+
+- [ ] Add footer
+- [ ] Remove Sync rides now functionality. Instead, make the Last updated ... a clickable link to the github action
+- [ ] Contact Us section includes email and instagram
+
 ## Backlog 3
 
 - [x] Include "Contact Us" section for cities/orgs to reach out
