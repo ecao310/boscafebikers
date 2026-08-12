@@ -262,6 +262,13 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
   `.is-active`/`aria-current` on exactly one link per page. `section {
   scroll-margin-top: 64px }` on the home page keeps the sticky nav from covering
   in-page anchor targets (`#rides`).
+- **Shared footer.** All five pages end with the same `<footer>`: a
+  `.footer-brand` tagline ("…exploring the city one café at a time"), a
+  `.footer-nav` mirroring the five tab links (relative, no `.is-active`), and a
+  `.footer-social` row (Instagram + Partiful, separated by a `.sep`). The footer
+  styles live once in `site/styles.css` next to the nav; each page just repeats
+  the shared markup. Keep the three footers on the WIP sub-pages identical to
+  the home page's — no per-page footer divergence.
 - CSS custom properties on `:root` are the warm café palette (`--espresso`,
   `--roast`, `--crema`, `--latte`, `--foam`, `--oat`, `--ink`, `--muted`).
   Reuse them; don't introduce new hex values.

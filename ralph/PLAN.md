@@ -5,9 +5,9 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 
 ## Backlog 4
 
-- [ ] Add footer
+- [x] Add footer (Added a consistent footer to all five pages: café tagline `.footer-brand`, a `.footer-nav` mirroring the tab links, and Instagram/Partiful links; styles live once in `site/styles.css` next to the nav. The old per-page footers were inconsistent — `index.html` linked "RSVP to a ride", the sub-pages linked "Home".)
 - [ ] Remove Sync rides now functionality. Instead, make the Last updated ... a clickable link to the github action
-- [ ] Contact Us section includes email and instagram
+- [ ] Contact Us section includes email and instagram and whatsapp https://chat.whatsapp.com/JtpmhMgE8EmFRGOXrNhT1w
 
 ## Backlog 3
 
