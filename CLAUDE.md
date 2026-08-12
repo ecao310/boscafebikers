@@ -94,8 +94,8 @@ Everything below is headless — nothing here needs the GitHub web UI.
     run on Node 24 on the runners — harmless today; a future pass can bump the
     action majors.
 - `PARTIFUL_ICS_URL` is **set** (as of 2026-07-20); the sync bot commits real
-  feed updates every 6h. `site/events.json` currently has 1 future ride
-  (2026-08-15).
+  feed updates every 6h. `site/events.json` currently has 3 future rides
+  (2026-08-15, 2026-08-16, 2026-08-23).
 
 ## `scripts/fetch_rides.py`
 
@@ -239,7 +239,8 @@ offers `/` or `/docs`, and the site lives in `site/`.
 Phase 1 (build) and phase 2 (deploy) are complete — the site is live and the
 sync→deploy freshness chain works. Phase 3 (Backlog 3) is in progress.
 `PARTIFUL_ICS_URL` is set and the sync bot commits real updates every 6h;
-`site/events.json` currently has 1 future ride (2026-08-15). Historical
+`site/events.json` currently has 3 future rides (2026-08-15, 2026-08-16,
+2026-08-23). Historical
 per-iteration notes were moved to `ralph/ralph.log` (gitignored scratch) in
 iteration 19 to keep this file a concise reference; `git log` records what
 each iteration changed.
