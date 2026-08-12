@@ -6,7 +6,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 ## Backlog 4
 
 - [x] Add footer (Added a consistent footer to all five pages: café tagline `.footer-brand`, a `.footer-nav` mirroring the tab links, and Instagram/Partiful links; styles live once in `site/styles.css` next to the nav. The old per-page footers were inconsistent — `index.html` linked "RSVP to a ride", the sub-pages linked "Home".)
-- [ ] Remove Sync rides now functionality. Instead, make the Last updated ... a clickable link to the github action
+- [x] Remove Sync rides now functionality. Instead, make the Last updated ... a clickable link to the github action (Removed the `.sync-bar` button/status/ghost-link and the `syncNow()` JS from `site/index.html`; the "Last updated … ET." stamp is now `#updated-link`, an anchor to the `sync.yml` workflow on GitHub Actions (`rel=noopener target=_blank`). The `<p id="updated">` is `hidden` until `updated_at` renders, so a failed load leaves no empty focusable link. Verified with the node DOM-shim: happy path (link visible, correct href + "Last updated … ET." text, no sync button), empty-data and fetch-failure paths (line stays hidden); 59 pytest pass; HTML well-formed.)
 - [ ] Contact Us section includes email and instagram and whatsapp https://chat.whatsapp.com/JtpmhMgE8EmFRGOXrNhT1w
 
 ## Backlog 3

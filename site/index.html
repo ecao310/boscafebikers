@@ -145,31 +145,19 @@
       margin-top: .5rem;
     }
 
-    /* --- "Sync rides now" --- */
-    .sync-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px 12px;
-      margin-top: 1.25rem;
+    /* The "Last updated …" stamp doubles as a link to the sync workflow on
+       GitHub Actions (the "Sync rides now" button it used to sit next to is
+       gone). Keep the muted note look; the underline hints it's clickable. */
+    #updated .updated-link {
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-color: var(--oat);
     }
 
-    .sync-bar .btn {
-      padding: 8px 16px;
-      font-size: .9rem;
-    }
-
-    .sync-bar .btn:disabled {
-      opacity: .6;
-      cursor: default;
-    }
-
-    #sync-status {
-      margin: 0;
-    }
-
-    .sync-bar .ghost-note {
-      font-size: .85rem;
+    #updated .updated-link:hover,
+    #updated .updated-link:focus {
+      color: var(--roast);
+      text-decoration-color: var(--crema);
     }
 
     [hidden] {
@@ -461,18 +449,15 @@
           <p class="note">Loading rides…</p>
         </div>
 
-        <p class="note" id="updated"></p>
-
-        <!-- "Sync rides now": re-fetches events.json (cache-busted) so a page
-           left open picks up rides the backend sync has since published. The
-           real ICS re-fetch runs in GitHub Actions — the ghost link jumps to
-           that workflow's "Run workflow" page for anyone with write access. -->
-        <div class="sync-bar">
-          <button type="button" id="sync-now" class="btn btn-ghost">Sync rides now</button>
-          <span class="note" id="sync-status" role="status" aria-live="polite"></span>
-          <a class="note ghost-note" href="https://github.com/ecao310/boscafebikers/actions/workflows/sync.yml"
-            rel="noopener" target="_blank">Run the full sync on GitHub</a>
-        </div>
+        <!-- The "Last updated …" stamp links to the sync workflow on GitHub
+           Actions: anyone can see the last run, and a maintainer can trigger a
+           re-sync from that page. The in-page "Sync rides now" button was
+           removed — the page already loads the current events.json on every
+           visit, so its cache-busting re-fetch was redundant. -->
+        <p class="note" id="updated" hidden>
+          <a id="updated-link" href="https://github.com/ecao310/boscafebikers/actions/workflows/sync.yml"
+            rel="noopener" target="_blank"></a>
+        </p>
       </div>
     </section>
 
@@ -568,6 +553,7 @@
       var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       var schedule = document.getElementById("schedule");
       var updated = document.getElementById("updated");
+      var updatedLink = document.getElementById("updated-link");
       var nextRideCard = document.getElementById("next-ride-card");
 
       var currentData = null;
@@ -967,7 +953,12 @@
           });
         }
         setNextRide(events);
-        updated.textContent = stamp(currentData && currentData.updated_at);
+        // The "Last updated …" stamp is the link to the sync workflow. Hide the
+        // whole line (not just the text) when there's no updated_at, so there's
+        // no empty focusable link.
+        var text = stamp(currentData && currentData.updated_at);
+        if (updatedLink) { updatedLink.textContent = text; }
+        if (updated) { updated.hidden = !text; }
       }
 
       // The deferred FullCalendar script usually finishes before the events fetch
@@ -989,37 +980,6 @@
             return res.json();
           });
       }
-
-      // --- "Sync rides now" button ---
-      // Re-fetches events.json with a cache-buster so a page left open picks up
-      // rides the backend sync has since published, and re-renders in place.
-      // The backend ICS re-fetch lives in GitHub Actions (sync.yml); the ghost
-      // link above jumps to that workflow's "Run workflow" page for maintainers.
-      var syncBtn = document.getElementById("sync-now");
-      var syncStatus = document.getElementById("sync-status");
-
-      function syncNow() {
-        syncBtn.disabled = true;
-        syncStatus.textContent = "Checking for updates…";
-        var before = JSON.stringify((currentData && currentData.events) || []);
-        loadData("events.json?_=" + Date.now())
-          .then(function (data) {
-            currentData = data;
-            render();
-            var after = JSON.stringify((data && data.events) || []);
-            syncStatus.textContent = before === after
-              ? "Schedule is up to date."
-              : "Found new rides — schedule refreshed.";
-          })
-          .catch(function () {
-            syncStatus.textContent = "Couldn't reach the schedule just now.";
-          })
-          .then(function () {
-            syncBtn.disabled = false;
-          });
-      }
-
-      syncBtn.addEventListener("click", syncNow);
 
       loadData("events.json")
         .then(function (data) {

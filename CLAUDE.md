@@ -287,9 +287,14 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
     and its `#view-toggle` were removed in favor of the next-ride card.
     `<div id="schedule">` gets the month calendar (FullCalendar 6 primary,
     hand-rolled grid fallback — see the calendar bullet), and
-    `<p class="note" id="updated">` gets the "Last updated … ET." stamp. Zero
-    events, a non-OK response, or bad JSON all fall back to a note plus a
-    "See all rides on Partiful" button pointing at the profile URL.
+    `<p class="note" id="updated">` holds the "Last updated … ET." stamp as a
+    clickable link (`#updated-link`) to the `sync.yml` workflow on GitHub
+    Actions — the "Sync rides now" button is gone (every page load already
+    fetches the current `events.json`, and a maintainer re-syncs from that
+    workflow page). The line stays `hidden` until `updated_at` renders, so a
+    failed load leaves no empty focusable link. Zero events, a non-OK
+    response, or bad JSON all fall back to a note plus a "See all rides on
+    Partiful" button pointing at the profile URL.
   - The shared `rideCard(ev, extraClass)` builder renders one `.ride` card
     (`.ride.next-ride` when passed the extra class): `.when` =
     `date_display · time_display`, `.where` = location or the friendly
