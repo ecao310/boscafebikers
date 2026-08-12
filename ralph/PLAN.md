@@ -123,3 +123,11 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   fields already in the file (no live-feed access). `rsvp_url` now points at
   the actual event page and the invite line is stripped. The next scheduled
   sync reconciles with the live feed either way.
+- [x] Post-`RALPH_DONE`, a fresh iteration found an **uncommitted copy edit** in
+  `site/index.html` (removed the "We're run by volunteers, so" intro from the
+  Contact-copy paragraph and reflowed the `#updated-link` anchor attributes —
+  no semantic change to the link). Verified it (html.parser well-formed on all
+  five pages, 59 pytest pass, node DOM-shim happy path 12/12 incl. the
+  `#updated-link` stamp/href/rel), committed it, and pushed to `master`; the
+  push-triggered `pages.yml` deploy was watched and the live URL re-curled to
+  confirm the updated copy is served. See ralph.log for the run details.
