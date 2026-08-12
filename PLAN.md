@@ -17,7 +17,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Clean up text imported from Partiful
 - [x] Attempt to include start and end locations from Partiful
 - [x] Button to trigger calendar sync
-- [ ] Move ralph-related filed to the ralph directory. adjust instructions to accomodate.
+- [x] Move ralph-related filed to the ralph directory. adjust instructions to accomodate.
 - [ ] Research better options for calendar display. Wrap the text. Research and decide on  a suitable open source calendar display solution.
 - [ ] Create a donation section/page. leave it blank/WIP for now. Include navigation to the page, as well as the shopify and meta pages.
 

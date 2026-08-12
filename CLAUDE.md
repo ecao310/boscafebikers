@@ -7,7 +7,8 @@ Tagline: "exploring the city one café at a time".
 
 | Path | Purpose |
 | --- | --- |
-| `PROMPT.md` | The Ralph loop spec (project spec + rules + backlog source of truth). |
+| `ralph/PROMPT.md` | The Ralph loop spec (project spec + rules + backlog source of truth). |
+| `ralph/ralph.log` | Gitignored loop scratch — per-iteration notes (do not commit). |
 | `PLAN.md` | Working copy of the backlog. Mark tasks `[x]` as they complete. |
 | `CLAUDE.md` | This file — decisions, gotchas, conventions for the next iteration. |
 | `requirements.txt` | Python deps: `icalendar`, `requests`, `pytest`. |
@@ -49,8 +50,9 @@ Tagline: "exploring the city one café at a time".
 - The remote is named **`boscafebikers`**, not `origin`
   (`git@github.com:ecao310/boscafebikers.git`). Every `git push`/`git fetch`
   needs the remote spelled out.
-- `ralph.log` is gitignored loop scratch — do not commit it. Historical
-  per-iteration notes live there; keep CLAUDE.md concise.
+- `ralph/ralph.log` is gitignored loop scratch — do not commit it. Historical
+  per-iteration notes live there; keep CLAUDE.md concise. All ralph loop files
+  live in `ralph/` (`ralph/PROMPT.md` is the spec and IS committed).
 
 ## Deployment
 
@@ -232,8 +234,8 @@ sync→deploy freshness chain works. Phase 3 (Backlog 3) is in progress.
 `PARTIFUL_ICS_URL` is set and the sync bot commits real updates every 6h;
 `site/events.json` currently has `events: []` (no future rides), so the live
 page shows the empty state. Historical per-iteration notes were moved to
-`ralph.log` (gitignored scratch) in iteration 19 to keep this file a concise
-reference; `git log` records what each iteration changed.
+`ralph/ralph.log` (gitignored scratch) in iteration 19 to keep this file a
+concise reference; `git log` records what each iteration changed.
 
 ## `site/index.html`
 

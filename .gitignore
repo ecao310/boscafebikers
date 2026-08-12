@@ -9,11 +9,8 @@ venv/
 .env
 *.env
 
-# Ralph loop scratch
+# Ralph loop scratch (lives in ralph/ — do not commit)
 ralph.log
 
 # OS
 .DS_Store
-
-# Ralph loop spec (local only)
-PROMPT.md
