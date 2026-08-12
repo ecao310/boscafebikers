@@ -56,10 +56,10 @@ New repository secret**:
 The workflow passes it to the fetch step as an env var (never as a CLI
 argument, since arguments show up in workflow logs).
 
-> **This secret is not set yet on `ecao310/boscafebikers`.** Until someone with
-> the real feed URL adds it, every scheduled sync fails at the fetch step and the
-> committed `site/events.json` stays at its current contents. It is the one
-> remaining manual setup step.
+> **The `PARTIFUL_ICS_URL` secret is set** on `ecao310/boscafebikers` (since
+> 2026-07-20), so the scheduled sync fetches the live feed and commits ride
+> updates automatically. No manual setup step remains for the current repo;
+> the steps above are only needed when setting up a fresh fork.
 
 To sync immediately rather than waiting for the cron: **Actions → Sync rides →
 Run workflow**.

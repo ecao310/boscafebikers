@@ -97,12 +97,15 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   that task's code (title suffix/whitespace + description cleanup in
   `4f54030`) was complete and 59 tests were green. Restored the marking and
   verified the cleanup end-to-end on the fixture.
-- [ ] README.md's "Deploying" section still says the `PARTIFUL_ICS_URL` secret
+- [x] README.md's "Deploying" section still says the `PARTIFUL_ICS_URL` secret
   is **not set** ("This secret is not set yet … It is the one remaining manual
   setup step"), but `gh secret list` shows it **is** set (since 2026-07-20) and
   the sync bot commits real feed updates every 6h. The README contradicting
   CLAUDE.md could mislead a future iteration — fix the wording when this task
-  is picked up.
+  is picked up. (Fixed: the blockquote in "Setting the repo secret" now states
+  the secret IS set since 2026-07-20, the cron sync runs automatically, and the
+  manual steps apply only to a fresh fork. `gh secret list` confirms
+  `PARTIFUL_ICS_URL` present, updated 2026-07-20.)
 - [x] The sync bot's last `events.json` commit (`63c17d6`, 2026-08-12 14:10 UTC)
   was generated **before** the text-cleanup / RSVP-link code landed on `master`
   (committed ~18:11 UTC the same day), so the deployed data was stale: the ride
