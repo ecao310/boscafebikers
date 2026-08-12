@@ -305,7 +305,50 @@
     .hero { padding: 80px 0 64px; }
     section { padding: 56px 0; }
   }
+
+  /* --- FullCalendar (dayGridMonth) café-palette overrides --- */
+  /* FullCalendar 6 injects its own <style> at runtime (from the deferred
+     CDN script), which lands after this block, so these rules use
+     !important to win the cascade. The library themes itself through the
+     --fc-* custom properties on .fc, so overriding those rethemes it. */
+  .fc {
+    --fc-border-color: var(--oat) !important;
+    --fc-page-bg-color: var(--foam) !important;
+    --fc-neutral-bg-color: var(--latte) !important;
+    --fc-today-bg-color: var(--oat) !important;
+    --fc-event-bg-color: var(--crema) !important;
+    --fc-event-border-color: var(--crema) !important;
+    --fc-event-text-color: #2b1a10 !important;
+    --fc-button-bg-color: var(--crema) !important;
+    --fc-button-border-color: var(--crema) !important;
+    --fc-button-text-color: #2b1a10 !important;
+    --fc-button-hover-bg-color: #c68f5d !important;
+    --fc-button-hover-border-color: #c68f5d !important;
+    --fc-button-active-bg-color: var(--roast) !important;
+    --fc-button-active-border-color: var(--roast) !important;
+    --fc-now-indicator-color: var(--crema) !important;
+    font-size: .78rem;
+  }
+  .fc .fc-toolbar-title {
+    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    font-size: 1.05rem !important;
+    color: var(--ink);
+  }
+  .fc .fc-col-header-cell-cushion {
+    padding: 4px 2px !important;
+    color: var(--muted) !important;
+    font-size: .64rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .fc .fc-daygrid-day-number { font-size: .72rem !important; font-weight: 700; color: var(--muted) !important; }
+  .fc .fc-daygrid-event { border-radius: 6px; padding: 1px 4px; margin-top: 2px; }
+  .fc .fc-event-title { overflow-wrap: anywhere; white-space: normal; }
+  .fc .fc-daygrid-more-link { font-size: .66rem !important; font-weight: 600; color: var(--roast); }
+  .fc .fc-button { font-size: .78rem !important; padding: 4px 8px !important; border-radius: 8px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
 </head>
 <body>
 
@@ -439,6 +482,7 @@
 
   var currentData = null;
   var currentView = "list";
+  var currentCalendar = null;
 
   function el(tag, cls, text) {
     var node = document.createElement(tag);
@@ -666,6 +710,45 @@
     return wrap;
   }
 
+  function destroyCalendar() {
+    if (currentCalendar) {
+      currentCalendar.destroy();
+      currentCalendar = null;
+    }
+  }
+
+  // Adopted open-source calendar view: FullCalendar 6 (dayGridMonth) loaded
+  // from a CDN with `defer`. It themes itself from the --fc-* custom props
+  // overridden in <head>. If the CDN script hasn't run yet (or is blocked),
+  // render() falls back to the hand-rolled month grid above.
+  function renderCalendarFull(events) {
+    var box = el("div", "calendar");
+    var holder = document.createElement("div");
+    holder.id = "ride-calendar";
+    box.appendChild(holder);
+    schedule.appendChild(box);
+
+    var first = events[0];
+    var initial = first && easternParts(first.start);
+    var fcEvents = events.map(function (ev) {
+      var out = { title: ev.title || "Café ride", start: ev.start, url: ev.rsvp_url || PARTIFUL };
+      if (ev.end) { out.end = ev.end; }
+      return out;
+    });
+
+    currentCalendar = new FullCalendar.Calendar(holder, {
+      initialView: "dayGridMonth",
+      timeZone: "America/New_York",
+      initialDate: initial ? initial.y + "-" + pad2(initial.m) + "-" + pad2(initial.d) : undefined,
+      headerToolbar: { left: "prev,next", center: "title", right: "" },
+      height: "auto",
+      dayMaxEvents: 3,
+      eventDisplay: "block",
+      events: fcEvents
+    });
+    currentCalendar.render();
+  }
+
   function setView(view) {
     currentView = view;
     var buttons = viewToggle.querySelectorAll(".view-btn");
@@ -678,6 +761,7 @@
   }
 
   function render() {
+    destroyCalendar();
     var events = (currentData && currentData.events) || [];
     schedule.textContent = "";
     if (!events.length) {
@@ -687,9 +771,13 @@
     }
     viewToggle.hidden = false;
     if (currentView === "calendar") {
-      groupByMonth(events).forEach(function (month) {
-        schedule.appendChild(monthGrid(month));
-      });
+      if (typeof FullCalendar !== "undefined") {
+        renderCalendarFull(events);
+      } else {
+        groupByMonth(events).forEach(function (month) {
+          schedule.appendChild(monthGrid(month));
+        });
+      }
     } else {
       var list = el("ul", "rides");
       events.forEach(function (ev) { list.appendChild(rideCard(ev)); });
@@ -703,6 +791,18 @@
     buttons[i].addEventListener("click", function () {
       setView(this.getAttribute("data-view"));
     });
+  }
+
+  // The deferred FullCalendar script usually finishes before the events fetch
+  // resolves, so the first render already uses it. This hook covers the edge
+  // case where the CDN script lands after an earlier fallback render.
+  if (typeof FullCalendar === "undefined") {
+    var fcScript = document.querySelector('script[src*="fullcalendar"]');
+    if (fcScript && fcScript.addEventListener) {
+      fcScript.addEventListener("load", function () {
+        if (currentView === "calendar" && currentData) { render(); }
+      });
+    }
   }
 
   function loadData(url) {

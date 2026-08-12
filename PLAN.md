@@ -18,11 +18,12 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Attempt to include start and end locations from Partiful
 - [x] Button to trigger calendar sync
 - [x] Move ralph-related filed to the ralph directory. adjust instructions to accomodate.
-- [ ] Research better options for calendar display. Wrap the text. Research and decide on  a suitable open source calendar display solution.
+- [x] Research better options for calendar display. Wrap the text. Research and decide on  a suitable open source calendar display solution. (Adopted FullCalendar 6 via CDN; hand-rolled grid kept as fallback. Decision + sizes in CLAUDE.md.)
 - [x] Create a donation section/page. leave it blank/WIP for now. Include navigation to the page, as well as the shopify and meta pages.
 - [x] The RSVP on Partiful button still links to the profile page instead of the event page. Extract event link from the description in events.json. 
 - [x] Clean up the events description. Remove the rsvp link from the description, but keep the button and the link in the button.
 - [ ] Clean up htmls. Consider creating a unified style sheet.
+- [ ] Research how https://bostoncyclistsunion.org/events/month/ handles event details and display. Consider incorporating their method.
 
 ## Backlog — phase 2: deploy to GitHub Pages
 

@@ -35,7 +35,10 @@ Tagline: "exploring the city one café at a time".
 - **Tests never hit the network.** Always parse `tests/fixtures/sample.ics`.
 - Timezone for all displayed times: `America/New_York` (use `zoneinfo`).
 - `site/` is plain static: single `index.html`, inline `<style>`/`<script>`,
-  no frameworks, no bundler. Mobile-first, warm café palette, readable at 380px.
+  no bundler, no build step. Mobile-first, warm café palette, readable at 380px.
+  The **one** exception to "no frameworks": the calendar view adopts FullCalendar 6
+  (MIT) from a CDN with `defer` — see the calendar bullet below for the trade-off
+  and the graceful fallback.
 - Public Partiful profile (safe to commit, used as empty-state fallback):
   `https://partiful.com/u/Hs47uq5mucZyXLBJZCda`
 - Instagram: `@bostoncafebikers`.
@@ -281,24 +284,40 @@ just before `</body>`.
 - **List/calendar toggle** (`#view-toggle`, static markup but `hidden` until
   the script has rides): two `.view-btn` buttons (`data-view="list|calendar"`,
   `.is-active` + `aria-pressed` mark the chosen view) switch `#schedule`
-  between the card list (default) and month-grid calendars. The calendar
-  renders one `.calendar` block per month that has rides — `groupByMonth()`
-  groups by the Y-M-D prefix of `start`, and because `events.json` is sorted,
-  both month order and within-month event order come out chronological for
-  free. Each `.cal-grid` is 7 weekday columns (`.cal-dow` headers); a day cell
-  has a `.num` plus one `.ride-chip` `<a>` per ride (href = `rsvp_url`, falling
-  back to the profile URL). Cells outside the month get the `.empty` class.
-  `.cal-day.has-ride` tints days that have rides. Ride titles **wrap** inside
-  their day cell (`overflow-wrap: anywhere`) rather than ellipsis-truncating,
-  so a long title stays fully visible at 380px.
-- **Calendar display decision (2026-08-12):** the month grid stays hand-rolled
-  vanilla. Evaluated FullCalendar (40–60KB, premium views need a commercial
-  license, bundler/CDN-oriented), TOAST UI Calendar (dormant since 2023, needs
-  a build), and vanilla-calendar / vanilla-js-calendar (date *pickers*, not
-  ride-display calendars, and need external CSS/JS). None fits the
-  single-file / no-framework / no-bundler constraint; the zero-dependency grid
-  already meets the need (a handful of read-only rides on their Eastern-tz
-  weekday, each linking to its RSVP page). Research notes: `ralph/ralph.log`.
+  between the card list (default) and the calendar view. The calendar view's
+  **primary renderer is FullCalendar 6** (`dayGridMonth`): when
+  `window.FullCalendar` is defined, `renderCalendarFull()` builds a
+  `FullCalendar.Calendar` in `#ride-calendar` with `timeZone:
+  "America/New_York"`, `initialDate` = first ride's Eastern date, `height:
+  "auto"`, `dayMaxEvents: 3`, `eventDisplay: "block"`, header nav
+  (prev/next + month title), and one event per ride (`title`, `start`, `end`,
+  `url` = `rsvp_url` falling back to the profile URL). `render()` calls
+  `destroyCalendar()` first so a stale instance can't leak when toggling views,
+  syncing, or re-rendering. **Fallback:** if the CDN script hasn't loaded (slow
+  network / blocked), `typeof FullCalendar` is undefined and the hand-rolled
+  month grid takes over — one `.calendar` block per month that has rides,
+  built by `groupByMonth()` / `monthGrid()` (7 `.cal-dow` weekday columns, a
+  `.num` per day cell, one `.ride-chip` `<a>` per ride; `.cal-day.has-ride`
+  tints days). Ride titles **wrap** in both renderers (`overflow-wrap:
+  anywhere`) rather than ellipsis-truncating, so a long title stays fully
+  visible at 380px. The FullCalendar CDN script has `defer`; a tiny hook
+  listens for its `load` event and re-renders the calendar view if it lands
+  after an earlier fallback render.
+- **Calendar display decision (2026-08-12, revised):** the calendar view adopts
+  **FullCalendar 6.1.15** (MIT, actively maintained, industry standard) via
+  CDN — a single `defer`'d script tag; its CSS is embedded in the JS and
+  auto-injected. Re-evaluated in Aug 2026 because the previous "keep hand-rolled"
+  resolution was reverted by the organizer: FullCalendar is the only candidate
+  that is (a) genuinely maintained, (b) MIT for the month-grid view this site
+  uses, (c) usable with zero build step via the `index.global.min.js` global
+  build, and (d) themeable to the café palette through the `--fc-*` custom
+  properties overridden (with `!important`, since the library injects its
+  `<style>` later) in `<head>`. Rejected alternatives: TOAST UI Calendar
+  (dormant since 2023, needs a build), vanilla-js-calendar / vanilla-calendar
+  (date *pickers*, not event-display calendars), SimpleCalendarJS (78KB,
+  npm-oriented, unproven). The hand-rolled grid is kept as the zero-dependency
+  fallback so a CDN outage still leaves a working calendar. Research notes:
+  `ralph/ralph.log`. Sizes: `index.global.min.js` ≈ 282KB raw / ~90KB gzip.
 - **Calendar weekday math is the exception to the no-`Date` rule.** The
   calendar must not call `new Date(start)` in the visitor's local tz — a
   near-midnight ride would land on the wrong weekday for non-Eastern visitors.
