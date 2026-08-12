@@ -3,6 +3,20 @@
 Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
+## Backlog 3
+
+- [x] Include "Contact Us" section for cities/orgs to reach out
+- [ ] New blank pages for Shopify integration and meta business integration. leave as separate pages and just put a WIP sign. no functionality.
+- [ ] Toggle between list and calendar view of future rides
+- [ ] Add gallery page
+- [ ] Tab header navigation
+- [ ] Ability to add images to rides
+- [ ] ICS download for each event
+- [ ] RSVP on Partiful button should link to actual event, not just the café bikers account page
+- [ ] Clean up text imported from Partiful
+- [ ] Attempt to include start and end locations from Partiful
+
+
 ## Backlog — phase 2: deploy to GitHub Pages
 
 - [x] Pre-flight: confirm local `master` is pushed to the `boscafebikers` remote

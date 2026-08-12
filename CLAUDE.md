@@ -197,6 +197,18 @@ deploy on a no-op sync); `gh workflow run pages.yml` run 29715268132 green in
 the committed `site/events.json`. (The runners now warn that `actions/checkout@v4`
 et al. target the deprecated Node 20 and are forced onto Node 24 — harmless
 today, but a future iteration should bump the action majors.)
+Iteration 17: **phase 3 (Backlog 3) begins.** Added a `#contact` section to
+`site/index.html` (last section before the footer, `aria-labelledby` pattern as
+the others) so cities/orgs can reach out — the lede speaks to starting a café
+bike club elsewhere or partnering, and the only CTA is a "DM us on Instagram"
+link, since the group has no public email. PLAN.md restored at the repo root
+with the Backlog 3 list (topmost unchecked items are the site features:
+Shopify/meta WIP pages, list/calendar toggle, gallery, tab nav, ride images,
+per-event ICS download, per-event RSVP URLs, Partiful text cleanup, start/end
+locations). NOTE: `PARTIFUL_ICS_URL` is now **set** (the sync bot has been
+committing real "Sync rides from Partiful feed" updates, last one d5477dd
+→ `events: []`, no future rides right now) — the "secret unset" notes elsewhere
+in this file are stale and should be cleaned up in a future pass.
 
 ### Deployment: pre-flight findings (iteration 10)
 
@@ -371,8 +383,8 @@ just before `</body>`.
   tiny `document`/`fetch`, pull the script out of the HTML with a regex, and
   `eval` it — that's how the happy path, empty, missing-rsvp and 404 cases
   were checked this iteration.
-- Sections/ids: `#rides`, `#first-ride`, `#about`, `#links`. The hero CTA
-  anchors to `#rides`.
+- Sections/ids: `#rides`, `#first-ride`, `#about`, `#links`, `#contact`. The
+  hero CTA anchors to `#rides`.
 - Verified well-formed by feeding it through `html.parser` (no unclosed or
   mismatched tags).
 
