@@ -403,6 +403,12 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
 - Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#links`,
   `#contact`; the ride-detail overlay is `#ride-modal` (not a `<section>`).
   The hero CTA anchors to `#next-ride`.
+- **Contact section** (`#contact`, home page only): three `.links` cards —
+  email `mailto:boscafebikers@gmail.com`, Instagram DM
+  (`https://instagram.com/bostoncafebikers`), and the WhatsApp group invite
+  (`https://chat.whatsapp.com/JtpmhMgE8EmFRGOXrNhT1w`). Same email is on the
+  donate page's WIP note. The sub-pages (gallery/shop/meta/donate) have no
+  contact section — only the shared footer.
 - Verified well-formed by feeding it through `html.parser` (no unclosed or
   mismatched tags).
 
