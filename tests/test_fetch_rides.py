@@ -185,6 +185,68 @@ def test_rsvp_url_not_derived_from_suffixed_uid():
     assert rides[0]["rsvp_url"] is None
 
 
+def test_clean_title_strips_partiful_suffix():
+    """Partiful exports append ' | Partiful' to every title; the site shouldn't show it."""
+    assert (
+        fetch_rides._clean_title("The journey is really the best part | Partiful")
+        == "The journey is really the best part"
+    )
+    assert fetch_rides._clean_title("Post PMC Celebration!! | Partiful") == "Post PMC Celebration!!"
+    assert fetch_rides._clean_title("Salt Bread and Coffee pop-up | Partiful") == "Salt Bread and Coffee pop-up"
+    assert fetch_rides._clean_title("Café Ride | partiful") == "Café Ride"  # case-insensitive
+    assert fetch_rides._clean_title("No suffix here") == "No suffix here"
+    assert fetch_rides._clean_title("") == ""
+
+
+def test_clean_title_collapses_whitespace():
+    """Real exports carry stray runs of spaces; collapse them to one."""
+    assert (
+        fetch_rides._clean_title("Boston Cafe Bikers        Ice Cream Crawl | Partiful")
+        == "Boston Cafe Bikers Ice Cream Crawl"
+    )
+    assert fetch_rides._clean_title("  Leading and  trailing  ") == "Leading and trailing"
+
+
+def test_clean_description_collapses_blank_lines():
+    """3+ newlines (e.g. left after the stripped invite line) read as one break."""
+    dirty = "RSVP at https://partiful.com/e/abc\n\nYou are invited!\n\n\n\nBring a lock."
+    assert fetch_rides._clean_description(dirty) == "You are invited!\n\nBring a lock."
+
+
+def test_clean_description_keeps_single_paragraph_break():
+    """One blank line between paragraphs is legitimate prose, not cruft."""
+    assert (
+        fetch_rides._clean_description("Meet at the café.\n\nThen we ride.")
+        == "Meet at the café.\n\nThen we ride."
+    )
+    assert fetch_rides._clean_description("Just prose.") == "Just prose."
+
+
+def test_real_partiful_title_suffix_stripped():
+    """A real Partiful-style title comes out clean end-to-end."""
+    data = (
+        b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+        b"BEGIN:VEVENT\r\nUID:gRzH7L3EoMRl3q8pl7OS\r\n"
+        b"DTSTART;TZID=America/New_York:20300622T093000\r\n"
+        b"SUMMARY:The journey is really the best part | Partiful\r\n"
+        b"DESCRIPTION:View this event on Partiful at https://partiful.com/e/gRzH7L3EoMRl3q8pl7OS\\n\\n"
+        b"Yippee! Another Saturday, another ride.\r\n"
+        b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    rides = _real_feed(data)
+    assert len(rides) == 1
+    assert rides[0]["title"] == "The journey is really the best part"
+    assert "Partiful" not in rides[0]["title"]
+    assert rides[0]["description"] == "Yippee! Another Saturday, another ride."
+
+
+def test_fixture_title_suffix_stripped(rides):
+    """The fixture's Charles title carries ' | Partiful'; it must come out clean."""
+    charles = rides[0]
+    assert charles["title"] == "Charles River Loop → Tatte"
+    assert charles["title"].endswith("Partiful") is False
+
+
 def test_missing_dtend_yields_null_end():
     """A feed event with no DTEND must still parse, with `end` null."""
     data = (

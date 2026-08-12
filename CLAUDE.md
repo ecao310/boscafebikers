@@ -126,6 +126,16 @@ Run it on the fixture (never the live feed) with:
   real Partiful exports use the bare event id; descriptive `<name>@partiful.com`
   UIDs are never treated as ids). This is what makes the site's "RSVP on Partiful"
   button link to the actual event instead of the group profile page.
+- **Text cleanup:** Partiful appends ` | Partiful` to every exported event title
+  and real titles carry stray whitespace runs (e.g.
+  `Boston Cafe Bikers        Ice Cream Crawl | Partiful`). `_clean_title`
+  strips the suffix (case-insensitive) and collapses internal whitespace, so
+  the site shows the organizer's real name. `_clean_description` (which wraps
+  `_strip_rsvp`) additionally trims every line and collapses runs of 3+
+  newlines into a single paragraph break — Partiful prose is plain paragraphs,
+  and the RSVP-line removal can leave a ragged blank gap. Locations are left
+  alone (the `Location available once RSVP'd` placeholder is a "start and end
+  locations" task, not a text-cleanup one).
 - **Ride photos:** the ICS feed carries no images, so `image` comes from the
   optional sidecar `scripts/ride_images.json` — a JSON object mapping event UID
   → photo URL (e.g. `"<partiful-id>@partiful.com": "https://…/a.jpg"`). The
@@ -149,10 +159,13 @@ included, so `icalendar` returns tz-aware datetimes directly).
 | --- | --- | --- | --- | --- |
 | `evt-past-jamaica-pond` | Jamaica Pond Loop ☕ | 2024-05-04 09:00 | CONFIRMED | dropped (past) |
 | `evt-cancelled-blue-hills` | Blue Hills Coffee Climb | 2030-09-14 08:30 | CANCELLED | dropped |
-| `evt-future-charles-loop` | Charles River Loop → Tatte | 2030-06-22 09:30 | CONFIRMED | **kept, 1st** |
+| `evt-future-charles-loop` | Charles River Loop → Tatte \| Partiful | 2030-06-22 09:30 | CONFIRMED | **kept, 1st** |
 | `evt-future-minuteman` | Minuteman Bikeway to Lexington | 2030-07-06 10:00 | CONFIRMED | **kept, 2nd** |
 
 - Future dates are in **2030** on purpose, so the fixture doesn't rot.
+- The Charles River title carries the ` | Partiful` suffix real exports append
+  (and the Minuteman title does not), so the shared `rides` fixture exercises
+  `_clean_title` end-to-end.
 - RSVP links live at the end of DESCRIPTION as `RSVP: https://partiful.com/e/<id>`,
   after a `\n\n`, and are **line-folded** across the `RSVP:` / URL boundary — the
   parser must work on the unfolded value (`str(event['DESCRIPTION'])`), never on
@@ -290,7 +303,7 @@ just before `</body>`.
 
 ## `tests/test_fetch_rides.py`
 
-Run with `.venv/bin/python -m pytest tests/ -q` (33 passing). Notes:
+Run with `.venv/bin/python -m pytest tests/ -q` (51 passing). Notes:
 
 - There is no `conftest.py` / packaging; the test file puts `scripts/` on
   `sys.path` itself and does `import fetch_rides`.

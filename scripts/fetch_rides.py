@@ -133,6 +133,38 @@ def _strip_rsvp(description: str) -> str:
     return RSVP_RE.sub("", description).strip()
 
 
+# Partiful appends " | Partiful" to every exported event title; strip it so the
+# site shows the organizer's actual name. Real exports also carry stray runs of
+# whitespace ("Boston Cafe Bikers        Ice Cream Crawl"), so tidy those too.
+TITLE_SUFFIX_RE = re.compile(r"\s*\|\s*Partiful\s*$", re.IGNORECASE)
+
+
+def _clean_title(title: str) -> str:
+    """Strip Partiful's ' | Partiful' title suffix and collapse whitespace."""
+    return re.sub(r"\s+", " ", TITLE_SUFFIX_RE.sub("", title)).strip()
+
+
+def _clean_description(description: str) -> str:
+    """Drop the RSVP/invite line, trim lines, and collapse runs of blank lines.
+
+    Partiful prose is plain paragraphs; 3+ newlines (e.g. after the stripped
+    invite line) should read as a single paragraph break, not a ragged gap.
+    """
+    body = _strip_rsvp(description)
+    lines: list[str] = []
+    blank = False
+    for raw in body.splitlines():
+        line = raw.strip()
+        if not line:
+            if not blank:
+                lines.append("")
+            blank = True
+        else:
+            lines.append(line)
+            blank = False
+    return "\n".join(lines).strip()
+
+
 def parse_events(
     data: bytes, now: datetime | None = None, images: dict | None = None
 ) -> list[dict]:
@@ -164,7 +196,7 @@ def parse_events(
         rides.append(
             {
                 "uid": uid,
-                "title": _text(component, "SUMMARY") or "Café ride",
+                "title": _clean_title(_text(component, "SUMMARY")) or "Café ride",
                 "start": start.isoformat(),
                 # End time is optional; the site's "add to calendar" ICS needs it
                 # to block out the right slot, but not every feed event has one.
@@ -172,7 +204,7 @@ def parse_events(
                 "date_display": f"{start:%A, %B} {start.day}",
                 "time_display": f"{start:%-I:%M %p}".replace("AM", "am").replace("PM", "pm"),
                 "location": _text(component, "LOCATION"),
-                "description": _strip_rsvp(description),
+                "description": _clean_description(description),
                 "rsvp_url": extract_rsvp_url(description) or derive_partiful_url(uid),
                 "image": images.get(uid),
             }
