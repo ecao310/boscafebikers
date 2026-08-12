@@ -122,6 +122,80 @@
   .note { color: var(--muted); font-size: .9rem; }
   #updated { margin-top: .5rem; }
 
+  [hidden] { display: none !important; }
+
+  /* --- list / calendar view toggle --- */
+  .view-toggle { display: flex; gap: 6px; margin: 0 0 1rem; }
+  .view-btn {
+    font: inherit;
+    background: var(--foam);
+    border: 1px solid var(--oat);
+    color: var(--ink);
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .view-btn:hover, .view-btn:focus { border-color: var(--crema); }
+  .view-btn.is-active {
+    background: var(--crema);
+    border-color: var(--crema);
+    color: #2b1a10;
+    font-weight: 600;
+  }
+
+  /* --- calendar view --- */
+  .calendar { margin: 0 0 1.5rem; }
+  .calendar h3 { font-size: 1.1rem; }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    background: var(--foam);
+    border: 1px solid var(--oat);
+    border-radius: var(--radius);
+    padding: 8px;
+  }
+  .cal-dow {
+    text-align: center;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--muted);
+    padding: 2px 0 4px;
+  }
+  .cal-day {
+    min-height: 46px;
+    border-radius: 8px;
+    padding: 4px 6px;
+    font-size: .78rem;
+    line-height: 1.25;
+  }
+  .cal-day.empty { visibility: hidden; }
+  .cal-day .num {
+    display: block;
+    font-weight: 700;
+    color: var(--muted);
+    font-size: .72rem;
+    line-height: 1;
+  }
+  .cal-day.has-ride { background: var(--oat); }
+  .cal-day .ride-chip {
+    display: block;
+    background: var(--crema);
+    color: #2b1a10;
+    text-decoration: none;
+    border-radius: 6px;
+    padding: 1px 4px;
+    margin-top: 3px;
+    font-size: .68rem;
+    line-height: 1.25;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .cal-day .ride-chip:hover, .cal-day .ride-chip:focus { background: #c68f5d; }
+
   .links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 1rem; }
   .links a {
     flex: 1 1 auto;
@@ -167,6 +241,12 @@
     <div class="wrap">
       <h2 id="rides-heading">Upcoming rides</h2>
       <p class="lede">Easy group rides that end with coffee. Everyone's invited.</p>
+
+      <!-- List/calendar toggle; hidden until the script has rides to show. -->
+      <div id="view-toggle" class="view-toggle" hidden>
+        <button type="button" class="view-btn is-active" data-view="list" aria-pressed="true">List</button>
+        <button type="button" class="view-btn" data-view="calendar" aria-pressed="false">Calendar</button>
+      </div>
 
       <!-- Schedule area. Populated from events.json by the script at the
            bottom of this file; this static markup is the pre-JS state. -->
@@ -245,8 +325,13 @@
   var PARTIFUL = "https://partiful.com/u/Hs47uq5mucZyXLBJZCda";
   var MONTHS = ["January", "February", "March", "April", "May", "June", "July",
                 "August", "September", "October", "November", "December"];
+  var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   var schedule = document.getElementById("schedule");
   var updated = document.getElementById("updated");
+  var viewToggle = document.getElementById("view-toggle");
+
+  var currentData = null;
+  var currentView = "list";
 
   function el(tag, cls, text) {
     var node = document.createElement(tag);
@@ -292,17 +377,117 @@
     return li;
   }
 
-  function render(data) {
-    var events = (data && data.events) || [];
+  // --- calendar view ---
+  // The start ISO string carries the Eastern offset, so its Y-M-D prefix IS
+  // the Eastern wall-clock date. Building a Date whose UTC components equal
+  // that date makes getUTC*() report the weekday / month length the ride
+  // falls on in America/New_York, independent of the visitor's timezone.
+  function easternParts(startIso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(startIso || "");
+    if (!m) { return null; }
+    return { y: parseInt(m[1], 10), m: parseInt(m[2], 10), d: parseInt(m[3], 10) };
+  }
+  function easternWeekday(y, m, d) {
+    return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  }
+  function daysInMonth(y, m) {
+    return new Date(Date.UTC(y, m, 0)).getUTCDate();
+  }
+
+  function groupByMonth(events) {
+    // events.json is already sorted by start, so both the month order and the
+    // order of events inside each month come out chronological for free.
+    var months = {};
+    var order = [];
+    events.forEach(function (ev) {
+      var p = easternParts(ev.start);
+      if (!p) { return; }
+      var key = p.y + "-" + p.m;
+      if (!months[key]) {
+        months[key] = { y: p.y, m: p.m, events: [] };
+        order.push(key);
+      }
+      months[key].events.push(ev);
+    });
+    return order.map(function (key) { return months[key]; });
+  }
+
+  function monthGrid(month) {
+    var firstDow = easternWeekday(month.y, month.m, 1);
+    var days = daysInMonth(month.y, month.m);
+    var byDay = {};
+    month.events.forEach(function (ev) {
+      var p = easternParts(ev.start);
+      if (!p) { return; }
+      (byDay[p.d] = byDay[p.d] || []).push(ev);
+    });
+
+    var grid = el("div", "cal-grid");
+    DOW.forEach(function (name) { grid.appendChild(el("div", "cal-dow", name)); });
+    var cellCount = Math.ceil((firstDow + days) / 7) * 7;
+    for (var i = 0; i < cellCount; i++) {
+      var dayNum = i - firstDow + 1;
+      if (dayNum < 1 || dayNum > days) {
+        grid.appendChild(el("div", "cal-day empty"));
+        continue;
+      }
+      var cell = el("div", "cal-day");
+      cell.appendChild(el("span", "num", String(dayNum)));
+      if (byDay[dayNum]) {
+        cell.classList.add("has-ride");
+        byDay[dayNum].forEach(function (ev) {
+          var chip = el("a", "ride-chip", ev.title);
+          chip.href = ev.rsvp_url || PARTIFUL;
+          chip.rel = "noopener";
+          cell.appendChild(chip);
+        });
+      }
+      grid.appendChild(cell);
+    }
+
+    var wrap = el("div", "calendar");
+    wrap.appendChild(el("h3", null, MONTHS[month.m - 1] + " " + month.y));
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  function setView(view) {
+    currentView = view;
+    var buttons = viewToggle.querySelectorAll(".view-btn");
+    for (var i = 0; i < buttons.length; i++) {
+      var active = buttons[i].getAttribute("data-view") === view;
+      buttons[i].classList.toggle("is-active", active);
+      buttons[i].setAttribute("aria-pressed", active ? "true" : "false");
+    }
+    render();
+  }
+
+  function render() {
+    var events = (currentData && currentData.events) || [];
+    schedule.textContent = "";
     if (!events.length) {
+      viewToggle.hidden = true;
       emptyState("No rides on the calendar right now — check Partiful for the next one.");
       return;
     }
-    var list = el("ul", "rides");
-    events.forEach(function (ev) { list.appendChild(rideCard(ev)); });
-    schedule.textContent = "";
-    schedule.appendChild(list);
-    updated.textContent = stamp(data.updated_at);
+    viewToggle.hidden = false;
+    if (currentView === "calendar") {
+      groupByMonth(events).forEach(function (month) {
+        schedule.appendChild(monthGrid(month));
+      });
+    } else {
+      var list = el("ul", "rides");
+      events.forEach(function (ev) { list.appendChild(rideCard(ev)); });
+      schedule.appendChild(list);
+    }
+    updated.textContent = stamp(currentData.updated_at);
+  }
+
+  var buttons = viewToggle.querySelectorAll(".view-btn");
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].addEventListener("click", function () {
+      setView(this.getAttribute("data-view"));
+    });
   }
 
   fetch("events.json", { cache: "no-cache" })
@@ -310,8 +495,12 @@
       if (!res.ok) { throw new Error("HTTP " + res.status); }
       return res.json();
     })
-    .then(render)
+    .then(function (data) {
+      currentData = data;
+      render();
+    })
     .catch(function () {
+      viewToggle.hidden = true;
       emptyState("Couldn't load the ride schedule just now.");
     });
 })();

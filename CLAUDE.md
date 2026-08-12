@@ -209,6 +209,20 @@ locations). NOTE: `PARTIFUL_ICS_URL` is now **set** (the sync bot has been
 committing real "Sync rides from Partiful feed" updates, last one d5477dd
 → `events: []`, no future rides right now) — the "secret unset" notes elsewhere
 in this file are stale and should be cleaned up in a future pass.
+Iteration 18: **Backlog 3: list/calendar view toggle.** `#rides` gained a
+`#view-toggle` (List/Calendar buttons, `hidden` until the script has rides).
+Calendar view renders one month-grid per month with rides; day cells carry
+`.ride-chip` links to each ride's RSVP URL. Weekday placement derives from the
+Eastern offset already in `start` via the UTC-component trick (see the
+`site/index.html` section), so non-Eastern visitors see the right day without
+re-formatting display times. Verified with the node DOM-shim render check (33
+checks): list default → calendar → list; June/July 2030 grids with correct
+alignment (June 1 = Sat, July 1 = Mon), leading/trailing `.empty` cells, chip
+titles + RSVP hrefs, missing-`rsvp_url` chip fallback, empty state (toggle
+hidden, CTA to profile), fetch-failure state. `pytest` 24 passed; HTML
+well-formed; served `/` + `/events.json` 200/200. Committed as `a937fb7`.
+NOTE: `site/events.json` currently has `events: []` (real feed has no future
+rides right now), so the live page shows the empty state with the toggle hidden.
 
 ### Deployment: pre-flight findings (iteration 10)
 
@@ -372,6 +386,29 @@ just before `</body>`.
   Zero events, a non-OK response, or bad JSON all fall back to a note plus a
   "See all rides on Partiful" button pointing at the profile URL. A missing
   `rsvp_url` also falls back to the profile URL.
+- **List/calendar toggle** (`#view-toggle`, static markup but `hidden` until
+  the script has rides): two `.view-btn` buttons (`data-view="list|calendar"`,
+  `.is-active` + `aria-pressed` mark the chosen view) switch `#schedule`
+  between the card list (default) and month-grid calendars. The calendar
+  renders one `.calendar` block per month that has rides — `groupByMonth()`
+  groups by the Y-M-D prefix of `start`, and because `events.json` is sorted,
+  both month order and within-month event order come out chronological for
+  free. Each `.cal-grid` is 7 weekday columns (`.cal-dow` headers); a day cell
+  has a `.num` plus one `.ride-chip` `<a>` per ride (href = `rsvp_url`, falling
+  back to the profile URL). Cells outside the month get the `.empty` class.
+  `.cal-day.has-ride` tints days that have rides.
+- **Calendar weekday math is the exception to the no-`Date` rule.** The
+  calendar must not call `new Date(start)` in the visitor's local tz — a
+  near-midnight ride would land on the wrong weekday for non-Eastern visitors.
+  The `start` ISO string already carries the Eastern offset, so its Y-M-D
+  prefix *is* the Eastern wall-clock date; the code builds
+  `new Date(Date.UTC(y, m-1, d))` and reads `getUTCDay()` / `getUTCDate()`.
+  That returns the same weekday in any timezone. Display times still come from
+  the precomputed `date_display`/`time_display`.
+- **`[hidden]` needs `display: none !important`** in the CSS: `.view-toggle`
+  sets `display: flex`, which would override the UA's `hidden` rule and show
+  the (empty) toggle before JS hides it. The global `[hidden]` rule exists for
+  this reason.
 - `events.json` display strings (`date_display`, `time_display`) are
   precomputed; the JS must **not** re-format dates with `Date`, or visitors
   outside Eastern see wrong times. `updated_at` is likewise formatted by

@@ -7,7 +7,8 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 
 - [x] Include "Contact Us" section for cities/orgs to reach out
 - [x] New blank pages for Shopify integration and meta business integration. leave as separate pages and just put a WIP sign. no functionality.
-- [ ] Toggle between list and calendar view of future rides
+- [x] Toggle between list and calendar view of future rides
+- [ ] Move notes from claude.md to ralph.log
 - [ ] Add gallery page
 - [ ] Tab header navigation
 - [ ] Ability to add images to rides
