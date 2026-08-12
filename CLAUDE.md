@@ -269,56 +269,65 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
   `@media (min-width: 560px)` block that only bumps vertical padding. Verified
   readable at 380px.
 - **Rendering script** (bottom of the file): `fetch("events.json")` →
-  `<div id="schedule">` gets a `<ul class="rides">` of `<li class="ride">`
-  cards (`.when` = `date_display · time_display`, `.where` = location or the
-  friendly "Location shared after you RSVP" note when `location_hidden`, a `<p>`
-  description, `<a class="btn">RSVP on Partiful`), and
-  `<p class="note" id="updated">` gets the "Last updated … ET." stamp.
-  Zero events, a non-OK response, or bad JSON all fall back to a note plus a
-  "See all rides on Partiful" button pointing at the profile URL. A missing
-  `rsvp_url` also falls back to the profile URL. When a ride has `image`, the
-  card starts with a photo banner (`.ride-img-link` wrapping `<img
-  class="ride-img" loading="lazy">`, `alt` = ride title) linked to the same
-  RSVP target; it's omitted entirely when `image` is null/absent. Each card
-  ends with a `.ride-actions` row: the RSVP button plus a `btn btn-ghost`
-  "Add to calendar" button that downloads a per-event `.ics` generated in the
-  browser (`buildIcs`/`downloadIcs`). ICS `DTSTART`/`DTEND` reuse the same
-  Eastern-wall-clock trick as the calendar — the `start`/`end` ISO prefixes
-  become `DTSTART;TZID=America/New_York:…` with no `new Date(start)`. Long
-  lines are folded per RFC 5545 (`foldIcsLine`), text is escaped
-  (`icsEscape`), and the RSVP URL is appended to the description + emitted as a
-  `URL:` property. A second `btn btn-ghost` "Google Calendar" `<a>` (opened in
-  a new tab) mirrors the BCU add-to-calendar export: `googleCalUrl(ev)` builds a
-  `calendar.google.com/calendar/render?action=TEMPLATE` URL from the same
-  precomputed Eastern wall-clock fields (`icsDateTime`, no `new Date(start)`),
-  `ctz=America/New_York`, and `end` null → the block defaults to +1h via
-  `icsDateTimePlusHour` (Date.UTC arithmetic so a near-midnight ride rolls into
-  the next day). Like `buildIcs`, the details field appends `RSVP: <url>` when
-  `rsvp_url` is present. This came out of the BCU research task — see the
-  decision note under "Research" in ralph.log; the "modal on calendar click"
-  task is the BCU detail-page pattern, deferred to its own backlog item.
-- **List/calendar toggle** (`#view-toggle`, static markup but `hidden` until
-  the script has rides): two `.view-btn` buttons (`data-view="list|calendar"`,
-  `.is-active` + `aria-pressed` mark the chosen view) switch `#schedule`
-  between the card list (default) and the calendar view. The calendar view's
-  **primary renderer is FullCalendar 6** (`dayGridMonth`): when
+  - The **next-ride section** (`#next-ride`, the first section in `<main>`,
+    right under the hero — whose CTA anchors to `#next-ride`) shows the nearest
+    upcoming ride as a featured card. `setNextRide()` renders `events[0]`
+    (events.json is sorted by start and the sync filters to future rides) into
+    `#next-ride-card` via the shared `rideCard(ev, "next-ride")` builder; when
+    there's nothing upcoming it shows a note plus a "See all rides on Partiful"
+    button.
+  - The **schedule section** (`#rides`) is **calendar-only** — the list view
+    and its `#view-toggle` were removed in favor of the next-ride card.
+    `<div id="schedule">` gets the month calendar (FullCalendar 6 primary,
+    hand-rolled grid fallback — see the calendar bullet), and
+    `<p class="note" id="updated">` gets the "Last updated … ET." stamp. Zero
+    events, a non-OK response, or bad JSON all fall back to a note plus a
+    "See all rides on Partiful" button pointing at the profile URL.
+  - The shared `rideCard(ev, extraClass)` builder renders one `.ride` card
+    (`.ride.next-ride` when passed the extra class): `.when` =
+    `date_display · time_display`, `.where` = location or the friendly
+    "Location shared after you RSVP" note when `location_hidden`, a `<p>`
+    description, and `<a class="btn">RSVP on Partiful` (a missing `rsvp_url`
+    falls back to the profile URL). When a ride has `image`, the card starts
+    with a photo banner (`.ride-img-link` wrapping `<img class="ride-img"
+    loading="lazy">`, `alt` = ride title) linked to the same RSVP target; it's
+    omitted entirely when `image` is null/absent. Each card ends with a
+    `.ride-actions` row: the RSVP button plus a `btn btn-ghost` "Add to
+    calendar" button that downloads a per-event `.ics` generated in the browser
+    (`buildIcs`/`downloadIcs`). ICS `DTSTART`/`DTEND` reuse the same
+    Eastern-wall-clock trick as the calendar — the `start`/`end` ISO prefixes
+    become `DTSTART;TZID=America/New_York:…` with no `new Date(start)`. Long
+    lines are folded per RFC 5545 (`foldIcsLine`), text is escaped
+    (`icsEscape`), and the RSVP URL is appended to the description + emitted as
+    a `URL:` property. A second `btn btn-ghost` "Google Calendar" `<a>` (opened
+    in a new tab) mirrors the BCU add-to-calendar export: `googleCalUrl(ev)`
+    builds a `calendar.google.com/calendar/render?action=TEMPLATE` URL from the
+    same precomputed Eastern wall-clock fields (`icsDateTime`, no `new
+    Date(start)`), `ctz=America/New_York`, and `end` null → the block defaults
+    to +1h via `icsDateTimePlusHour` (Date.UTC arithmetic so a near-midnight
+    ride rolls into the next day). Like `buildIcs`, the details field appends
+    `RSVP: <url>` when `rsvp_url` is present. This came out of the BCU research
+    task — see the decision note under "Research" in ralph.log; the "modal on
+    calendar click" task is the BCU detail-page pattern, deferred to its own
+    backlog item.
+- **Calendar view** (the schedule section's only renderer — the list view was
+  removed). The **primary renderer is FullCalendar 6** (`dayGridMonth`): when
   `window.FullCalendar` is defined, `renderCalendarFull()` builds a
   `FullCalendar.Calendar` in `#ride-calendar` with `timeZone:
   "America/New_York"`, `initialDate` = first ride's Eastern date, `height:
   "auto"`, `dayMaxEvents: 3`, `eventDisplay: "block"`, header nav
   (prev/next + month title), and one event per ride (`title`, `start`, `end`,
   `url` = `rsvp_url` falling back to the profile URL). `render()` calls
-  `destroyCalendar()` first so a stale instance can't leak when toggling views,
-  syncing, or re-rendering. **Fallback:** if the CDN script hasn't loaded (slow
-  network / blocked), `typeof FullCalendar` is undefined and the hand-rolled
-  month grid takes over — one `.calendar` block per month that has rides,
-  built by `groupByMonth()` / `monthGrid()` (7 `.cal-dow` weekday columns, a
-  `.num` per day cell, one `.ride-chip` `<a>` per ride; `.cal-day.has-ride`
-  tints days). Ride titles **wrap** in both renderers (`overflow-wrap:
-  anywhere`) rather than ellipsis-truncating, so a long title stays fully
-  visible at 380px. The FullCalendar CDN script has `defer`; a tiny hook
-  listens for its `load` event and re-renders the calendar view if it lands
-  after an earlier fallback render.
+  `destroyCalendar()` first so a stale instance can't leak when syncing or
+  re-rendering. **Fallback:** if the CDN script hasn't loaded (slow network /
+  blocked), `typeof FullCalendar` is undefined and the hand-rolled month grid
+  takes over — one `.calendar` block per month that has rides, built by
+  `groupByMonth()` / `monthGrid()` (7 `.cal-dow` weekday columns, a `.num` per
+  day cell, one `.ride-chip` `<a>` per ride; `.cal-day.has-ride` tints days).
+  Ride titles **wrap** in both renderers (`overflow-wrap: anywhere`) rather
+  than ellipsis-truncating, so a long title stays fully visible at 380px. The
+  FullCalendar CDN script has `defer`; a tiny hook listens for its `load` event
+  and re-renders if it lands after an earlier fallback render.
 - **Calendar display decision (2026-08-12, revised):** the calendar view adopts
   **FullCalendar 6.1.15** (MIT, actively maintained, industry standard) via
   CDN — a single `defer`'d script tag; its CSS is embedded in the JS and
@@ -342,10 +351,10 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
   `new Date(Date.UTC(y, m-1, d))` and reads `getUTCDay()` / `getUTCDate()`.
   That returns the same weekday in any timezone. Display times still come from
   the precomputed `date_display`/`time_display`.
-- **`[hidden]` needs `display: none !important`** in the CSS: `.view-toggle`
-  sets `display: flex`, which would override the UA's `hidden` rule and show
-  the (empty) toggle before JS hides it. The global `[hidden]` rule exists for
-  this reason.
+- **`[hidden]` needs `display: none !important`** in the CSS. It was added so
+  the `.view-toggle` (which set `display: flex`) couldn't override the UA's
+  `hidden` rule and show an empty toggle before JS hid it; the toggle is gone,
+  but the rule is kept as a global safety net for any future `[hidden]`.
 - `events.json` display strings (`date_display`, `time_display`) are
   precomputed; the JS must **not** re-format dates with `Date`, or visitors
   outside Eastern see wrong times. `updated_at` is likewise formatted by
@@ -357,8 +366,8 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
   tiny `document`/`fetch`, pull the script out of the HTML with a regex, and
   `eval` it — that's how the happy path, empty, missing-rsvp and 404 cases
   were checked.
-- Sections/ids: `#rides`, `#first-ride`, `#about`, `#links`, `#contact`. The
-  hero CTA anchors to `#rides`.
+- Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#links`,
+  `#contact`. The hero CTA anchors to `#next-ride`.
 - Verified well-formed by feeding it through `html.parser` (no unclosed or
   mismatched tags).
 

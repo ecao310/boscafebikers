@@ -44,8 +44,7 @@
     top: 0;
   }
 
-  /* --- schedule --- */
-  .rides { margin: 0; padding: 0; list-style: none; }
+  /* --- ride card (used for the "next ride" feature) --- */
   .ride {
     background: var(--foam);
     border: 1px solid var(--oat);
@@ -63,6 +62,17 @@
   }
   .ride .where { color: var(--muted); margin: .4rem 0; }
   .ride p { margin: .4rem 0 1rem; }
+  /* Featured treatment for the single next-ride card: warm oat fill, thicker
+     crema border, larger type. Buttons stay readable — their crema fill and
+     ghost border still contrast against oat. */
+  .ride.next-ride {
+    background: var(--oat);
+    border: 2px solid var(--crema);
+    padding: 22px;
+    margin-bottom: 0;
+  }
+  .ride.next-ride h3 { font-size: 1.5rem; }
+  .ride.next-ride .when { font-size: .9rem; }
   .ride-actions {
     display: flex;
     flex-wrap: wrap;
@@ -102,26 +112,7 @@
 
   [hidden] { display: none !important; }
 
-  /* --- list / calendar view toggle --- */
-  .view-toggle { display: flex; gap: 6px; margin: 0 0 1rem; }
-  .view-btn {
-    font: inherit;
-    background: var(--foam);
-    border: 1px solid var(--oat);
-    color: var(--ink);
-    padding: 8px 16px;
-    border-radius: 999px;
-    cursor: pointer;
-  }
-  .view-btn:hover, .view-btn:focus { border-color: var(--crema); }
-  .view-btn.is-active {
-    background: var(--crema);
-    border-color: var(--crema);
-    color: #2b1a10;
-    font-weight: 600;
-  }
-
-  /* --- calendar view --- */
+  /* --- calendar --- */
   .calendar { margin: 0 0 1.5rem; }
   .calendar h3 { font-size: 1.1rem; }
   .cal-grid {
@@ -251,24 +242,29 @@
     <span class="mark" aria-hidden="true">☕🚲</span>
     <h1>Boston Café Bikers</h1>
     <p class="tagline">Exploring the city one café at a time.</p>
-    <a class="btn" href="#rides">See upcoming rides</a>
+    <a class="btn" href="#next-ride">See the next ride</a>
   </div>
 </header>
 
 <main>
 
+  <section id="next-ride" aria-labelledby="next-ride-heading">
+    <div class="wrap">
+      <h2 id="next-ride-heading">Next ride</h2>
+      <!-- Featured card for the nearest upcoming ride. Populated by the script
+           at the bottom of this file; this static markup is the pre-JS state. -->
+      <div id="next-ride-card">
+        <p class="note">Loading next ride…</p>
+      </div>
+    </div>
+  </section>
+
   <section id="rides" aria-labelledby="rides-heading">
     <div class="wrap">
       <h2 id="rides-heading">Upcoming rides</h2>
-      <p class="lede">Easy group rides that end with coffee. Everyone's invited.</p>
+      <p class="lede">Every upcoming ride on one calendar.</p>
 
-      <!-- List/calendar toggle; hidden until the script has rides to show. -->
-      <div id="view-toggle" class="view-toggle" hidden>
-        <button type="button" class="view-btn is-active" data-view="list" aria-pressed="true">List</button>
-        <button type="button" class="view-btn" data-view="calendar" aria-pressed="false">Calendar</button>
-      </div>
-
-      <!-- Schedule area. Populated from events.json by the script at the
+      <!-- Calendar area. Populated from events.json by the script at the
            bottom of this file; this static markup is the pre-JS state. -->
       <div id="schedule">
         <p class="note">Loading rides…</p>
@@ -360,10 +356,9 @@
   var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   var schedule = document.getElementById("schedule");
   var updated = document.getElementById("updated");
-  var viewToggle = document.getElementById("view-toggle");
+  var nextRideCard = document.getElementById("next-ride-card");
 
   var currentData = null;
-  var currentView = "list";
   var currentCalendar = null;
 
   function el(tag, cls, text) {
@@ -396,8 +391,8 @@
            " " + suffix + " ET.";
   }
 
-  function rideCard(ev) {
-    var li = el("li", "ride");
+  function rideCard(ev, extraClass) {
+    var card = el("div", "ride" + (extraClass ? " " + extraClass : ""));
     if (ev.image) {
       // Photo banner, linked to the same RSVP target as the button below.
       var imgLink = el("a", "ride-img-link");
@@ -408,19 +403,19 @@
       img.alt = ev.title || "Café ride";
       img.loading = "lazy";
       imgLink.appendChild(img);
-      li.appendChild(imgLink);
+      card.appendChild(imgLink);
     }
     var when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
-    if (when) { li.appendChild(el("p", "when", when)); }
-    li.appendChild(el("h3", null, ev.title || "Café ride"));
+    if (when) { card.appendChild(el("p", "when", when)); }
+    card.appendChild(el("h3", null, ev.title || "Café ride"));
     if (ev.location) {
-      li.appendChild(el("p", "where", ev.location));
+      card.appendChild(el("p", "where", ev.location));
     } else if (ev.location_hidden) {
       // Partiful hides the address until RSVP; show a friendly note instead
       // of the feed's "Location available once RSVP'd" template text.
-      li.appendChild(el("p", "where", "Location shared after you RSVP"));
+      card.appendChild(el("p", "where", "Location shared after you RSVP"));
     }
-    if (ev.description) { li.appendChild(el("p", null, ev.description)); }
+    if (ev.description) { card.appendChild(el("p", null, ev.description)); }
     var actions = el("div", "ride-actions");
     var link = el("a", "btn", "RSVP on Partiful");
     link.href = ev.rsvp_url || PARTIFUL;
@@ -436,8 +431,8 @@
     gcal.target = "_blank";
     gcal.rel = "noopener";
     actions.appendChild(gcal);
-    li.appendChild(actions);
-    return li;
+    card.appendChild(actions);
+    return card;
   }
 
   // --- per-event .ics download ---
@@ -672,48 +667,40 @@
     currentCalendar.render();
   }
 
-  function setView(view) {
-    currentView = view;
-    var buttons = viewToggle.querySelectorAll(".view-btn");
-    for (var i = 0; i < buttons.length; i++) {
-      var active = buttons[i].getAttribute("data-view") === view;
-      buttons[i].classList.toggle("is-active", active);
-      buttons[i].setAttribute("aria-pressed", active ? "true" : "false");
+  // The next-ride section always shows events[0] (events.json is sorted by
+  // start, and the sync filters to future rides), or an empty-state with a
+  // Partiful fallback link when the calendar has nothing upcoming.
+  function setNextRide(events) {
+    nextRideCard.textContent = "";
+    if (!events.length) {
+      nextRideCard.appendChild(el("p", "note", "No rides scheduled yet — check Partiful for the next one."));
+      var link = el("a", "btn", "See all rides on Partiful");
+      link.href = PARTIFUL;
+      link.rel = "noopener";
+      nextRideCard.appendChild(link);
+      return;
     }
-    render();
+    nextRideCard.appendChild(rideCard(events[0], "next-ride"));
   }
 
+  // The schedule section is calendar-only now: FullCalendar 6 when its CDN
+  // script has loaded, otherwise the hand-rolled month grid. The list view
+  // was removed in favor of the featured next-ride card above.
   function render() {
     destroyCalendar();
     var events = (currentData && currentData.events) || [];
     schedule.textContent = "";
     if (!events.length) {
-      viewToggle.hidden = true;
       emptyState("No rides on the calendar right now — check Partiful for the next one.");
-      return;
-    }
-    viewToggle.hidden = false;
-    if (currentView === "calendar") {
-      if (typeof FullCalendar !== "undefined") {
-        renderCalendarFull(events);
-      } else {
-        groupByMonth(events).forEach(function (month) {
-          schedule.appendChild(monthGrid(month));
-        });
-      }
+    } else if (typeof FullCalendar !== "undefined") {
+      renderCalendarFull(events);
     } else {
-      var list = el("ul", "rides");
-      events.forEach(function (ev) { list.appendChild(rideCard(ev)); });
-      schedule.appendChild(list);
+      groupByMonth(events).forEach(function (month) {
+        schedule.appendChild(monthGrid(month));
+      });
     }
-    updated.textContent = stamp(currentData.updated_at);
-  }
-
-  var buttons = viewToggle.querySelectorAll(".view-btn");
-  for (var i = 0; i < buttons.length; i++) {
-    buttons[i].addEventListener("click", function () {
-      setView(this.getAttribute("data-view"));
-    });
+    setNextRide(events);
+    updated.textContent = stamp(currentData && currentData.updated_at);
   }
 
   // The deferred FullCalendar script usually finishes before the events fetch
@@ -723,7 +710,7 @@
     var fcScript = document.querySelector('script[src*="fullcalendar"]');
     if (fcScript && fcScript.addEventListener) {
       fcScript.addEventListener("load", function () {
-        if (currentView === "calendar" && currentData) { render(); }
+        if (currentData) { render(); }
       });
     }
   }
@@ -773,7 +760,7 @@
       render();
     })
     .catch(function () {
-      viewToggle.hidden = true;
+      setNextRide([]);
       emptyState("Couldn't load the ride schedule just now.");
     });
 })();
