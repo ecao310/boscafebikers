@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gallery — Boston Café Bikers</title>
+<meta name="description" content="Ride photos from Boston Café Bikers — exploring the city one café at a time.">
+<meta name="theme-color" content="#7a4a2b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --espresso: #2e1d13;
+    --roast:    #4a2c1a;
+    --crema:    #b07a4a;
+    --latte:    #f6ece0;
+    --foam:     #fffaf4;
+    --oat:      #e6d5c2;
+    --ink:      #33261d;
+    --muted:    #7a685a;
+    --radius:   14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--latte);
+    color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  h1, h2, h3 {
+    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    line-height: 1.2;
+    margin: 0 0 .5rem;
+  }
+
+  a { color: var(--roast); }
+
+  .hero {
+    background: linear-gradient(160deg, var(--roast) 0%, var(--espresso) 100%);
+    color: var(--foam);
+    padding: 56px 0 48px;
+    text-align: center;
+  }
+  .hero h1 { font-size: clamp(2rem, 9vw, 3rem); letter-spacing: -.01em; }
+  .hero .tagline {
+    font-size: 1.1rem;
+    color: var(--oat);
+    margin: 0;
+  }
+  .hero .mark { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+
+  section { padding: 40px 0; }
+  section + section { border-top: 1px solid var(--oat); }
+  section h2 { font-size: 1.6rem; }
+  .lede { color: var(--muted); margin-top: 0; }
+
+  .btn {
+    display: inline-block;
+    background: var(--crema);
+    color: #2b1a10;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: 0;
+    margin-top: 1rem;
+  }
+  .btn:hover, .btn:focus { background: #c68f5d; }
+
+  /* --- gallery grid --- */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 1rem;
+  }
+  .gallery-item {
+    background: var(--foam);
+    border: 1px solid var(--oat);
+    border-radius: var(--radius);
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: .85rem;
+    text-align: center;
+    padding: 12px;
+  }
+
+  footer {
+    background: var(--espresso);
+    color: var(--oat);
+    text-align: center;
+    padding: 28px 0;
+    font-size: .9rem;
+  }
+  footer a { color: var(--oat); }
+
+  @media (min-width: 560px) {
+    .hero { padding: 80px 0 64px; }
+    section { padding: 56px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="mark" aria-hidden="true">☕🚲</span>
+    <h1>Gallery</h1>
+    <p class="tagline">Ride photos — one café at a time.</p>
+  </div>
+</header>
+
+<main>
+  <section aria-labelledby="gallery-heading">
+    <div class="wrap">
+      <h2 id="gallery-heading">From the rides</h2>
+      <p class="lede">Rollouts, regroup points, and the coffee at the end. Photos
+      from group rides land here — check Instagram for the latest in the
+      meantime.</p>
+
+      <div class="gallery-grid">
+        <div class="gallery-item">No photos yet — the camera roll is just getting warmed up.</div>
+      </div>
+
+      <a class="btn" href="https://instagram.com/bostoncafebikers" rel="noopener">See photos on Instagram</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Boston Café Bikers — exploring the city one café at a time.</p>
+    <p><a href="index.html">Home</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
