@@ -125,6 +125,60 @@ def test_build_payload_shape(rides):
     assert payload["events"] == rides
 
 
+def test_image_is_null_without_sidecar(rides):
+    """No images passed in → every ride carries image: None."""
+    assert all(ride["image"] is None for ride in rides)
+
+
+def test_image_merged_from_sidecar(feed_bytes):
+    images = {"evt-future-charles-loop@partiful.com": "https://example.com/img/charles.jpg"}
+    rides = fetch_rides.parse_events(feed_bytes, now=NOW, images=images)
+    charles, minuteman = rides
+    assert charles["image"] == "https://example.com/img/charles.jpg"
+    assert minuteman["image"] is None
+
+
+def test_load_ride_images_missing_file_is_empty(tmp_path):
+    assert fetch_rides.load_ride_images(tmp_path / "nope.json") == {}
+
+
+def test_load_ride_images_valid_object(tmp_path):
+    sidecar = tmp_path / "ride_images.json"
+    sidecar.write_text('{"abc@partiful.com": "https://example.com/img/a.jpg"}', encoding="utf-8")
+    assert fetch_rides.load_ride_images(sidecar) == {
+        "abc@partiful.com": "https://example.com/img/a.jpg"
+    }
+
+
+def test_load_ride_images_malformed_raises(tmp_path):
+    sidecar = tmp_path / "ride_images.json"
+    sidecar.write_text("{not json", encoding="utf-8")
+    with pytest.raises(fetch_rides.FeedError):
+        fetch_rides.load_ride_images(sidecar)
+
+
+def test_load_ride_images_non_object_raises(tmp_path):
+    sidecar = tmp_path / "ride_images.json"
+    sidecar.write_text("[1, 2]", encoding="utf-8")
+    with pytest.raises(fetch_rides.FeedError):
+        fetch_rides.load_ride_images(sidecar)
+
+
+def test_main_writes_image_from_sidecar(tmp_path):
+    sidecar = tmp_path / "ride_images.json"
+    sidecar.write_text(
+        '{"evt-future-charles-loop@partiful.com": "https://example.com/img/c.jpg"}',
+        encoding="utf-8",
+    )
+    out = tmp_path / "events.json"
+    assert fetch_rides.main(
+        ["--ics-file", str(FIXTURE), "--ride-images", str(sidecar), "--out", str(out)]
+    ) == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["events"][0]["image"] == "https://example.com/img/c.jpg"
+    assert payload["events"][1]["image"] is None
+
+
 def test_main_writes_expected_json(tmp_path):
     out = tmp_path / "nested" / "events.json"
     assert fetch_rides.main(["--ics-file", str(FIXTURE), "--out", str(out)]) == 0

@@ -158,6 +158,19 @@
   }
   .ride .where { color: var(--muted); margin: .4rem 0; }
   .ride p { margin: .4rem 0 1rem; }
+  .ride-img-link {
+    display: block;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .ride-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 220px;
+    object-fit: cover;
+  }
 
   .note { color: var(--muted); font-size: .9rem; }
   #updated { margin-top: .5rem; }
@@ -416,6 +429,18 @@
 
   function rideCard(ev) {
     var li = el("li", "ride");
+    if (ev.image) {
+      // Photo banner, linked to the same RSVP target as the button below.
+      var imgLink = el("a", "ride-img-link");
+      imgLink.href = ev.rsvp_url || PARTIFUL;
+      imgLink.rel = "noopener";
+      var img = el("img", "ride-img");
+      img.src = ev.image;
+      img.alt = ev.title || "Café ride";
+      img.loading = "lazy";
+      imgLink.appendChild(img);
+      li.appendChild(imgLink);
+    }
     var when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
     if (when) { li.appendChild(el("p", "when", when)); }
     li.appendChild(el("h3", null, ev.title || "Café ride"));

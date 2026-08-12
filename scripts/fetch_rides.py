@@ -27,6 +27,10 @@ from icalendar import Calendar
 LOCAL_TZ = ZoneInfo("America/New_York")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = REPO_ROOT / "site" / "events.json"
+# Optional sidecar mapping ride UID -> image URL, merged into each event as
+# `image`. The ICS feed itself carries no photos, so this is how the organizer
+# attaches a picture to a ride without touching the site code.
+RIDE_IMAGES_PATH = REPO_ROOT / "scripts" / "ride_images.json"
 FETCH_TIMEOUT_SECONDS = 30
 
 # RSVP links sit at the end of DESCRIPTION as "RSVP: https://partiful.com/e/<id>".
@@ -90,13 +94,34 @@ def extract_rsvp_url(description: str) -> str | None:
     return match.group(1).rstrip(".,);") if match else None
 
 
+def load_ride_images(path: Path | None = None) -> dict:
+    """Read the optional UID → image-URL sidecar. A missing file means "{}"."""
+    path = Path(path) if path is not None else RIDE_IMAGES_PATH
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise FeedError(f"could not parse ride images ({path.name}): {scrub(exc)}") from None
+    if not isinstance(data, dict):
+        raise FeedError(f"ride images ({path.name}) must be a JSON object of UID → URL")
+    return data
+
+
 def _strip_rsvp(description: str) -> str:
     """The blurb without the trailing 'RSVP: <url>' line."""
     return RSVP_RE.sub("", description).strip()
 
 
-def parse_events(data: bytes, now: datetime | None = None) -> list[dict]:
-    """Parse feed bytes into a sorted list of upcoming, non-cancelled rides."""
+def parse_events(
+    data: bytes, now: datetime | None = None, images: dict | None = None
+) -> list[dict]:
+    """Parse feed bytes into a sorted list of upcoming, non-cancelled rides.
+
+    `images` is the optional UID → image-URL sidecar; each ride carries its
+    photo URL as `image` (None when absent).
+    """
+    images = images or {}
     now = (now or datetime.now(timezone.utc)).astimezone(LOCAL_TZ)
     try:
         calendar = Calendar.from_ical(data)
@@ -113,10 +138,11 @@ def parse_events(data: bytes, now: datetime | None = None) -> list[dict]:
         start = _as_local_datetime(dtstart.dt)
         if start < now:
             continue
+        uid = _text(component, "UID")
         description = _text(component, "DESCRIPTION")
         rides.append(
             {
-                "uid": _text(component, "UID"),
+                "uid": uid,
                 "title": _text(component, "SUMMARY") or "Café ride",
                 "start": start.isoformat(),
                 "date_display": f"{start:%A, %B} {start.day}",
@@ -124,6 +150,7 @@ def parse_events(data: bytes, now: datetime | None = None) -> list[dict]:
                 "location": _text(component, "LOCATION"),
                 "description": _strip_rsvp(description),
                 "rsvp_url": extract_rsvp_url(description),
+                "image": images.get(uid),
             }
         )
 
@@ -176,11 +203,16 @@ def main(argv: list[str] | None = None) -> int:
         default=str(DEFAULT_OUTPUT),
         help=f"where to write the JSON (default: {DEFAULT_OUTPUT})",
     )
+    parser.add_argument(
+        "--ride-images",
+        default=str(RIDE_IMAGES_PATH),
+        help=f"UID → image-URL sidecar JSON (default: {RIDE_IMAGES_PATH})",
+    )
     args = parser.parse_args(argv)
 
     try:
         data = load_source(args)
-        rides = parse_events(data)
+        rides = parse_events(data, images=load_ride_images(args.ride_images))
     except FeedError as exc:
         print(f"fetch_rides: {exc}", file=sys.stderr)
         return 1

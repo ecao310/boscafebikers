@@ -28,6 +28,11 @@ strings so the page never re-formats dates in the visitor's timezone.
 If `events.json` is missing, empty, or unreadable, the page falls back to a
 link to the Partiful profile instead of showing an empty list.
 
+**Ride photos.** The ICS feed doesn't carry images. To put a photo on a ride
+card, add an entry to `scripts/ride_images.json` mapping the ride's `uid`
+(shown in `site/events.json`) to an image URL, and commit it — the next sync
+bakes the `image` into `events.json` and the ride card displays it.
+
 ## Getting the ICS URL from Partiful
 
 1. Open Partiful and go to **Settings → Calendar Sync → Apple Calendar**.

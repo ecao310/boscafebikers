@@ -13,6 +13,7 @@ Tagline: "exploring the city one café at a time".
 | `requirements.txt` | Python deps: `icalendar`, `requests`, `pytest`. |
 | `scripts/fetch_rides.py` | Fetches + parses the ICS feed → `site/events.json`. |
 | `scripts/promote_events.py` | Copies fetched JSON over the committed one only if `events` differ. |
+| `scripts/ride_images.json` | Optional sidecar: ride UID → image URL, merged into each event as `image`. |
 | `tests/fixtures/sample.ics` | Offline fixture (2 future, 1 past, 1 cancelled). See table below. |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
 | `site/index.html` | Home: rides list/calendar, inline CSS/JS, no build step. |
@@ -95,11 +96,13 @@ Run it on the fixture (never the live feed) with:
 .venv/bin/python scripts/fetch_rides.py --ics-file tests/fixtures/sample.ics
 ```
 
-- CLI: `--ics-file PATH` (bypasses the network) and `--out PATH`
-  (default `site/events.json`). With no `--ics-file` it reads
+- CLI: `--ics-file PATH` (bypasses the network), `--out PATH`
+  (default `site/events.json`), and `--ride-images PATH` (default
+  `scripts/ride_images.json`). With no `--ics-file` it reads
   `PARTIFUL_ICS_URL`, rewriting a leading `webcal://` to `https://`.
-- Importable API for tests: `parse_events(data: bytes, now=None) -> list[dict]`,
-  `extract_rsvp_url(description)`, `build_payload(rides, now=None)`,
+- Importable API for tests: `parse_events(data: bytes, now=None, images=None)
+  -> list[dict]`, `extract_rsvp_url(description)`,
+  `load_ride_images(path=None) -> dict`, `build_payload(rides, now=None)`,
   `write_events(payload, path)`, `main(argv) -> int`, and `FeedError`.
   Injecting `now` is how the tests pin "future" without depending on the clock.
 - **Never echo `requests` exception text** — it embeds the request URL. The
@@ -107,8 +110,17 @@ Run it on the fixture (never the live feed) with:
   `scrub()` strips URLs from any other text that gets surfaced.
 - Output shape: `{"updated_at", "count", "events": [...]}`; each event has
   `uid, title, start (ISO+offset), date_display, time_display, location,
-  description (RSVP line stripped), rsvp_url (may be null)`. Display strings
-  are precomputed in Python so the page doesn't render in the visitor's tz.
+  description (RSVP line stripped), rsvp_url (may be null), image (may be
+  null)`. Display strings are precomputed in Python so the page doesn't render
+  in the visitor's tz.
+- **Ride photos:** the ICS feed carries no images, so `image` comes from the
+  optional sidecar `scripts/ride_images.json` — a JSON object mapping event UID
+  → photo URL (e.g. `"<partiful-id>@partiful.com": "https://…/a.jpg"`). The
+  organizer edits that file, commits it, and the next sync writes the merged
+  `image` into `events.json`; a missing file or an empty object means every
+  ride has `image: null`. UIDs come from the feed (`uid` field in
+  `events.json`). Malformed sidecar JSON is a `FeedError` (fails the sync
+  loudly rather than silently dropping photos).
 - Filtering is `start >= now` in `America/New_York`; `STATUS:CANCELLED` dropped.
   All-day `DATE` values become local midnight.
 - The venv here is **Python 3.9**, so the module uses
@@ -210,7 +222,10 @@ just before `</body>`.
   `<p class="note" id="updated">` gets the "Last updated … ET." stamp.
   Zero events, a non-OK response, or bad JSON all fall back to a note plus a
   "See all rides on Partiful" button pointing at the profile URL. A missing
-  `rsvp_url` also falls back to the profile URL.
+  `rsvp_url` also falls back to the profile URL. When a ride has `image`, the
+  card starts with a photo banner (`.ride-img-link` wrapping `<img
+  class="ride-img" loading="lazy">`, `alt` = ride title) linked to the same
+  RSVP target; it's omitted entirely when `image` is null/absent.
 - **List/calendar toggle** (`#view-toggle`, static markup but `hidden` until
   the script has rides): two `.view-btn` buttons (`data-view="list|calendar"`,
   `.is-active` + `aria-pressed` mark the chosen view) switch `#schedule`
