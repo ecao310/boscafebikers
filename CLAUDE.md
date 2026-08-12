@@ -109,10 +109,12 @@ Run it on the fixture (never the live feed) with:
   fetch path reports only `type(exc).__name__` (+ HTTP status when present).
   `scrub()` strips URLs from any other text that gets surfaced.
 - Output shape: `{"updated_at", "count", "events": [...]}`; each event has
-  `uid, title, start (ISO+offset), date_display, time_display, location,
-  description (RSVP line stripped), rsvp_url (may be null), image (may be
-  null)`. Display strings are precomputed in Python so the page doesn't render
-  in the visitor's tz.
+  `uid, title, start (ISO+offset), end (ISO+offset, may be null), date_display,
+  time_display, location, description (RSVP line stripped), rsvp_url (may be
+  null), image (may be null)`. `end` comes from the feed's `DTEND` (absent →
+  null); the site's "add to calendar" ICS uses it so the invite blocks the whole
+  ride. Display strings are precomputed in Python so the page doesn't render in
+  the visitor's tz.
 - **Ride photos:** the ICS feed carries no images, so `image` comes from the
   optional sidecar `scripts/ride_images.json` — a JSON object mapping event UID
   → photo URL (e.g. `"<partiful-id>@partiful.com": "https://…/a.jpg"`). The
@@ -225,7 +227,15 @@ just before `</body>`.
   `rsvp_url` also falls back to the profile URL. When a ride has `image`, the
   card starts with a photo banner (`.ride-img-link` wrapping `<img
   class="ride-img" loading="lazy">`, `alt` = ride title) linked to the same
-  RSVP target; it's omitted entirely when `image` is null/absent.
+  RSVP target; it's omitted entirely when `image` is null/absent. Each card
+  ends with a `.ride-actions` row: the RSVP button plus a `btn btn-ghost`
+  "Add to calendar" button that downloads a per-event `.ics` generated in the
+  browser (`buildIcs`/`downloadIcs`). ICS `DTSTART`/`DTEND` reuse the same
+  Eastern-wall-clock trick as the calendar — the `start`/`end` ISO prefixes
+  become `DTSTART;TZID=America/New_York:…` with no `new Date(start)`. Long
+  lines are folded per RFC 5545 (`foldIcsLine`), text is escaped
+  (`icsEscape`), and the RSVP URL is appended to the description + emitted as a
+  `URL:` property.
 - **List/calendar toggle** (`#view-toggle`, static markup but `hidden` until
   the script has rides): two `.view-btn` buttons (`data-view="list|calendar"`,
   `.is-active` + `aria-pressed` mark the chosen view) switch `#schedule`
@@ -267,7 +277,7 @@ just before `</body>`.
 
 ## `tests/test_fetch_rides.py`
 
-Run with `.venv/bin/python -m pytest tests/ -q` (24 passing). Notes:
+Run with `.venv/bin/python -m pytest tests/ -q` (33 passing). Notes:
 
 - There is no `conftest.py` / packaging; the test file puts `scripts/` on
   `sys.path` itself and does `import fetch_rides`.
@@ -277,7 +287,8 @@ Run with `.venv/bin/python -m pytest tests/ -q` (24 passing). Notes:
   RSVP line stripped from description, `-04:00` offsets, precomputed display
   strings, non-ASCII round-trip, `now` boundary (`>=` keeps an event starting
   exactly now), empty result, malformed feed → `FeedError`, `main()` exit codes
-  (0 happy path, 1 for broken feed / missing file / unset env var), and two
-  leak tests asserting the feed URL never reaches an error message.
+  (0 happy path, 1 for broken feed / missing file / unset env var), `end`
+  extraction (fixture DTEND → ISO, missing DTEND → null), and two leak tests
+  asserting the feed URL never reaches an error message.
 - The suite passes under any system timezone (verified with `TZ=Asia/Tokyo`) —
   keep it that way; assert on explicit offsets, not on local time.

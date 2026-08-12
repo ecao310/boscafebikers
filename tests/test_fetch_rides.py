@@ -88,6 +88,28 @@ def test_timezone_is_eastern_with_correct_offsets(rides):
     assert datetime.fromisoformat(charles["start"]).utcoffset().total_seconds() == -4 * 3600
 
 
+def test_end_time_extracted(rides):
+    """The fixture carries DTEND on every event; it should flow through as `end`."""
+    charles, minuteman = rides
+    assert charles["end"] == "2030-06-22T12:00:00-04:00"
+    assert minuteman["end"] == "2030-07-06T14:00:00-04:00"
+    assert datetime.fromisoformat(charles["end"]).utcoffset().total_seconds() == -4 * 3600
+
+
+def test_missing_dtend_yields_null_end():
+    """A feed event with no DTEND must still parse, with `end` null."""
+    data = (
+        b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+        b"BEGIN:VEVENT\r\nUID:noend@example.com\r\n"
+        b"DTSTART;TZID=America/New_York:20300101T100000\r\n"
+        b"SUMMARY:No End\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    rides = fetch_rides.parse_events(data, now=datetime(2029, 1, 1, tzinfo=EASTERN))
+    assert len(rides) == 1
+    assert rides[0]["uid"] == "noend@example.com"
+    assert rides[0]["end"] is None
+
+
 def test_display_strings_are_precomputed(rides):
     charles, minuteman = rides
     assert charles["date_display"] == "Saturday, June 22"

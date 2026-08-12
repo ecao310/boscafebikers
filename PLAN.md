@@ -12,7 +12,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Add gallery page
 - [x] Tab header navigation
 - [x] Ability to add images to rides
-- [ ] ICS download for each event
+- [x] ICS download for each event
 - [ ] RSVP on Partiful button should link to actual event, not just the café bikers account page
 - [ ] Clean up text imported from Partiful
 - [ ] Attempt to include start and end locations from Partiful
@@ -70,12 +70,15 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 
 (append new tasks here as `- [ ]` items; treat them as part of the Backlog)
 
-- [ ] The `PARTIFUL_ICS_URL` secret is **not set** on the repo (`gh secret list`
+- [x] The `PARTIFUL_ICS_URL` secret is **not set** on the repo (`gh secret list`
   is empty), so any `sync.yml` run fails at the fetch step. Only a human holding
   the real feed URL can set it — do **not** invent one. The "wire freshness"
   task must therefore verify the sync→deploy chain some other way (e.g. confirm
   the deploy job is reached / correctly skipped), and the README should say the
   secret is a required setup step that is still outstanding.
+  — Resolved 2026-08-12: `gh secret list` shows `PARTIFUL_ICS_URL` **is** set
+  (since 2026-07-20); the sync bot commits real feed updates every 6h. This
+  note is stale.
 - [x] Pages is currently on the **legacy** source publishing the repo root, so
   <https://ecao310.github.io/boscafebikers/> serves the README, not the site.
   Converting it is part of the "switch Pages source" task, not a separate fix.

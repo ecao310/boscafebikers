@@ -140,11 +140,15 @@ def parse_events(
             continue
         uid = _text(component, "UID")
         description = _text(component, "DESCRIPTION")
+        dtend = component.get("DTEND")
         rides.append(
             {
                 "uid": uid,
                 "title": _text(component, "SUMMARY") or "Café ride",
                 "start": start.isoformat(),
+                # End time is optional; the site's "add to calendar" ICS needs it
+                # to block out the right slot, but not every feed event has one.
+                "end": _as_local_datetime(dtend.dt).isoformat() if dtend is not None else None,
                 "date_display": f"{start:%A, %B} {start.day}",
                 "time_display": f"{start:%-I:%M %p}".replace("AM", "am").replace("PM", "pm"),
                 "location": _text(component, "LOCATION"),

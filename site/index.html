@@ -79,6 +79,15 @@
     border: 0;
   }
   .btn:hover, .btn:focus { background: #c68f5d; }
+  .btn-ghost {
+    background: transparent;
+    border: 1.5px solid var(--crema);
+    color: var(--roast);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-ghost:hover, .btn-ghost:focus { background: var(--latte); }
 
   /* --- tab header nav --- */
   .nav {
@@ -158,6 +167,13 @@
   }
   .ride .where { color: var(--muted); margin: .4rem 0; }
   .ride p { margin: .4rem 0 1rem; }
+  .ride-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .ride-actions .btn { padding: 10px 18px; font-size: .9rem; }
   .ride-img-link {
     display: block;
     margin-bottom: 12px;
@@ -446,11 +462,101 @@
     li.appendChild(el("h3", null, ev.title || "Café ride"));
     if (ev.location) { li.appendChild(el("p", "where", ev.location)); }
     if (ev.description) { li.appendChild(el("p", null, ev.description)); }
+    var actions = el("div", "ride-actions");
     var link = el("a", "btn", "RSVP on Partiful");
     link.href = ev.rsvp_url || PARTIFUL;
     link.rel = "noopener";
-    li.appendChild(link);
+    actions.appendChild(link);
+    var ics = el("button", "btn btn-ghost", "Add to calendar");
+    ics.type = "button";
+    ics.setAttribute("aria-label", "Download .ics for " + (ev.title || "this ride"));
+    ics.addEventListener("click", function () { downloadIcs(ev); });
+    actions.appendChild(ics);
+    li.appendChild(actions);
     return li;
+  }
+
+  // --- per-event .ics download ---
+  // Generated in the browser from the precomputed events.json data. The start
+  // ISO string already carries the Eastern offset, so its Y-M-DTHH:MM prefix IS
+  // the Eastern wall-clock time — never new Date(start), mirroring the calendar.
+  function icsEscape(text) {
+    return String(text == null ? "" : text)
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\r?\n/g, "\\n");
+  }
+  function foldIcsLine(line) {
+    // RFC 5545: fold at 75 chars, continuation lines lead with a space. Avoid
+    // splitting a surrogate pair (emoji in a café name, say).
+    var out = [];
+    while (line.length > 75) {
+      var cut = 75;
+      var c = line.charCodeAt(cut);
+      if (c >= 0xD800 && c <= 0xDBFF) { cut -= 1; }
+      out.push(line.slice(0, cut));
+      line = " " + line.slice(cut);
+    }
+    out.push(line);
+    return out.join("\r\n");
+  }
+  function pad2(n) { return n < 10 ? "0" + n : String(n); }
+  function icsDateTime(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/.exec(iso || "");
+    if (!m) { return null; }
+    return m[1] + m[2] + m[3] + "T" + m[4] + m[5] + (m[6] || "00");
+  }
+  function utcStamp() {
+    var now = new Date();
+    return now.getUTCFullYear() + pad2(now.getUTCMonth() + 1) + pad2(now.getUTCDate()) +
+           "T" + pad2(now.getUTCHours()) + pad2(now.getUTCMinutes()) +
+           pad2(now.getUTCSeconds()) + "Z";
+  }
+  function icsFilename(title) {
+    var safe = String(title || "").toLowerCase()
+      .replace(/[^\w\- ]+/g, "")
+      .trim().replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
+    return (safe || "cafe-ride") + ".ics";
+  }
+  function fallbackUid(ev) {
+    return "boscafebikers-" + (icsDateTime(ev.start) || "undated") + "-" +
+           String(ev.title || "ride").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  }
+  function buildIcs(ev) {
+    var lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Boston Café Bikers//boscafebikers//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "BEGIN:VEVENT",
+      "UID:" + icsEscape(ev.uid || fallbackUid(ev)),
+      "DTSTAMP:" + utcStamp()
+    ];
+    var start = icsDateTime(ev.start);
+    if (start) { lines.push("DTSTART;TZID=America/New_York:" + start); }
+    var end = icsDateTime(ev.end);
+    if (end) { lines.push("DTEND;TZID=America/New_York:" + end); }
+    lines.push("SUMMARY:" + icsEscape(ev.title || "Café ride"));
+    if (ev.location) { lines.push("LOCATION:" + icsEscape(ev.location)); }
+    var desc = ev.description || "";
+    if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
+    if (desc) { lines.push("DESCRIPTION:" + icsEscape(desc)); }
+    if (ev.rsvp_url) { lines.push("URL:" + ev.rsvp_url); }
+    lines.push("END:VEVENT", "END:VCALENDAR");
+    return lines.map(foldIcsLine).join("\r\n") + "\r\n";
+  }
+  function downloadIcs(ev) {
+    var blob = new Blob([buildIcs(ev)], { type: "text/calendar;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = icsFilename(ev.title);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 0);
   }
 
   // --- calendar view ---
