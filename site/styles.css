@@ -92,6 +92,9 @@ a { color: var(--roast); }
   border: 0;
 }
 .btn:hover, .btn:focus { background: #c68f5d; }
+/* Tap feedback on touch: brightness darkens the whole button on press
+   without introducing a new palette hex. */
+.btn:active { filter: brightness(.92); }
 
 /* --- tab header nav --- */
 .nav {
@@ -128,6 +131,7 @@ a { color: var(--roast); }
 }
 .nav .tabs a:hover,
 .nav .tabs a:focus { color: var(--foam); background: rgba(246, 236, 224, .1); }
+.nav .tabs a:active { background: rgba(246, 236, 224, .25); }
 .nav .tabs a.is-active {
   background: var(--crema);
   color: #2b1a10;

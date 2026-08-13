@@ -42,6 +42,10 @@
       background: var(--latte);
     }
 
+    .btn-ghost:active {
+      filter: brightness(.92);
+    }
+
     ul.checks {
       list-style: none;
       padding: 0;
@@ -117,6 +121,12 @@
     }
 
     .ride-actions .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      /* Touch target: at least 44px tall so a thumb tap on the ride card's
+         actions lands on the button, not the gap around it. */
+      min-height: 44px;
       padding: 10px 18px;
       font-size: .9rem;
     }
@@ -218,12 +228,13 @@
     }
 
     .cal-day .ride-chip {
-      display: block;
+      display: flex;
+      align-items: center;
       background: var(--crema);
       color: #2b1a10;
       text-decoration: none;
       border-radius: 6px;
-      padding: 1px 4px;
+      padding: 8px 4px;
       margin-top: 3px;
       /* Chips are <button>s (they open the ride-detail modal) — reset the UA
        button look (font, border, centered text, cursor) while keeping the
@@ -239,11 +250,19 @@
        ellipsis-truncated; "anywhere" also breaks an unbroken token (a long
        café name) that would otherwise overflow a 1fr column at 380px. */
       overflow-wrap: anywhere;
+      /* Touch target: at least 44px tall (the column is ~1/7th of the grid,
+       so width is the full column and height is the dimension we can
+       guarantee for a thumb tap). */
+      min-height: 44px;
     }
 
     .cal-day .ride-chip:hover,
     .cal-day .ride-chip:focus {
       background: #c68f5d;
+    }
+
+    .cal-day .ride-chip:active {
+      filter: brightness(.92);
     }
 
     /* --- ride detail modal (calendar event click) --- */
@@ -272,25 +291,31 @@
       width: 100%;
       max-width: 460px;
       max-height: 88vh;
-      overflow-y: auto;
+      /* Flex column so the close button stays pinned at the top (with the
+         whole dialog scrolling it would scroll out of view, and a 44px
+         absolute button would overlap the ride title) while the ride content
+         scrolls inside the dialog. #ride-modal-content is the scrollport
+         (min-height: 0 lets it shrink to fit 88vh). */
+      display: flex;
+      flex-direction: column;
       background: var(--foam);
       border: 1px solid var(--oat);
       border-radius: var(--radius);
-      padding: 24px 22px 22px;
+      padding: 12px 14px 16px;
       box-shadow: 0 18px 50px rgba(46, 29, 19, .35);
     }
 
     .modal-close {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 32px;
-      height: 32px;
+      flex: 0 0 auto;
+      align-self: flex-end;
+      width: 44px;
+      height: 44px;
+      margin-bottom: 8px;
       border: 0;
       border-radius: 50%;
       background: var(--latte);
       color: var(--roast);
-      font-size: 1.15rem;
+      font-size: 1.4rem;
       line-height: 1;
       cursor: pointer;
     }
@@ -298,6 +323,19 @@
     .modal-close:hover,
     .modal-close:focus {
       background: var(--oat);
+    }
+
+    .modal-close:active {
+      filter: brightness(.92);
+    }
+
+    /* The ride content is the dialog's scrollport: the flex-column parent
+       caps the dialog at 88vh, and this child is allowed to shrink
+       (min-height: 0) so a long ride description scrolls instead of pushing
+       the dialog past the viewport. */
+    #ride-modal-content {
+      min-height: 0;
+      overflow-y: auto;
     }
 
     /* The rideCard inside the modal supplies its own box; drop the card chrome
@@ -330,6 +368,10 @@
     .links a:hover,
     .links a:focus {
       border-color: var(--crema);
+    }
+
+    .links a:active {
+      filter: brightness(.95);
     }
 
     /* --- FullCalendar (dayGridMonth) café-palette overrides --- */
@@ -379,8 +421,18 @@
 
     .fc .fc-daygrid-event {
       border-radius: 6px;
-      padding: 1px 4px;
+      padding: 4px 6px;
       margin-top: 2px;
+      /* Event chips are tappable (left-click opens the ride-detail modal) —
+       the same 44px min height as the fallback grid's .ride-chip so a thumb
+       tap lands on the event, not the gap around it. */
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+
+    .fc .fc-daygrid-event:active {
+      filter: brightness(.92);
     }
 
     .fc .fc-event-title {
@@ -392,12 +444,24 @@
       font-size: .66rem !important;
       font-weight: 600;
       color: var(--roast);
+      /* Also a tap target (opens the FC popover of overflow rides) — give it
+       the same 44px min height as the event chips. */
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 4px;
     }
 
     .fc .fc-button {
       font-size: .78rem !important;
       padding: 4px 8px !important;
       border-radius: 8px;
+      /* The prev/next month buttons are tap targets too — same 44px min
+         height as the event chips. */
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>

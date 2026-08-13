@@ -381,7 +381,12 @@ unavailable. The node DOM-shim loads the same three files in the same order
     the `×` button, Escape (a `keydown` listener), or clicking the backdrop
     (any click in the overlay whose target isn't inside `.modal-dialog`). The
     modal sits at `z-index: 100` (above the sticky nav's 10) and relies on the
-    `[hidden]` rule to beat its `display: flex`.
+    `[hidden]` rule to beat its `display: flex`. The dialog is a **flex column**
+    with `#ride-modal-content` as its scrollport (`min-height: 0;
+    overflow-y: auto`), so it fits within `max-height: 88vh` and the 44px
+    `.modal-close` button stays pinned at the top while a long description
+    scrolls (don't revert to `overflow-y: auto` on the whole dialog — the close
+    button would scroll out of view).
 - **Calendar view** (the schedule section's only renderer — the list view was
   removed). The **primary renderer is FullCalendar 6** (`dayGridMonth`): when
   `window.FullCalendar` is defined, `renderCalendarFull()` builds a
@@ -405,7 +410,10 @@ unavailable. The node DOM-shim loads the same three files in the same order
   (`font: inherit`, `border: 0`, `text-align: left`, `cursor: pointer`, plus
   `width: 100%`) on top of the shared chip styling. Ride titles **wrap** in
   both renderers (`overflow-wrap: anywhere`) rather than ellipsis-truncating,
-  so a long title stays fully visible at 380px. The FullCalendar CDN script has
+  so a long title stays fully visible at 380px. Every tappable calendar element
+  (`.ride-chip`, `.fc .fc-daygrid-event`, the FC `+N more` link, the prev/next
+  `.fc .fc-button`) carries `min-height: 44px` — the 2026-08-13 mobile audit's
+  touch-target rule; keep it when restyling. The FullCalendar CDN script has
   `defer`; a tiny hook listens for its `load` event and re-renders if it lands
   after an earlier fallback render.
 - **Calendar display decision (2026-08-12, revised):** the calendar view adopts
