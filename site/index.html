@@ -124,6 +124,14 @@
       min-height: 44px;
       padding: 10px 18px;
       font-size: .9rem;
+      /* Mobile-first: the action buttons stack FULL-width (flex-basis 100%
+         forces each onto its own row in the wrapping flex container) — three
+         small pills only filled ~half the card on a phone, so the primary
+         RSVP CTA now spans the whole card and the row reads as a proper
+         action block. Compact inline pills return at ≥560px (media query at
+         the bottom of this file). */
+      flex: 1 1 100%;
+      white-space: nowrap;
     }
 
     .ride-img-link {
@@ -484,6 +492,13 @@
        screens the columns are ~90px and there's vertical room, so restore the
        full 44px touch targets and let titles wrap instead of truncating. */
     @media (min-width: 560px) {
+      /* Ride-action buttons return to compact inline pills (their natural
+         content width) now that the wrap is wide enough to hold all three on
+         one row. */
+      .ride-actions .btn {
+        flex: 0 1 auto;
+      }
+
       .cal-day .ride-chip {
         display: flex;
         align-items: center;

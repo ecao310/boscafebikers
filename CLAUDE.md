@@ -383,7 +383,13 @@ unavailable. The node DOM-shim loads the same three files in the same order
     to +1h via `icsDateTimePlusHour` (Date.UTC arithmetic so a near-midnight
     ride rolls into the next day). Like `buildIcs`, the details field appends
     `RSVP: <url>` when `rsvp_url` is present. This came out of the BCU research
-    task — see the decision note under "Research" in ralph.log.
+    task — see the decision note under "Research" in ralph.log. The action row
+    is **mobile-first stacked**: below 560px the three `.btn`s are full-width
+    (`flex: 1 1 100%` in the wrapping flex container), so the primary RSVP CTA
+    spans the whole card and the two ghost buttons stack full-width beneath it —
+    three small pills only filled ~half the card on a phone (2026-08-13). The
+    `@media (min-width: 560px)` block restores compact inline pills
+    (`flex: 0 1 auto`), which fit on the wider wrap.
   - The **ride-detail modal** (`#ride-modal`, a `.modal` overlay with
     `.modal-backdrop` + `.modal-dialog`) is the BCU detail-page pattern adapted
     for the single page: clicking a calendar event (FullCalendar `eventClick`
