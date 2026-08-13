@@ -14,11 +14,13 @@
   --ink:      #33261d;
   --muted:    #7a685a;
   --radius:   14px;
-  /* Readability "setting" for the photo-backed section (#next-ride): the
+  /* Readability "setting" for the photo-backed sections ([data-bg]): the
      espresso scrim's opacity. Raise it to darken the photo more when the text
      over it needs stronger contrast; lower it to let more of the photo
-     through. */
-  --bg-overlay-opacity: .55;
+     through. Default .7 was raised from .55 (2026-08-13) so body copy over
+     the photos clears WCAG AA — measured worst-case contrast was ~2.6:1 at
+     .55 and is ~4.2:1 at .7. */
+  --bg-overlay-opacity: .7;
 }
 
 * { box-sizing: border-box; }
@@ -98,12 +100,15 @@ a { color: var(--roast); }
 /* The section is always dark (gradient pre-JS, photo + scrim post-JS), so the
    heading and copy are light regardless. Direct body-copy paragraphs go light;
    the featured ride card's <p> is exempt — its parent is .ride, an opaque oat
-   card, so it keeps its dark text. */
-[data-bg] h2 { color: var(--foam); }
-[data-bg] .note { color: var(--oat); }
-[data-bg] :not(.ride) > p { color: var(--oat); }
-[data-bg] ul.checks li { color: var(--oat); }
-[data-bg] ul.checks li strong { color: var(--foam); }
+   card, so it keeps its dark text. The espresso text-shadow (same rgba as the
+   scrim, no new palette hex) is the legibility boost for any bright photo
+   patch that survives the scrim — it darkens the pixels just behind the glyphs
+   without darkening the whole photo (added 2026-08-13). */
+[data-bg] h2 { color: var(--foam); text-shadow: 0 1px 3px rgba(46, 29, 19, .7); }
+[data-bg] .note { color: var(--oat); text-shadow: 0 1px 2px rgba(46, 29, 19, .7); }
+[data-bg] :not(.ride) > p { color: var(--oat); text-shadow: 0 1px 2px rgba(46, 29, 19, .7); }
+[data-bg] ul.checks li { color: var(--oat); text-shadow: 0 1px 2px rgba(46, 29, 19, .7); }
+[data-bg] ul.checks li strong { color: var(--foam); text-shadow: 0 1px 2px rgba(46, 29, 19, .7); }
 
 /* --- buttons --- */
 .btn {

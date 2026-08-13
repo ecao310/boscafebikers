@@ -17,7 +17,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] On mobile, calendar gets stretched vertically to fit names. Avoid huge cell heights. Truncate or something else.
 - [x] On mobile, rsvp buttons take up only half the size. Change so it looks better. decide yourself how.
 - [x] Revert plan.md bullet points back to their original states. look through git if needed. write instructions to leave notes in ralph.log and keep the bullet points as is. it's still good to write more bullet points if needed.
-- [ ] Improve readability on index pages. background images make them hard to read.
+- [x] Improve readability on index pages. background images make them hard to read.
 
 ## Backlog 5
 

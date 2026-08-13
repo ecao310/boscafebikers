@@ -330,9 +330,14 @@ unavailable. The node DOM-shim loads the same three files in the same order
   over the photo. The overlay's opacity is the **`--bg-overlay-opacity` custom
   property** in `styles.css` `:root` — the readability "setting" the organizer
   asked for: raise it to darken the photo more (stronger contrast for the
-  heading), lower it to show more photo. Text over photos is light:
-  `[data-bg] h2` = foam, `[data-bg] .note` / `[data-bg] :not(.ride) > p` /
-  `[data-bg] ul.checks li` = oat (`strong` = foam). The `:not(.ride) > p` scope
+  heading), lower it to show more photo. Default is **`.7`** (raised from `.55`
+  on 2026-08-13): measured worst-case contrast over the four photos was ~2.6:1
+  for oat body copy at .55 and ~4.2:1 at .7 — see the "Improve readability"
+  backlog note. Text over photos is light: `[data-bg] h2` = foam,
+  `[data-bg] .note` / `[data-bg] :not(.ride) > p` / `[data-bg] ul.checks li` =
+  oat (`strong` = foam), **each with a subtle espresso text-shadow**
+  (`0 1px 2px rgba(46,29,19,.7)`; h2 gets `0 1px 3px`) as the legibility boost
+  on bright photo patches that survive the scrim. The `:not(.ride) > p` scope
   is deliberate — the featured ride card on `#next-ride` is an opaque oat card,
   so its `<p>` must stay dark (a blanket `[data-bg] p` would turn it invisible
   on its own background). Ride `<img>` photos stay `loading="lazy"` in
