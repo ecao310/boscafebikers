@@ -9,7 +9,7 @@ Tagline: "exploring the city one café at a time".
 | --- | --- |
 | `ralph/PROMPT.md` | The Ralph loop spec (project spec + rules + backlog source of truth). |
 | `ralph/ralph.log` | Gitignored loop scratch — per-iteration notes (do not commit). |
-| `ralph/PLAN.md` | Working copy of the backlog. Mark tasks `[x]` as they complete. |
+| `ralph/PLAN.md` | Working copy of the backlog. Mark tasks `[x]` as they complete — keep the bullet at its original task wording (no `(Done: …)` notes appended to bullets; those go in `ralph/ralph.log`). |
 | `CLAUDE.md` | This file — decisions, gotchas, conventions for the next iteration. |
 | `requirements.txt` | Python deps: `icalendar`, `requests`, `pytest`. |
 | `scripts/fetch_rides.py` | Fetches + parses the ICS feed → `site/events.json`; enriches ride images from public Partiful event pages during live syncs. |

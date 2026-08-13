@@ -61,3 +61,7 @@ Two hard constraints that rule out the obvious approach:
   (trigger sync → promote → deploy → live URL serves the updated page), then
   print exactly `RALPH_DONE` and exit.
 - Add notes to `ralph/ralph.log` (gitignored scratch — never commit it).
+- Keep `ralph/PLAN.md` bullets at their original task wording. When completing a
+  task, just flip `[ ]` to `[x]` — do NOT append `(Done: …)` write-ups to the
+  bullet. Write the per-iteration write-up in `ralph/ralph.log` instead. Adding
+  new backlog bullets when there is new work is still fine.
