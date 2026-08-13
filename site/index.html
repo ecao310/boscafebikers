@@ -547,6 +547,12 @@
     </div>
   </div>
 
+  <!-- Plain scripts in dependency order (see the "JS module split" note in
+     CLAUDE.md): each file attaches its public API to window.BCB, and defer
+     preserves this order — after the deferred FullCalendar CDN script in
+     <head>. -->
+  <script src="js/ride-card.js" defer></script>
+  <script src="js/calendar.js" defer></script>
   <script src="js/app.js" defer></script>
 
 </body>

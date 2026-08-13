@@ -18,8 +18,10 @@ Tagline: "exploring the city one café at a time".
 | `tests/fixtures/sample.ics` | Offline fixture (2 future, 1 past, 1 cancelled). See table below. |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
 | `site/styles.css` | Shared stylesheet: café palette + base/nav/hero/footer styles, linked by every page. |
-| `site/index.html` | Home: rides list/calendar, page-specific inline CSS + shared `styles.css`. Loads the ride JS as `js/app.js`. |
-| `site/js/app.js` | The ride-rendering script (extracted from `index.html`'s inline block; see the `site/index.html` section). |
+| `site/index.html` | Home: rides list/calendar, page-specific inline CSS + shared `styles.css`. Loads the three ride JS files in dependency order (see the `site/index.html` section). |
+| `site/js/ride-card.js` | JS module (plain script, part of `window.BCB`): `rideCard()` builder + the `.ics` download / Google Calendar exports + shared constants (`PARTIFUL`, `MONTHS`, `DOW`) and the `el()` DOM helper. Loaded first. |
+| `site/js/calendar.js` | JS module (plain script, part of `window.BCB`): FullCalendar renderer + fallback month grid + Eastern wall-clock date math. Loaded second. |
+| `site/js/app.js` | JS module (plain script, part of `window.BCB`): bootstrap — `fetch("events.json")`, render, next-ride, modal, "Last updated" stamp. Loaded last. |
 | `site/gallery.html` | Ride-photo gallery (empty state → Instagram CTA). |
 | `site/shopify.html` | WIP shop page (placeholder only). |
 | `site/meta-business.html` | WIP Meta Business page (placeholder only). |
@@ -249,13 +251,17 @@ each iteration changed.
 ## `site/index.html`
 
 No build step: `site/styles.css` linked in `<head>` (the shared base — palette,
-nav, hero, footer), a small page-specific inline `<style>`, and the ride script
-loaded as `<script src="js/app.js" defer></script>` at the end of `<body>` (the
-IIFE lives in `site/js/app.js` — see the "Verifying the JS" note for how the
-node DOM-shim loads it directly). The `defer`'d FullCalendar CDN script sits in
-`<head>`; both are deferred, so FC executes before app.js on a real page and the
-calendar takes the FullCalendar path directly, falling back to the hand-rolled
-grid only when the CDN is unavailable.
+nav, hero, footer), a small page-specific inline `<style>`, and the ride JS
+loaded as three plain scripts at the end of `<body>` — `js/ride-card.js`,
+`js/calendar.js`, `js/app.js` — all `defer` (the "JS module split" bullet
+below). Each file is an IIFE that attaches its public API to the shared
+`window.BCB` namespace, so the three files share state without a module
+system or build step. The `defer`'d FullCalendar CDN script sits in `<head>`;
+all four are deferred, so FC executes before ride-card/calendar/app in
+document order on a real page and the calendar takes the FullCalendar path
+directly, falling back to the hand-rolled grid only when the CDN is
+unavailable. The node DOM-shim loads the same three files in the same order
+(see the "Verifying the JS" note).
 
 - **Shared tab header nav.** All five pages (`index.html`, `gallery.html`,
   `shopify.html`, `meta-business.html`, `donate.html`) carry the same `.nav` —
@@ -282,7 +288,8 @@ grid only when the CDN is unavailable.
 - Layout is mobile-first: `.wrap` (max-width 680px, 20px gutters) and one
   `@media (min-width: 560px)` block that only bumps vertical padding. Verified
   readable at 380px.
-- **Rendering script** (`site/js/app.js`, loaded as `js/app.js` with `defer`): `fetch("events.json")` →
+- **Rendering script** (`site/js/app.js` — loads last; `ride-card.js` /
+  `calendar.js` supply the helpers via `window.BCB`): `fetch("events.json")` →
   - The **next-ride section** (`#next-ride`, the first section in `<main>`,
     right under the hero — whose CTA anchors to `#next-ride`) shows the nearest
     upcoming ride as a featured card. `setNextRide()` renders `events[0]`
@@ -402,13 +409,30 @@ grid only when the CDN is unavailable.
   keep it that way.
 - The DOM is built with `createElement`/`textContent`, never `innerHTML`, so
   feed text can't inject markup. Keep that.
-- Verifying the JS: no browser here, but `node` (v25) is installed. The script
-  now lives in `site/js/app.js`, so the node DOM-shim `readFileSync`s that file
-  directly and evals it against a shimmed `document`/`fetch` (no regex-pulling
-  out of the HTML) — that's how the happy path, empty, missing-rsvp, 404, and
-  the ride-detail modal (open via chip / FullCalendar `eventClick`, close via
-  backdrop / Escape / `×`, stale-instance-destroyed-on-re-render) cases are
-  checked.
+- **JS module split (2026-08-13):** the ride JS is three plain scripts in
+  dependency order — `js/ride-card.js` → `js/calendar.js` → `js/app.js` — each
+  an IIFE attaching its public API to the shared `window.BCB` namespace, all
+  loaded `defer` after the FullCalendar CDN script. Chosen over native ES
+  modules (`<script type="module">`): both need zero build step and Pages
+  serves either as-is, but plain scripts keep the node DOM-shim's
+  `vm.runInContext` verification trivial (run the three files in order against
+  a shimmed `document`/`fetch`/`window`), and the cross-file references
+  (`calendar.js` calls `BCB.openRideModal`, `app.js` calls
+  `BCB.renderCalendarFull`) resolve at call time, after every file has loaded.
+  `window.BCB` is the one shared global — never leak anything else onto
+  `window`. Dependency-order contract: `ride-card.js` owns the constants
+  (`PARTIFUL`, `MONTHS`, `DOW`), `el()`, `pad2()`, the `rideCard` builder, and
+  `buildIcs`/`downloadIcs`/`googleCalUrl`; `calendar.js` owns the calendar
+  renderers and Eastern date math and returns `.calendar` boxes for `app.js` to
+  append; `app.js` owns DOM refs, `currentData`, the modal, and the bootstrap.
+- Verifying the JS: no browser here, but `node` (v25+) is installed. The node
+  DOM-shim `readFileSync`s `site/js/ride-card.js`, `calendar.js`, `app.js` (in
+  that order) and evals each against a shimmed `document`/`fetch`/`window`
+  (no regex-pulling out of the HTML) — `window` points at the vm global so the
+  `window.BCB` namespace survives across files — that's how the happy path,
+  empty, missing-rsvp, 404, and the ride-detail modal (open via chip /
+  FullCalendar `eventClick`, close via backdrop / Escape / `×`,
+  stale-instance-destroyed-on-re-render) cases are checked.
 - Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#links`,
   `#contact`; the ride-detail overlay is `#ride-modal` (not a `<section>`).
   The hero CTA anchors to `#next-ride`.
