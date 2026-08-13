@@ -43,12 +43,34 @@ h1, h2, h3 {
 a { color: var(--roast); }
 
 /* --- hero --- */
+/* The espresso gradient is the no-JS / pre-load fallback: the hero photo is
+   deferred (app.js copies the [data-bg] URL into background-image only after
+   window.load), so this gradient is what renders on first paint and for
+   anyone without JS. */
 .hero {
+  position: relative;
   background: linear-gradient(160deg, var(--roast) 0%, var(--espresso) 100%);
   color: var(--foam);
   padding: 56px 0 48px;
   text-align: center;
 }
+/* Once the deferred background has been applied, cover the hero with the
+   photo. The URL comes from the element's data-bg attribute (app.js sets the
+   inline background-image) — this rule only shapes it. A translucent espresso
+   ::before keeps the white hero text readable over the photo; .wrap is lifted
+   above it. */
+.hero.bg-loaded {
+  background-size: cover;
+  background-position: center;
+}
+.hero.bg-loaded::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(46, 29, 19, .45); /* --espresso, translucent */
+  z-index: 0;
+}
+.hero.bg-loaded > .wrap { position: relative; z-index: 1; }
 .hero h1 { font-size: clamp(2rem, 9vw, 3rem); letter-spacing: -.01em; }
 .hero .tagline {
   font-size: 1.1rem;

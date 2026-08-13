@@ -137,6 +137,29 @@
     }
   }
 
+  // --- deferred background images ([data-bg]) ---
+  // The hero photo (and any future background image) is held in the data-bg
+  // attribute; JS copies it into background-image only after window.load so it
+  // never blocks first paint / LCP. The element's own CSS background (a café
+  // gradient/color) is the fallback that renders before this — and stays for
+  // anyone without JS. ride <img> photos keep loading="lazy" in rideCard.
+  function applyBackgrounds() {
+    document.querySelectorAll("[data-bg]").forEach((el) => {
+      const src = el.getAttribute("data-bg");
+      if (src) {
+        el.style.backgroundImage = 'url("' + src + '")';
+        el.classList.add("bg-loaded");
+      }
+    });
+  }
+  // defer scripts run before the load event; the readyState guard covers the
+  // edge case where a page is restored from bfcache and load has already fired.
+  if (document.readyState === "complete") {
+    applyBackgrounds();
+  } else {
+    window.addEventListener("load", applyBackgrounds);
+  }
+
   async function loadData(url) {
     const res = await fetch(url, { cache: "no-cache" });
     if (!res.ok) { throw new Error("HTTP " + res.status); }

@@ -21,7 +21,8 @@ Tagline: "exploring the city one café at a time".
 | `site/index.html` | Home: rides list/calendar, page-specific inline CSS + shared `styles.css`. Loads the three ride JS files in dependency order (see the `site/index.html` section). |
 | `site/js/ride-card.js` | JS module (plain script, part of `window.BCB`): `rideCard()` builder + the `.ics` download / Google Calendar exports + shared constants (`PARTIFUL`, `MONTHS`, `DOW`) and the `el()` DOM helper. Loaded first. |
 | `site/js/calendar.js` | JS module (plain script, part of `window.BCB`): FullCalendar renderer + fallback month grid + Eastern wall-clock date math. Loaded second. |
-| `site/js/app.js` | JS module (plain script, part of `window.BCB`): bootstrap — `fetch("events.json")`, render, next-ride, modal, "Last updated" stamp. Loaded last. |
+| `site/js/app.js` | JS module (plain script, part of `window.BCB`): bootstrap — `fetch("events.json")`, render, next-ride, modal, "Last updated" stamp, and the deferred `data-bg` background mechanism. Loaded last. |
+| `site/images/jess-b-gracies-bikes.jpeg` | Hero café photo (optimized 1600px wide); the hero's `data-bg` URL, applied as a background image only after `window.load`. |
 | `site/gallery.html` | Ride-photo gallery (empty state → Instagram CTA). |
 | `site/shopify.html` | WIP shop page (placeholder only). |
 | `site/meta-business.html` | WIP Meta Business page (placeholder only). |
@@ -288,6 +289,17 @@ unavailable. The node DOM-shim loads the same three files in the same order
 - Layout is mobile-first: `.wrap` (max-width 680px, 20px gutters) and one
   `@media (min-width: 560px)` block that only bumps vertical padding. Verified
   readable at 380px.
+- **Hero photo loads last (`data-bg`).** The hero café photo
+  (`site/images/jess-b-gracies-bikes.jpeg`) is *not* a `background-image` in the
+  stylesheet — `app.js` reads the `data-bg` attribute on `<header class="hero">`
+  and copies it into `background-image` only after `window.load`
+  (`applyBackgrounds()`), so the photo never blocks first paint / LCP. The
+  espresso gradient on `.hero` in `styles.css` is the no-JS / pre-load fallback.
+  `.hero.bg-loaded` adds `background-size: cover` / `background-position:
+  center` and a translucent espresso `::before` overlay (hero `.wrap` is lifted
+  above it) for text legibility over the photo. Ride `<img>` photos stay
+  `loading="lazy"` in `rideCard()`. The node shim asserts `background-image` is
+  unset before the load event fires and set after.
 - **Rendering script** (`site/js/app.js` — loads last; `ride-card.js` /
   `calendar.js` supply the helpers via `window.BCB`): `fetch("events.json")` →
   - The **next-ride section** (`#next-ride`, the first section in `<main>`,
@@ -430,9 +442,11 @@ unavailable. The node DOM-shim loads the same three files in the same order
   that order) and evals each against a shimmed `document`/`fetch`/`window`
   (no regex-pulling out of the HTML) — `window` points at the vm global so the
   `window.BCB` namespace survives across files — that's how the happy path,
-  empty, missing-rsvp, 404, and the ride-detail modal (open via chip /
+  empty, missing-rsvp, 404, the ride-detail modal (open via chip /
   FullCalendar `eventClick`, close via backdrop / Escape / `×`,
-  stale-instance-destroyed-on-re-render) cases are checked.
+  stale-instance-destroyed-on-re-render), and the deferred `data-bg`
+  background-image (unset before the window `load` event, set after — the
+  shim fires `context.handlers.load()` to prove it) cases are checked.
 - Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#links`,
   `#contact`; the ride-detail overlay is `#ride-modal` (not a `<section>`).
   The hero CTA anchors to `#next-ride`.
