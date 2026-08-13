@@ -410,7 +410,15 @@ unavailable. The node DOM-shim loads the same three files in the same order
   RSVP page; the event keeps its `url` so middle-click / ctrl-click still opens
   the RSVP target in a new tab (native anchor behavior). `render()` calls
   `destroyCalendar()` first so a stale instance can't leak when syncing or
-  re-rendering. **Fallback:** if the CDN script hasn't loaded (slow network /
+  re-rendering. **`renderCalendarFull` takes the mount element
+  (`renderCalendarFull(events, schedule)`) and appends the `.calendar` box into
+  it BEFORE calling `FullCalendar.render()`** — FullCalendar measures its
+  container via `getBoundingClientRect()` during `componentDidMount`, and if the
+  holder is detached at render time it measures 0 wide, collapsing the day-grid
+  columns to ~0px and crushing every event to ~14px (the "calendar looks
+  completely broken" bug). Don't revert to "build the box, return it, then
+  append" — the render must happen after the box is in the document.
+  **Fallback:** if the CDN script hasn't loaded (slow network /
   blocked), `typeof FullCalendar` is undefined and the hand-rolled month grid
   takes over — one `.calendar` block per month that has rides, built by
   `groupByMonth()` / `monthGrid()` (7 `.cal-dow` weekday columns, a `.num` per
@@ -474,8 +482,12 @@ unavailable. The node DOM-shim loads the same three files in the same order
   `window`. Dependency-order contract: `ride-card.js` owns the constants
   (`PARTIFUL`, `MONTHS`, `DOW`), `el()`, `pad2()`, the `rideCard` builder, and
   `buildIcs`/`downloadIcs`/`googleCalUrl`; `calendar.js` owns the calendar
-  renderers and Eastern date math and returns `.calendar` boxes for `app.js` to
-  append; `app.js` owns DOM refs, `currentData`, the modal, and the bootstrap.
+  renderers and Eastern date math — `renderCalendarFull(events, mountEl)`
+  appends its `.calendar` box into `mountEl` (app.js passes `#schedule`) BEFORE
+  calling `FullCalendar.render()` (the holder must be in the document at render
+  time, or FC measures 0-wide columns — see the Calendar-view bullet); the
+  fallback `monthGrid()` returns a `.calendar` box `app.js` appends itself;
+  `app.js` owns DOM refs, `currentData`, the modal, and the bootstrap.
 - Verifying the JS: no browser here, but `node` (v25+) is installed. The node
   DOM-shim `readFileSync`s `site/js/ride-card.js`, `calendar.js`, `app.js` (in
   that order) and evals each against a shimmed `document`/`fetch`/`window`

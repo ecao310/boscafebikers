@@ -95,13 +95,21 @@
   // Adopted open-source calendar view: FullCalendar 6 (dayGridMonth) loaded
   // from a CDN with `defer`. It themes itself from the --fc-* custom props
   // overridden in <head>. If the CDN script hasn't run yet (or is blocked),
-  // app.js falls back to the hand-rolled month grid above. Returns the box
-  // element; app.js appends it into #schedule.
-  function renderCalendarFull(events) {
+  // app.js falls back to the hand-rolled month grid above. `mountEl` is the
+  // element the resulting .calendar box is appended to (app.js passes
+  // #schedule); returns the box element as well.
+  function renderCalendarFull(events, mountEl) {
     const box = BCB.el("div", "calendar");
     const holder = document.createElement("div");
     holder.id = "ride-calendar";
     box.appendChild(holder);
+
+    // The holder must be in the document BEFORE FullCalendar renders: it
+    // measures its container (getBoundingClientRect) during componentDidMount,
+    // and a detached element measures 0 wide — which collapses the day-grid
+    // columns to ~0px and crushes every event to ~14px (the "calendar looks
+    // completely broken" bug). Mount first, then render.
+    if (mountEl) { mountEl.appendChild(box); }
 
     const first = events[0];
     const initial = first && easternParts(first.start);

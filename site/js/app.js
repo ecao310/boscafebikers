@@ -110,7 +110,10 @@
     if (!events.length) {
       emptyState("No rides on the calendar right now — check Partiful for the next one.");
     } else if (typeof FullCalendar !== "undefined") {
-      schedule.appendChild(renderCalendarFull(events));
+      // renderCalendarFull mounts the box into #schedule itself before it
+      // calls FullCalendar.render() — the holder must be in the document so FC
+      // measures a real container width (a detached element → 0-width columns).
+      renderCalendarFull(events, schedule);
     } else {
       groupByMonth(events).forEach((month) => {
         schedule.appendChild(monthGrid(month));
