@@ -1,6 +1,6 @@
 You are one iteration of a loop. Each run: pick exactly ONE unchecked task from the
 Backlog below (topmost first), complete it fully, verify it, mark it `[x]` in
-`ralph/PLAN.md`, commit, and exit. Do not attempt more
+`ralph/PLAN.md`, commit, push, and exit. Do not attempt more
 than one task per run.
 
 ## Project spec
