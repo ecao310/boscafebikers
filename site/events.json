@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-12T17:03:51.089710-04:00",
+  "updated_at": "2026-08-13T13:44:23.350305-04:00",
   "count": 3,
   "events": [
     {
@@ -13,7 +13,7 @@
       "location_hidden": false,
       "description": "Yippee! Another Saturday, another ride. This time from Lower Allston over to Koko coffee.",
       "rsvp_url": "https://partiful.com/e/gRzH7L3EoMRl3q8pl7OS",
-      "image": null
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FZjqrASzKptaWblqVVRqtb?alt=media&token=02154fd4-5f38-4a7a-a9fc-67c77518238f"
     },
     {
       "uid": "a0gbEpda9D8KPbQfY275",
@@ -26,7 +26,7 @@
       "location_hidden": false,
       "description": "Come out and explore your city… or another city right next door!\n\nThis gorgeous little ride will take us from Charlestown up to Localito Cafe in Medford.",
       "rsvp_url": "https://partiful.com/e/a0gbEpda9D8KPbQfY275",
-      "image": null
+      "image": "https://assets.getpartiful.com/posters/yes.png"
     },
     {
       "uid": "5I2Zwclcs30LUlbOjjeb",
@@ -39,7 +39,7 @@
       "location_hidden": false,
       "description": "Watertown? How about we call it coffee town just for today? 🤫 This jaunt will start in Brookline and end at O’Some Cafe in Watertown.\n\nH.A.G.S.",
       "rsvp_url": "https://partiful.com/e/5I2Zwclcs30LUlbOjjeb",
-      "image": null
+      "image": "https://assets.getpartiful.com/posters/hot-drinks-plain-2.png"
     }
   ]
 }
