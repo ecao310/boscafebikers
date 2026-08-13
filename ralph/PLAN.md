@@ -6,9 +6,10 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 ## Backlog 5
 
 - [x] Make top navigation bar not stay permanently on screen. (Done: the organizer re-opened the earlier "keep the nav pinned" request with the OPPOSITE intent — the nav should scroll away with the page, not stay pinned. Removed `position: sticky; top: 0` (plus the now-inert `z-index: 10`) from `.nav` in `site/styles.css`; removed the `section { scroll-margin-top: 64px }` rule + comment from `index.html` (it existed only to clear the sticky nav over in-page anchor targets). `.nav` is now a static espresso bar that scrolls with the page. CLAUDE.md's nav bullet + modal z-index note updated to match. Verified: grep clean (no `position: sticky` anywhere in `site/`), all five HTML pages well-formed via html.parser, 69 pytest pass (Python/workflows untouched), local serve 200 on `/`, `/styles.css`, `/events.json`, `/index.html`, and headless Chrome CDP shows `.nav` computed `position: static` with `navTopAfterScroll(600) = -600` — it scrolls away with the page.)
-- [ ] Combine about us and find us sections.
+- [x] Combine about us and find us sections. (Done: `#about` and `#links` in `site/index.html` were merged into one `#about` section — the two "About us" paragraphs and the former "Find us" lede + Instagram/Partiful links now sit under a single heading, so the page reads as one continuous intro block. No JS or CSS referenced either section id, so nothing else changed. CLAUDE.md's sections/ids list updated (`#links` gone). Verified: html.parser well-formed on all five pages, grep clean (no `id="links"` / `links-heading` left anywhere), local serve 200 + headless-Chrome 380px screenshot shows the merged section rendering correctly, 69 pytest pass (Python/workflows untouched).)
 - [ ] Add photos to gallery page
 - [ ] Add more background images from gallery page
+- [ ] On mobile, calendar gets stretched vertically to fit names. Avoid huge cell heights. Truncate or something else.
 
 ## Backlog 5
 

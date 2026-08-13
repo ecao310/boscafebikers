@@ -498,9 +498,11 @@ unavailable. The node DOM-shim loads the same three files in the same order
   stale-instance-destroyed-on-re-render), and the deferred `data-bg`
   background-image (unset before the window `load` event, set after — the
   shim fires `context.handlers.load()` to prove it) cases are checked.
-- Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#links`,
-  `#contact`; the ride-detail overlay is `#ride-modal` (not a `<section>`).
-  The hero CTA anchors to `#next-ride`.
+- Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#contact`;
+  the ride-detail overlay is `#ride-modal` (not a `<section>`). The hero CTA
+  anchors to `#next-ride`. (`#about` absorbed the former `#links` "Find us"
+  section on 2026-08-13 — the Instagram/Partiful links now live under the
+  About us heading; there is no `#links` section anymore.)
 - **Contact section** (`#contact`, home page only): three `.links` cards —
   email `mailto:boscafebikers@gmail.com`, Instagram DM
   (`https://instagram.com/bostoncafebikers`), and the WhatsApp group invite
