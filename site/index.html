@@ -17,10 +17,35 @@
   <style>
     /* --- index-specific styles (shared base lives in styles.css) --- */
 
-    /* The hero CTA button sits right under the tagline; styles.css gives
-     .hero .tagline margin: 0, so restore the original gap here. */
+    /* --- hero (index only): reduced size --- */
+    /* The shared .hero in styles.css is tall (56px/48px padding, 2.5rem mark,
+       clamp(2rem, 9vw, 3rem) h1) — at 680px-wide it measured ~277px tall on
+       mobile and ~357px on desktop. The organizer asked to shrink the index
+       hero, so this page overrides it with tighter paddings and type; the
+       sub-pages (gallery/shop/meta/donate) keep the shared hero. The tagline's
+       shared margin: 0 stands (there is no hero CTA button anymore), so no
+       margin-bottom override is needed here. */
+    .hero {
+      padding: 32px 0 24px;
+    }
+
+    .hero .mark {
+      font-size: 2rem;
+      margin-bottom: .4rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.7rem, 7vw, 2.4rem);
+    }
+
     .hero .tagline {
-      margin-bottom: 1.5rem;
+      font-size: 1rem;
+    }
+
+    @media (min-width: 560px) {
+      .hero {
+        padding: 48px 0 32px;
+      }
     }
 
     .btn-ghost {

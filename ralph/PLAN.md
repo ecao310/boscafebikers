@@ -6,7 +6,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 ## Backlog 6
 
 - [x] I like how it looks on mobile, but the text is harder to read on desktop.
-- [ ] Reduce size of hero section on index
+- [x] Reduce size of hero section on index
 - [ ] remove shop, meta business from top tabs for now. keep on footer.
 
 > **Note convention (2026-08-13):** completed bullets keep their original

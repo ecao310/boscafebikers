@@ -301,6 +301,16 @@ unavailable. The node DOM-shim loads the same three files in the same order
   `.btn { margin-top: 1rem }` CTA spacing on the sub-pages) in a small inline
   `<style>`. Keep links relative — never root-relative — and keep the
   `.is-active`/`aria-current` on exactly one link per page.
+- **Index hero is compact (index only, 2026-08-13).** The shared `.hero` in
+  `styles.css` is tall (`padding: 56px 0 48px`, bumping to `80px 0 64px` at
+  ≥560px; a `2.5rem` mark; `clamp(2rem, 9vw, 3rem)` h1). The organizer asked to
+  shrink the hero on the index page, so `index.html`'s inline `<style>`
+  overrides it: `padding: 32px 0 24px` (`48px 0 32px` at ≥560px), a `2rem` mark,
+  `clamp(1.7rem, 7vw, 2.4rem)` h1, and a `1rem` tagline — measured ~35% shorter
+  (277→180px at 380px, 357→234px at 1280px). The sub-pages keep the shared
+  hero. There is **no hero CTA button** in the markup anymore, so the tagline's
+  shared `margin: 0` stands — don't restore a `margin-bottom` for a button that
+  doesn't exist.
 - **Shared footer.** All five pages end with the same `<footer>`: a
   `.footer-brand` tagline ("…exploring the city one café at a time"), a
   `.footer-nav` mirroring the five tab links (relative, no `.is-active`), and a
@@ -354,7 +364,7 @@ unavailable. The node DOM-shim loads the same three files in the same order
 - **Rendering script** (`site/js/app.js` — loads last; `ride-card.js` /
   `calendar.js` supply the helpers via `window.BCB`): `fetch("events.json")` →
   - The **next-ride section** (`#next-ride`, the first section in `<main>`,
-    right under the hero — whose CTA anchors to `#next-ride`) shows the nearest
+    right under the photo-free hero) shows the nearest
     upcoming ride as a featured card. `setNextRide()` renders `events[0]`
     (events.json is sorted by start and the sync filters to future rides) into
     `#next-ride-card` via the shared `rideCard(ev, "next-ride")` builder; when
@@ -540,8 +550,7 @@ unavailable. The node DOM-shim loads the same three files in the same order
 - Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#contact`;
   `#next-ride`, `#first-ride`, `#about`, and `#contact` are photo-backed
   (`data-bg`; see the deferred-background bullet). The ride-detail overlay is
-  `#ride-modal` (not a `<section>`). The hero CTA
-  anchors to `#next-ride`. (`#about` absorbed the former `#links` "Find us"
+  `#ride-modal` (not a `<section>`). (`#about` absorbed the former `#links` "Find us"
   section on 2026-08-13 — the Instagram/Partiful links now live under the
   About us heading; there is no `#links` section anymore.)
 - **Contact section** (`#contact`, home page only): three `.links` cards —
