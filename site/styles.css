@@ -67,36 +67,43 @@ a { color: var(--roast); }
 .hero .mark { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
 .hero a { color: var(--foam); }
 
-/* --- photo-backed section (#next-ride, the 2nd block under the hero) --- */
-/* Same deferred-photo pattern the hero used to have: the espresso gradient is
-   the no-JS / pre-load fallback, and app.js replaces it with the [data-bg]
-   café photo after window.load. A translucent espresso ::before keeps the
-   heading readable over the photo; its opacity is the --bg-overlay-opacity
-   setting in :root (raise it to improve readability). The section's .wrap is
-   lifted above the scrim so the featured ride card stays fully opaque. */
-#next-ride {
+/* --- photo-backed sections ([data-bg]) --- */
+/* Any section carrying a data-bg attribute (app.js copies the URL into
+   background-image only after window.load) becomes a photo-backed section:
+   the espresso gradient is the no-JS / pre-load fallback, then a translucent
+   espresso ::before scrim sits over the photo (its opacity is the
+   --bg-overlay-opacity setting in :root — raise it to improve readability),
+   and the section's .wrap is lifted above the scrim. Body copy goes light so
+   it stays readable over the photo; opaque cards (.ride, .links) keep their
+   own dark text on their light backgrounds. */
+[data-bg] {
   position: relative;
   background: linear-gradient(160deg, var(--roast) 0%, var(--espresso) 100%);
 }
-#next-ride.bg-loaded {
+[data-bg].bg-loaded {
   background-size: cover;
   background-position: center;
 }
-#next-ride.bg-loaded::before {
+[data-bg].bg-loaded::before {
   content: "";
   position: absolute;
   inset: 0;
   background: rgba(46, 29, 19, var(--bg-overlay-opacity)); /* --espresso, translucent */
   z-index: 0;
 }
-#next-ride.bg-loaded > .wrap {
+[data-bg].bg-loaded > .wrap {
   position: relative;
   z-index: 1;
 }
 /* The section is always dark (gradient pre-JS, photo + scrim post-JS), so the
-   heading and the "Loading…" / empty-state note are light regardless. */
-#next-ride h2 { color: var(--foam); }
-#next-ride .note { color: var(--oat); }
+   heading and copy are light regardless. Direct body-copy paragraphs go light;
+   the featured ride card's <p> is exempt — its parent is .ride, an opaque oat
+   card, so it keeps its dark text. */
+[data-bg] h2 { color: var(--foam); }
+[data-bg] .note { color: var(--oat); }
+[data-bg] :not(.ride) > p { color: var(--oat); }
+[data-bg] ul.checks li { color: var(--oat); }
+[data-bg] ul.checks li strong { color: var(--foam); }
 
 /* --- buttons --- */
 .btn {

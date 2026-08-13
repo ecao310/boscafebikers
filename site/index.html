@@ -525,7 +525,11 @@
       </div>
     </section>
 
-    <section id="first-ride" aria-labelledby="first-ride-heading">
+    <!-- Photo-backed like #next-ride: the group-ride photo stays a data-bg
+       attribute until app.js copies it to background-image after window.load.
+       The espresso gradient in styles.css is the no-JS / pre-load fallback. -->
+    <section id="first-ride" data-bg="images/aman-s-group-speedway.jpeg"
+      aria-labelledby="first-ride-heading">
       <div class="wrap">
         <h2 id="first-ride-heading">Your first ride</h2>
         <p class="lede">Never ridden with a group before? This is the one to start with.</p>
@@ -542,8 +546,11 @@
 
     <!-- "About us" and the old "Find us" section were combined into one (2026-08-13):
        the two descriptions + the Instagram/Partiful links live under the same
-       #about section so the page reads as one continuous intro block. -->
-    <section id="about" aria-labelledby="about-heading">
+       #about section so the page reads as one continuous intro block.
+       Photo-backed via data-bg (deferred by app.js after window.load); the
+       gradient in styles.css is the no-JS / pre-load fallback. -->
+    <section id="about" data-bg="images/aman-s-group-preride-fenway.jpeg"
+      aria-labelledby="about-heading">
       <div class="wrap">
         <h2 id="about-heading">About us</h2>
         <p>Boston Café Bikers is a casual cycling group built around the two best
@@ -560,7 +567,11 @@
       </div>
     </section>
 
-    <section id="contact" aria-labelledby="contact-heading">
+    <!-- Photo-backed via data-bg like the other sections: the mid-ride photo
+       loads as a background only after window.load (app.js), so the espresso
+       gradient in styles.css renders first. -->
+    <section id="contact" data-bg="images/jack-t-freshpond-midride.jpeg"
+      aria-labelledby="contact-heading">
       <div class="wrap">
         <h2 id="contact-heading">Contact us</h2>
         <p class="lede">Starting a café bike club in your own city? Want to team

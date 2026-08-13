@@ -23,8 +23,8 @@ Tagline: "exploring the city one café at a time".
 | `site/js/ride-card.js` | JS module (plain script, part of `window.BCB`): `rideCard()` builder + the `.ics` download / Google Calendar exports + shared constants (`PARTIFUL`, `MONTHS`, `DOW`) and the `el()` DOM helper. Loaded first. |
 | `site/js/calendar.js` | JS module (plain script, part of `window.BCB`): FullCalendar renderer + fallback month grid + Eastern wall-clock date math. Loaded second. |
 | `site/js/app.js` | JS module (plain script, part of `window.BCB`): bootstrap — `fetch("events.json")`, render, next-ride, modal, "Last updated" stamp, and the deferred `data-bg` background mechanism. Loaded last. |
-| `site/images/jess-b-gracies-bikes.jpeg` | Café photo (optimized 1600px wide); the `data-bg` URL on the `#next-ride` section, applied as a background image only after `window.load`. |
-| `site/gallery.html` | Ride-photo gallery: 5 ride photos in a responsive grid + Instagram CTA. Gallery-specific CSS lives in the page's inline `<style>` (grid, `.gallery-item` figure, captions); the photos were optimized with the same `sips -Z 1600` quality-70 pass as the café photo. |
+| `site/images/*.jpeg` | Six optimized photos (1600px longest side, `sips -Z 1600` quality-70): `jess-b-gracies-bikes.jpeg` is the `data-bg` café photo on `#next-ride`; `aman-s-group-speedway.jpeg`, `aman-s-group-preride-fenway.jpeg`, `jack-t-freshpond-midride.jpeg` are the `data-bg` backgrounds on `#first-ride`/`#about`/`#contact`; all five ride photos also appear in `gallery.html`. Applied as background images only after `window.load`. |
+| `site/gallery.html` | Ride-photo gallery: the 5 ride photos in a responsive grid + Instagram CTA. Gallery-specific CSS lives in the page's inline `<style>` (grid, `.gallery-item` figure, captions); the photos were optimized with the same `sips -Z 1600` quality-70 pass as the café photo. |
 | `site/shopify.html` | WIP shop page (placeholder only). |
 | `site/meta-business.html` | WIP Meta Business page (placeholder only). |
 | `site/donate.html` | WIP donate page (placeholder only). |
@@ -314,23 +314,30 @@ unavailable. The node DOM-shim loads the same three files in the same order
 - Layout is mobile-first: `.wrap` (max-width 680px, 20px gutters) and one
   `@media (min-width: 560px)` block that only bumps vertical padding. Verified
   readable at 380px.
-- **Café photo loads last (`data-bg`), backing the `#next-ride` section.** The
-  café photo (`site/images/jess-b-gracies-bikes.jpeg`) is *not* a
-  `background-image` in the stylesheet — `app.js` reads the `data-bg` attribute
-  on `<section id="next-ride">` (the 2nd block, right under the photo-free hero)
-  and copies it into `background-image` only after `window.load`
-  (`applyBackgrounds()`), so the photo never blocks first paint / LCP. The
-  espresso gradient on `#next-ride` in `styles.css` is the no-JS / pre-load
-  fallback (the hero keeps the same gradient, permanently photo-free).
-  `#next-ride.bg-loaded` adds `background-size: cover` / `background-position:
+- **Photos load last (`data-bg`), backing four sections.** Photos are *not*
+  `background-image`s in the stylesheet — `app.js` reads the `data-bg`
+  attribute on any matching element and copies it into `background-image` only
+  after `window.load` (`applyBackgrounds()` runs `querySelectorAll("[data-bg]")`,
+  adds `.bg-loaded`), so a photo never blocks first paint / LCP. The sections:
+  `#next-ride` (the café photo `images/jess-b-gracies-bikes.jpeg`, 2nd block
+  under the photo-free hero), `#first-ride`, `#about`, and `#contact` (three
+  gallery ride photos, added 2026-08-13). The espresso gradient in `styles.css`
+  is the no-JS / pre-load fallback on every `[data-bg]` element (the hero keeps
+  the same gradient, permanently photo-free — it never carries `data-bg`).
+  `[data-bg].bg-loaded` adds `background-size: cover` / `background-position:
   center` and a translucent espresso `::before` overlay (the section's `.wrap`
-  is lifted above it) for text legibility over the photo. The overlay's opacity
-  is the **`--bg-overlay-opacity` custom property** in `styles.css` `:root` —
-  the readability "setting" the organizer asked for: raise it to darken the
-  photo more (stronger contrast for the "Next ride" heading), lower it to show
-  more photo. Ride `<img>` photos stay `loading="lazy"` in `rideCard()`. The
-  node shim asserts `background-image` is unset before the load event fires and
-  set after.
+  is lifted above it via `position: relative; z-index: 1`) for text legibility
+  over the photo. The overlay's opacity is the **`--bg-overlay-opacity` custom
+  property** in `styles.css` `:root` — the readability "setting" the organizer
+  asked for: raise it to darken the photo more (stronger contrast for the
+  heading), lower it to show more photo. Text over photos is light:
+  `[data-bg] h2` = foam, `[data-bg] .note` / `[data-bg] :not(.ride) > p` /
+  `[data-bg] ul.checks li` = oat (`strong` = foam). The `:not(.ride) > p` scope
+  is deliberate — the featured ride card on `#next-ride` is an opaque oat card,
+  so its `<p>` must stay dark (a blanket `[data-bg] p` would turn it invisible
+  on its own background). Ride `<img>` photos stay `loading="lazy"` in
+  `rideCard()`. The node shim asserts `background-image` is unset on every
+  `[data-bg]` section before the load event fires and set on all of them after.
 - **Rendering script** (`site/js/app.js` — loads last; `ride-card.js` /
   `calendar.js` supply the helpers via `window.BCB`): `fetch("events.json")` →
   - The **next-ride section** (`#next-ride`, the first section in `<main>`,
@@ -499,7 +506,9 @@ unavailable. The node DOM-shim loads the same three files in the same order
   background-image (unset before the window `load` event, set after — the
   shim fires `context.handlers.load()` to prove it) cases are checked.
 - Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#contact`;
-  the ride-detail overlay is `#ride-modal` (not a `<section>`). The hero CTA
+  `#next-ride`, `#first-ride`, `#about`, and `#contact` are photo-backed
+  (`data-bg`; see the deferred-background bullet). The ride-detail overlay is
+  `#ride-modal` (not a `<section>`). The hero CTA
   anchors to `#next-ride`. (`#about` absorbed the former `#links` "Find us"
   section on 2026-08-13 — the Instagram/Partiful links now live under the
   About us heading; there is no `#links` section anymore.)
