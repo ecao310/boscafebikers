@@ -481,10 +481,8 @@
     </div>
   </nav>
 
-  <!-- data-bg: the hero photo URL stays an attribute until app.js copies it to
-     background-image after window.load, so it never blocks first paint. The
-     espresso gradient in styles.css is the no-JS / pre-load fallback. -->
-  <header class="hero" data-bg="images/jess-b-gracies-bikes.jpeg">
+  <!-- The hero is photo-free: it keeps the espresso gradient from styles.css. -->
+  <header class="hero">
     <div class="wrap">
       <span class="mark" aria-hidden="true">☕🚲</span>
       <h1>Boston Café Bikers</h1>
@@ -494,7 +492,11 @@
 
   <main>
 
-    <section id="next-ride" aria-labelledby="next-ride-heading">
+    <!-- data-bg: the café photo URL stays an attribute until app.js copies it
+       to background-image after window.load, so it never blocks first paint.
+       The espresso gradient in styles.css is the no-JS / pre-load fallback. -->
+    <section id="next-ride" data-bg="images/jess-b-gracies-bikes.jpeg"
+      aria-labelledby="next-ride-heading">
       <div class="wrap">
         <h2 id="next-ride-heading">Next ride</h2>
         <!-- Featured card for the nearest upcoming ride. Populated by the script

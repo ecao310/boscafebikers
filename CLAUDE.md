@@ -23,7 +23,7 @@ Tagline: "exploring the city one café at a time".
 | `site/js/ride-card.js` | JS module (plain script, part of `window.BCB`): `rideCard()` builder + the `.ics` download / Google Calendar exports + shared constants (`PARTIFUL`, `MONTHS`, `DOW`) and the `el()` DOM helper. Loaded first. |
 | `site/js/calendar.js` | JS module (plain script, part of `window.BCB`): FullCalendar renderer + fallback month grid + Eastern wall-clock date math. Loaded second. |
 | `site/js/app.js` | JS module (plain script, part of `window.BCB`): bootstrap — `fetch("events.json")`, render, next-ride, modal, "Last updated" stamp, and the deferred `data-bg` background mechanism. Loaded last. |
-| `site/images/jess-b-gracies-bikes.jpeg` | Hero café photo (optimized 1600px wide); the hero's `data-bg` URL, applied as a background image only after `window.load`. |
+| `site/images/jess-b-gracies-bikes.jpeg` | Café photo (optimized 1600px wide); the `data-bg` URL on the `#next-ride` section, applied as a background image only after `window.load`. |
 | `site/gallery.html` | Ride-photo gallery (empty state → Instagram CTA). |
 | `site/shopify.html` | WIP shop page (placeholder only). |
 | `site/meta-business.html` | WIP Meta Business page (placeholder only). |
@@ -314,17 +314,23 @@ unavailable. The node DOM-shim loads the same three files in the same order
 - Layout is mobile-first: `.wrap` (max-width 680px, 20px gutters) and one
   `@media (min-width: 560px)` block that only bumps vertical padding. Verified
   readable at 380px.
-- **Hero photo loads last (`data-bg`).** The hero café photo
-  (`site/images/jess-b-gracies-bikes.jpeg`) is *not* a `background-image` in the
-  stylesheet — `app.js` reads the `data-bg` attribute on `<header class="hero">`
+- **Café photo loads last (`data-bg`), backing the `#next-ride` section.** The
+  café photo (`site/images/jess-b-gracies-bikes.jpeg`) is *not* a
+  `background-image` in the stylesheet — `app.js` reads the `data-bg` attribute
+  on `<section id="next-ride">` (the 2nd block, right under the photo-free hero)
   and copies it into `background-image` only after `window.load`
   (`applyBackgrounds()`), so the photo never blocks first paint / LCP. The
-  espresso gradient on `.hero` in `styles.css` is the no-JS / pre-load fallback.
-  `.hero.bg-loaded` adds `background-size: cover` / `background-position:
-  center` and a translucent espresso `::before` overlay (hero `.wrap` is lifted
-  above it) for text legibility over the photo. Ride `<img>` photos stay
-  `loading="lazy"` in `rideCard()`. The node shim asserts `background-image` is
-  unset before the load event fires and set after.
+  espresso gradient on `#next-ride` in `styles.css` is the no-JS / pre-load
+  fallback (the hero keeps the same gradient, permanently photo-free).
+  `#next-ride.bg-loaded` adds `background-size: cover` / `background-position:
+  center` and a translucent espresso `::before` overlay (the section's `.wrap`
+  is lifted above it) for text legibility over the photo. The overlay's opacity
+  is the **`--bg-overlay-opacity` custom property** in `styles.css` `:root` —
+  the readability "setting" the organizer asked for: raise it to darken the
+  photo more (stronger contrast for the "Next ride" heading), lower it to show
+  more photo. Ride `<img>` photos stay `loading="lazy"` in `rideCard()`. The
+  node shim asserts `background-image` is unset before the load event fires and
+  set after.
 - **Rendering script** (`site/js/app.js` — loads last; `ride-card.js` /
   `calendar.js` supply the helpers via `window.BCB`): `fetch("events.json")` →
   - The **next-ride section** (`#next-ride`, the first section in `<main>`,
