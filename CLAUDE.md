@@ -433,14 +433,27 @@ unavailable. The node DOM-shim loads the same three files in the same order
   `.cal-day.has-ride` tints days). The chip is a `<button>` — clicking it is an
   action (show details), not a navigation — so CSS resets the UA button look
   (`font: inherit`, `border: 0`, `text-align: left`, `cursor: pointer`, plus
-  `width: 100%`) on top of the shared chip styling. Ride titles **wrap** in
-  both renderers (`overflow-wrap: anywhere`) rather than ellipsis-truncating,
-  so a long title stays fully visible at 380px. Every tappable calendar element
-  (`.ride-chip`, `.fc .fc-daygrid-event`, the FC `+N more` link, the prev/next
-  `.fc .fc-button`) carries `min-height: 44px` — the 2026-08-13 mobile audit's
-  touch-target rule; keep it when restyling. The FullCalendar CDN script has
-  `defer`; a tiny hook listens for its `load` event and re-renders if it lands
-  after an earlier fallback render.
+  `width: 100%`) on top of the shared chip styling. **Mobile cell heights
+  (2026-08-13):** below 560px the calendar is compact — ride titles are
+  truncated to **one line** (`white-space: nowrap` + `text-overflow: ellipsis`
+  on `.ride-chip` and `.fc .fc-event-title`) instead of wrapping, and every
+  tappable calendar element (`.ride-chip`, `.fc .fc-daygrid-event`, the FC
+  `+N more` link) drops from `min-height: 44px` to `28px`, so a wrapped long
+  name can't stretch a ~48px mobile column into a tall cell (measured before:
+  event chips 165/131/80px, day cells up to 208px at 380px; after: chips 29px,
+  day cells ≤72px). Two supporting rules make this safe: `.cal-day { min-width:
+  0 }` (a grid item's content-based automatic minimum size would otherwise
+  force the whole track — and calendar — wider than the viewport when the chip
+  is nowrap), and `.fc .fc-daygrid-event .fc-event-main { min-width: 0 }` (lets
+  FC's flex child shrink so the title ellipsizes). The **`@media (min-width:
+  560px)`** block at the end of index.html's inline `<style>` restores the
+  roomier desktop look: chips/events back to `min-height: 44px` and titles
+  wrapping (`white-space: normal`, `overflow-wrap: anywhere`) — that is the
+  earlier mobile-audit touch-target rule, scoped to wider screens where columns
+  are ~90px and there's vertical room. The full title is always one tap away in
+  the ride-detail modal (and in the chip's `aria-label`). The FullCalendar CDN
+  script has `defer`; a tiny hook listens for its `load` event and re-renders
+  if it lands after an earlier fallback render.
 - **Calendar display decision (2026-08-12, revised):** the calendar view adopts
   **FullCalendar 6.1.15** (MIT, actively maintained, industry standard) via
   CDN — a single `defer`'d script tag; its CSS is embedded in the JS and

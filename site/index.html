@@ -199,6 +199,11 @@
     }
 
     .cal-day {
+      /* A grid item's automatic minimum size is content-based by default, so
+       a nowrap chip (long title) would force its whole track — and the whole
+       calendar — wider than the viewport. min-width: 0 lets the 1fr tracks
+       stay equal and the chip's ellipsis clip instead. */
+      min-width: 0;
       min-height: 46px;
       border-radius: 8px;
       padding: 4px 6px;
@@ -223,13 +228,12 @@
     }
 
     .cal-day .ride-chip {
-      display: flex;
-      align-items: center;
+      display: block;
       background: var(--crema);
       color: #2b1a10;
       text-decoration: none;
       border-radius: 6px;
-      padding: 8px 4px;
+      padding: 4px 6px;
       margin-top: 3px;
       /* Chips are <button>s (they open the ride-detail modal) — reset the UA
        button look (font, border, centered text, cursor) while keeping the
@@ -240,15 +244,17 @@
       text-align: left;
       width: 100%;
       cursor: pointer;
-      line-height: 1.25;
-      /* Long ride titles wrap inside the narrow cell instead of being
-       ellipsis-truncated; "anywhere" also breaks an unbroken token (a long
-       café name) that would otherwise overflow a 1fr column at 380px. */
-      overflow-wrap: anywhere;
-      /* Touch target: at least 44px tall (the column is ~1/7th of the grid,
-       so width is the full column and height is the dimension we can
-       guarantee for a thumb tap). */
-      min-height: 44px;
+      line-height: 1.4;
+      /* Truncate long ride titles to one line instead of wrapping: a long
+       café name would wrap across several lines inside a ~48px mobile column
+       and stretch the whole calendar row tall. The full title lives in the
+       chip's aria-label and the ride-detail modal the chip opens. */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      /* Compact height on mobile so several rides in one day don't stack
+       into a huge cell; restored to the 44px touch target at ≥560px. */
+      min-height: 28px;
     }
 
     .cal-day .ride-chip:hover,
@@ -418,10 +424,10 @@
       border-radius: 6px;
       padding: 4px 6px;
       margin-top: 2px;
-      /* Event chips are tappable (left-click opens the ride-detail modal) —
-       the same 44px min height as the fallback grid's .ride-chip so a thumb
-       tap lands on the event, not the gap around it. */
-      min-height: 44px;
+      /* Event chips are tappable (left-click opens the ride-detail modal).
+       Compact on mobile so stacked rides don't stretch the calendar row
+       tall; restored to the 44px touch target at ≥560px. */
+      min-height: 28px;
       display: flex;
       align-items: center;
     }
@@ -430,20 +436,33 @@
       filter: brightness(.92);
     }
 
+    /* The event title must be free to shrink so its ellipsis can take over;
+       FC's own .fc-event-main clips, but min-width: 0 is what lets a flex
+       child drop below its content width. */
+    .fc .fc-daygrid-event .fc-event-main {
+      min-width: 0;
+      overflow: hidden;
+    }
+
     .fc .fc-event-title {
-      overflow-wrap: anywhere;
-      white-space: normal;
+      /* Truncate long ride titles to one line instead of wrapping — a long
+       name would wrap across several lines inside a ~48px mobile column and
+       stretch the whole calendar row tall. The full title is in the
+       ride-detail modal the event opens. */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .fc .fc-daygrid-more-link {
       font-size: .66rem !important;
       font-weight: 600;
       color: var(--roast);
-      /* Also a tap target (opens the FC popover of overflow rides) — give it
-       the same 44px min height as the event chips. */
+      /* Also a tap target (opens the FC popover of overflow rides) — compact
+       on mobile like the event chips; 44px at ≥560px. */
       display: inline-flex;
       align-items: center;
-      min-height: 44px;
+      min-height: 28px;
       padding: 0 4px;
     }
 
@@ -457,6 +476,38 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+    }
+
+    /* --- calendar at ≥560px --- */
+    /* The compact single-line chips are the mobile-first default (a wrapped
+       title would stretch the ~48px mobile column into a tall cell). On wider
+       screens the columns are ~90px and there's vertical room, so restore the
+       full 44px touch targets and let titles wrap instead of truncating. */
+    @media (min-width: 560px) {
+      .cal-day .ride-chip {
+        display: flex;
+        align-items: center;
+        padding: 8px 4px;
+        line-height: 1.25;
+        white-space: normal;
+        overflow: visible;
+        overflow-wrap: anywhere;
+        min-height: 44px;
+      }
+
+      .fc .fc-daygrid-event {
+        min-height: 44px;
+      }
+
+      .fc .fc-event-title {
+        white-space: normal;
+        overflow: visible;
+        overflow-wrap: anywhere;
+      }
+
+      .fc .fc-daygrid-more-link {
+        min-height: 44px;
+      }
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
