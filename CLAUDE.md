@@ -24,7 +24,7 @@ Tagline: "exploring the city one café at a time".
 | `site/js/calendar.js` | JS module (plain script, part of `window.BCB`): FullCalendar renderer + fallback month grid + Eastern wall-clock date math. Loaded second. |
 | `site/js/app.js` | JS module (plain script, part of `window.BCB`): bootstrap — `fetch("events.json")`, render, next-ride, modal, "Last updated" stamp, and the deferred `data-bg` background mechanism. Loaded last. |
 | `site/images/jess-b-gracies-bikes.jpeg` | Café photo (optimized 1600px wide); the `data-bg` URL on the `#next-ride` section, applied as a background image only after `window.load`. |
-| `site/gallery.html` | Ride-photo gallery (empty state → Instagram CTA). |
+| `site/gallery.html` | Ride-photo gallery: 5 ride photos in a responsive grid + Instagram CTA. Gallery-specific CSS lives in the page's inline `<style>` (grid, `.gallery-item` figure, captions); the photos were optimized with the same `sips -Z 1600` quality-70 pass as the café photo. |
 | `site/shopify.html` | WIP shop page (placeholder only). |
 | `site/meta-business.html` | WIP Meta Business page (placeholder only). |
 | `site/donate.html` | WIP donate page (placeholder only). |

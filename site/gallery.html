@@ -12,22 +12,30 @@
   /* --- gallery-specific styles (shared base lives in styles.css) --- */
   .gallery-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
     margin-top: 1rem;
+    /* Don't stretch cards to the tallest in their row: each photo card stays
+       its natural aspect-ratio height, so mixed orientations don't leave
+       white gaps below landscape shots. */
+    align-items: start;
   }
   .gallery-item {
     background: var(--foam);
     border: 1px solid var(--oat);
     border-radius: var(--radius);
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
+    margin: 0;
+  }
+  .gallery-item img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .gallery-item figcaption {
+    padding: 8px 12px 10px;
+    font-size: .8rem;
     color: var(--muted);
-    font-size: .85rem;
-    text-align: center;
-    padding: 12px;
   }
 
   /* The section CTA button needs breathing room from the grid above. */
@@ -65,7 +73,26 @@
       meantime.</p>
 
       <div class="gallery-grid">
-        <div class="gallery-item">No photos yet — the camera roll is just getting warmed up.</div>
+        <figure class="gallery-item">
+          <img src="images/aman-s-group-preride-fenway.jpeg" alt="Group of cyclists gathered for a preride at Fenway" loading="lazy">
+          <figcaption>Group preride at Fenway</figcaption>
+        </figure>
+        <figure class="gallery-item">
+          <img src="images/aman-s-group-speedway.jpeg" alt="Boston Café Bikers group rolling at the Speedway" loading="lazy">
+          <figcaption>Group ride at the Speedway</figcaption>
+        </figure>
+        <figure class="gallery-item">
+          <img src="images/jack-t-freshpond-midride.jpeg" alt="Riders mid-ride by Fresh Pond" loading="lazy">
+          <figcaption>Fresh Pond, mid-ride</figcaption>
+        </figure>
+        <figure class="gallery-item">
+          <img src="images/jack-t-midride-putnamave.jpeg" alt="Riders mid-ride on Putnam Avenue" loading="lazy">
+          <figcaption>Mid-ride on Putnam Ave</figcaption>
+        </figure>
+        <figure class="gallery-item">
+          <img src="images/mike-r-midride-helmet.jpeg" alt="Rider wearing a helmet mid-ride" loading="lazy">
+          <figcaption>Mid-ride helmet shot</figcaption>
+        </figure>
       </div>
 
       <a class="btn" href="https://instagram.com/bostoncafebikers" rel="noopener">See photos on Instagram</a>
