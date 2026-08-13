@@ -288,7 +288,11 @@ unavailable. The node DOM-shim loads the same three files in the same order
 - **Shared tab header nav.** All five pages (`index.html`, `gallery.html`,
   `shopify.html`, `meta-business.html`, `donate.html`) carry the same `.nav` —
   a sticky espresso bar with five relative `.tabs` links (Rides / Gallery /
-  Shop / Meta Business / Donate). The current page's link gets `.is-active` +
+  Shop / Meta Business / Donate). The sticky behavior (`position: sticky;
+  top: 0`) is intentional and satisfies the organizer's "top nav doesn't
+  scroll with the page" backlog item — verified in headless Chromium on the
+  live site (2026-08-13). If that request is ever re-opened to mean the
+  OPPOSITE (nav scrolls away), the revert is removing those two declarations. The current page's link gets `.is-active` +
   `aria-current="page"`; the others are plain. The nav CSS lives once in
   `site/styles.css` (linked by all five pages); each page keeps only its
   page-specific rules (rides/calendar on `index.html`, gallery grid, the
