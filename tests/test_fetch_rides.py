@@ -358,6 +358,131 @@ def test_image_merged_from_sidecar(feed_bytes):
     assert minuteman["image"] is None
 
 
+# --- Event-page image enrichment -------------------------------------------
+
+EVENT_PAGE = REPO_ROOT / "tests" / "fixtures" / "event-page.html"
+CHARLES_IMAGE = (
+    "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/"
+    "rides%2Fcharles-loop.jpg?alt=media"
+)
+
+
+def test_extract_event_image_from_fixture_page():
+    html = EVENT_PAGE.read_text(encoding="utf-8")
+    assert fetch_rides._extract_event_image(html) == CHARLES_IMAGE
+
+
+def test_extract_event_image_string_image():
+    html = (
+        '<script id="__NEXT_DATA__" type="application/json">'
+        '{"props":{"pageProps":{"event":{"image":"' + CHARLES_IMAGE + '"}}}}'
+        "</script>"
+    )
+    assert fetch_rides._extract_event_image(html) == CHARLES_IMAGE
+
+
+def test_extract_event_image_falls_back_to_first_firebase_url():
+    """No __NEXT_DATA__ → a Firebase Storage URL anywhere in the page wins."""
+    html = (
+        '<img src="https://firebasestorage.googleapis.com/v0/b/getpartiful'
+        '.appspot.com/o/a%2Fb.jpg?alt=media">'
+    )
+    assert fetch_rides._extract_event_image(html) == (
+        "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/a%2Fb.jpg?alt=media"
+    )
+
+
+def test_extract_event_image_blank_page_is_none():
+    assert fetch_rides._extract_event_image("<html><body></body></html>") is None
+
+
+def _fake_event_page(url: str) -> str:
+    if url == "https://partiful.com/e/3mTnV6xJaQ9wLpEr":
+        return EVENT_PAGE.read_text(encoding="utf-8")
+    raise fetch_rides.requests.RequestException(f"no page at {url}")
+
+
+def test_enrich_rides_sets_image_on_fixture_ride(feed_bytes):
+    """The sync pipeline over the fixture + a stubbed transport backfills image."""
+    rides = fetch_rides.parse_events(feed_bytes, now=NOW)
+    assert all(ride["image"] is None for ride in rides)
+    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page) == 1
+    charles, minuteman = rides
+    assert charles["image"] == CHARLES_IMAGE
+    assert minuteman["image"] is None  # page fetch failed → soft, stays null
+
+
+def test_enrich_rides_sidecar_wins(feed_bytes):
+    """An explicit ride_images.json entry is never overwritten by enrichment."""
+    rides = fetch_rides.parse_events(
+        feed_bytes,
+        now=NOW,
+        images={
+            "evt-future-charles-loop@partiful.com": "https://example.com/img/curated.jpg"
+        },
+    )
+    charles, minuteman = rides
+    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page) == 0
+    assert charles["image"] == "https://example.com/img/curated.jpg"
+    assert minuteman["image"] is None
+
+
+def test_enrich_rides_fetch_failure_is_soft(feed_bytes):
+    def boom(url: str) -> str:
+        raise fetch_rides.requests.RequestException("nope")
+
+    rides = fetch_rides.parse_events(feed_bytes, now=NOW)
+    assert fetch_rides.enrich_rides(rides, fetch_page=boom) == 0
+    assert all(ride["image"] is None for ride in rides)
+
+
+def test_enrich_rides_skips_rides_without_event_page():
+    """No rsvp link and a non-id UID → there is no page to fetch."""
+    data = (
+        b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+        b"BEGIN:VEVENT\r\nUID:evt-no-link@partiful.com\r\n"
+        b"DTSTART;TZID=America/New_York:20300101T100000\r\n"
+        b"SUMMARY:No Link\r\n"
+        b"DESCRIPTION:No RSVP line at all.\r\n"
+        b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    rides = fetch_rides.parse_events(data, now=datetime(2029, 1, 1, tzinfo=EASTERN))
+    assert rides[0]["rsvp_url"] is None
+
+    def unreachable(url: str) -> str:  # pragma: no cover - must not be called
+        raise AssertionError("fetch_page must not be called for a ride with no page")
+
+    assert fetch_rides.enrich_rides(rides, fetch_page=unreachable) == 0
+    assert rides[0]["image"] is None
+
+
+def test_main_enriches_only_on_live_feed(tmp_path, monkeypatch):
+    """--ics-file stays offline; only a network feed run reaches event pages."""
+    out = tmp_path / "events.json"
+    calls = []
+    monkeypatch.setattr(
+        fetch_rides, "enrich_rides", lambda rides: calls.append(rides) or len(rides)
+    )
+    assert fetch_rides.main(["--ics-file", str(FIXTURE), "--out", str(out)]) == 0
+    assert calls == []
+
+
+def test_main_enriches_when_feed_comes_from_live_url(tmp_path, monkeypatch):
+    out = tmp_path / "events.json"
+    enriched = []
+    monkeypatch.setattr(
+        fetch_rides, "enrich_rides", lambda rides: enriched.append(rides) or 2
+    )
+    monkeypatch.setattr(fetch_rides, "fetch_ics", lambda url: FIXTURE.read_bytes())
+    monkeypatch.setenv("PARTIFUL_ICS_URL", "https://partiful.example.invalid/feed.ics")
+    assert fetch_rides.main(["--out", str(out)]) == 0
+    assert len(enriched) == 1
+    assert [ride["uid"] for ride in enriched[0]] == [
+        "evt-future-charles-loop@partiful.com",
+        "evt-future-minuteman@partiful.com",
+    ]
+
+
 def test_load_ride_images_missing_file_is_empty(tmp_path):
     assert fetch_rides.load_ride_images(tmp_path / "nope.json") == {}
 

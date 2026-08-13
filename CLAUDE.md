@@ -12,10 +12,11 @@ Tagline: "exploring the city one café at a time".
 | `ralph/PLAN.md` | Working copy of the backlog. Mark tasks `[x]` as they complete. |
 | `CLAUDE.md` | This file — decisions, gotchas, conventions for the next iteration. |
 | `requirements.txt` | Python deps: `icalendar`, `requests`, `pytest`. |
-| `scripts/fetch_rides.py` | Fetches + parses the ICS feed → `site/events.json`. |
+| `scripts/fetch_rides.py` | Fetches + parses the ICS feed → `site/events.json`; enriches ride images from public Partiful event pages during live syncs. |
 | `scripts/promote_events.py` | Copies fetched JSON over the committed one only if `events` differ. |
-| `scripts/ride_images.json` | Optional sidecar: ride UID → image URL, merged into each event as `image`. |
+| `scripts/ride_images.json` | Optional sidecar: ride UID → image URL, merged into each event as `image`; an explicit entry wins over auto-enrichment. |
 | `tests/fixtures/sample.ics` | Offline fixture (2 future, 1 past, 1 cancelled). See table below. |
+| `tests/fixtures/event-page.html` | Offline fixture: a Partiful event page (`__NEXT_DATA__` with the event's cover image) used to test the enrichment step. |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
 | `site/styles.css` | Shared stylesheet: café palette + base/nav/hero/footer styles, linked by every page. |
 | `site/index.html` | Home: rides list/calendar, page-specific inline CSS + shared `styles.css`. Loads the three ride JS files in dependency order (see the `site/index.html` section). |
@@ -103,8 +104,9 @@ Everything below is headless — nothing here needs the GitHub web UI.
   without a Firebase token), so a client-side fetch can't replace the secret
   ICS; a serverless proxy would mean porting the tested Python parsing for
   marginal freshness gain. Public per-event pages *do* expose full data + a
-  CORS-enabled per-event ICS (`calendarFile`) — a possible future
-  `events.json` enrichment (e.g. ride images), not a feed replacement. Full
+  CORS-enabled per-event ICS (`calendarFile`) — the sync now uses them to
+  backfill ride `image` (see the "Ride photos" bullet under
+  `scripts/fetch_rides.py`), but they are not a feed replacement. Full
   comparison: ralph.log.
 - `PARTIFUL_ICS_URL` is **set** (as of 2026-07-20); the sync bot commits real
   feed updates every 6h. `site/events.json` currently has 3 future rides
@@ -122,11 +124,13 @@ Run it on the fixture (never the live feed) with:
   (default `site/events.json`), and `--ride-images PATH` (default
   `scripts/ride_images.json`). With no `--ics-file` it reads
   `PARTIFUL_ICS_URL`, rewriting a leading `webcal://` to `https://`.
+  **`--ics-file` runs never enrich** (see the enrichment bullet below) — they
+  stay fully offline, so local fixture runs make zero network calls.
 - Importable API for tests: `parse_events(data: bytes, now=None, images=None)
   -> list[dict]`, `extract_rsvp_url(description)`,
   `derive_partiful_url(uid) -> str | None`, `load_ride_images(path=None) -> dict`,
-  `build_payload(rides, now=None)`, `write_events(payload, path)`,
-  `main(argv) -> int`, and `FeedError`.
+  `enrich_rides(rides, fetch_page=None) -> int`, `build_payload(rides, now=None)`,
+  `write_events(payload, path)`, `main(argv) -> int`, and `FeedError`.
   Injecting `now` is how the tests pin "future" without depending on the clock.
 - **Never echo `requests` exception text** — it embeds the request URL. The
   fetch path reports only `type(exc).__name__` (+ HTTP status when present).
@@ -167,14 +171,22 @@ Run it on the fixture (never the live feed) with:
   `_clean_location` detects it (`HIDDEN_LOCATION_RE`) and emits `location: null`
   with `location_hidden: true`; the site renders "Location shared after you
   RSVP" instead of the template junk, and the `.ics` download omits `LOCATION`.
-- **Ride photos:** the ICS feed carries no images, so `image` comes from the
-  optional sidecar `scripts/ride_images.json` — a JSON object mapping event UID
-  → photo URL (e.g. `"<partiful-id>@partiful.com": "https://…/a.jpg"`). The
-  organizer edits that file, commits it, and the next sync writes the merged
-  `image` into `events.json`; a missing file or an empty object means every
-  ride has `image: null`. UIDs come from the feed (`uid` field in
-  `events.json`). Malformed sidecar JSON is a `FeedError` (fails the sync
-  loudly rather than silently dropping photos).
+- **Ride photos:** the ICS feed carries no images, so `image` has two sources.
+  (1) **Auto-enrichment** (default, added 2026-08-13): on a **live-feed** sync
+  only (`--ics-file` runs stay offline), `enrich_rides()` fetches each ride's
+  public Partiful event page `https://partiful.com/e/<id>` (the URL from
+  `rsvp_url`, or `derive_partiful_url(uid)`) and extracts the cover image from
+  the page's `__NEXT_DATA__` blob (`props.pageProps.event.image`, a URL string
+  or `{url, blurHash}`) with a raw Firebase-Storage-URL regex as fallback.
+  Fail-soft: a fetch/parse miss leaves `image: null` and never breaks the sync.
+  (2) The optional sidecar `scripts/ride_images.json` — a JSON object mapping
+  event UID → photo URL. An explicit sidecar entry **wins** over enrichment.
+  The organizer edits the sidecar, commits it, and the next sync writes the
+  merged `image` into `events.json`; a missing file or an empty object just
+  means enrichment is the only source. Malformed sidecar JSON is a `FeedError`
+  (fails the sync loudly rather than silently dropping photos). Verified on
+  the fixture (`tests/fixtures/event-page.html`) — pytest injects a stub
+  `fetch_page` so the tests never hit the network.
 - Filtering is `start >= now` in `America/New_York`; `STATUS:CANCELLED` dropped.
   All-day `DATE` values become local midnight.
 - The venv here is **Python 3.9**, so the module uses
@@ -470,7 +482,7 @@ unavailable. The node DOM-shim loads the same three files in the same order
 
 ## `tests/test_fetch_rides.py`
 
-Run with `.venv/bin/python -m pytest tests/ -q` (59 passing). Notes:
+Run with `.venv/bin/python -m pytest tests/ -q` (69 passing). Notes:
 
 - There is no `conftest.py` / packaging; the test file puts `scripts/` on
   `sys.path` itself and does `import fetch_rides`.
@@ -482,7 +494,9 @@ Run with `.venv/bin/python -m pytest tests/ -q` (59 passing). Notes:
   exactly now), empty result, malformed feed → `FeedError`, `main()` exit codes
   (0 happy path, 1 for broken feed / missing file / unset env var), `end`
   extraction (fixture DTEND → ISO, missing DTEND → null), hidden-location
-  placeholder → `location: null` + `location_hidden: true`, and two leak tests
-  asserting the feed URL never reaches an error message.
+  placeholder → `location: null` + `location_hidden: true`, two leak tests
+  asserting the feed URL never reaches an error message, and the event-page
+  enrichment (fixture `event-page.html` → image extracted; sidecar wins;
+  fetch failure is soft; `--ics-file` runs never enrich, live-feed runs do).
 - The suite passes under any system timezone (verified with `TZ=Asia/Tokyo`) —
   keep it that way; assert on explicit offsets, not on local time.

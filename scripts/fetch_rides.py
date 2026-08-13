@@ -17,6 +17,7 @@ import json
 import os
 import re
 import sys
+from collections.abc import Callable
 from datetime import date, datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -32,6 +33,21 @@ DEFAULT_OUTPUT = REPO_ROOT / "site" / "events.json"
 # attaches a picture to a ride without touching the site code.
 RIDE_IMAGES_PATH = REPO_ROOT / "scripts" / "ride_images.json"
 FETCH_TIMEOUT_SECONDS = 30
+# Enrichment: the sync backfills `image` from each ride's public Partiful
+# event page. The page is unauthenticated, so no new secret — the event IDs
+# still come from the secret feed, which is why this stays sync-time work.
+ENRICH_TIMEOUT_SECONDS = 15
+# Next.js embeds the event data (including the cover image) in a __NEXT_DATA__
+# script; the real JSON never contains a literal </script> (Next escapes '<').
+NEXT_DATA_RE = re.compile(
+    r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.DOTALL
+)
+# Partiful stores event images in Firebase Storage; the URL appears verbatim
+# in the page (in __NEXT_DATA__ and/or an <img>). Stop before a quote/angle
+# bracket/brace/whitespace so a URL inside JSON isn't over-matched.
+FIREBASE_IMAGE_URL_RE = re.compile(
+    r"https://firebasestorage\.googleapis\.com/[^\"'\s<>}]+", re.IGNORECASE
+)
 
 # RSVP links sit in DESCRIPTION in one of three phrasings — "RSVP: <url>",
 # "RSVP at <url>", or "View this event on Partiful at <url>" — and are
@@ -126,6 +142,99 @@ def load_ride_images(path: Path | None = None) -> dict:
     if not isinstance(data, dict):
         raise FeedError(f"ride images ({path.name}) must be a JSON object of UID → URL")
     return data
+
+
+def _extract_next_data(html: str) -> dict | None:
+    """The parsed __NEXT_DATA__ blob from a Partiful event page, or None."""
+    match = NEXT_DATA_RE.search(html)
+    if not match:
+        return None
+    try:
+        data = json.loads(match.group(1))
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _image_url_value(value: object) -> str | None:
+    """A cover-image URL out of whatever shape the event page embeds.
+
+    ``event.image`` is either a plain URL string or an object like
+    ``{"url": …, "blurHash": …}`` (blurHash is a tiny placeholder encoding,
+    not a URL). A storage object *name* (e.g. ``images/a.jpg``) is not a URL
+    and is left for the regex fallback to resolve.
+    """
+    if isinstance(value, str):
+        return value if value.startswith(("http://", "https://")) else None
+    if isinstance(value, dict):
+        for key in ("url", "src", "image", "imageUrl"):
+            found = _image_url_value(value.get(key))
+            if found:
+                return found
+    return None
+
+
+def _first_image_url(text: str) -> str | None:
+    """Any Firebase Storage URL in the page — a fallback for unknown shapes."""
+    match = FIREBASE_IMAGE_URL_RE.search(text)
+    return match.group(0) if match else None
+
+
+def _extract_event_image(html: str) -> str | None:
+    """The event's cover image URL from its public Partiful event page.
+
+    Structured path first (__NEXT_DATA__.props.pageProps.event.image), then a
+    raw regex for a Firebase Storage URL anywhere in the page.
+    """
+    data = _extract_next_data(html)
+    if data is not None:
+        try:
+            event = data["props"]["pageProps"]["event"]
+            image = _image_url_value(event.get("image"))
+        except (KeyError, TypeError, AttributeError):
+            image = None
+        if image:
+            return image
+    return _first_image_url(html)
+
+
+def _fetch_event_page(url: str) -> str:
+    response = requests.get(
+        url,
+        timeout=ENRICH_TIMEOUT_SECONDS,
+        headers={"User-Agent": "boscafebikers-sync/1.0"},
+    )
+    response.raise_for_status()
+    return response.text
+
+
+def enrich_rides(
+    rides: list[dict], fetch_page: Callable[[str], str] | None = None
+) -> int:
+    """Backfill each ride's ``image`` from its public Partiful event page.
+
+    Rides whose ``image`` is already set (the explicit ``ride_images.json``
+    sidecar wins) are left alone, as are rides with no event-page URL. A fetch
+    or parse failure is *not* a sync failure — a ride that can't be enriched
+    keeps its current ``image`` (None). Returns how many rides were backfilled.
+    """
+    if fetch_page is None:
+        fetch_page = _fetch_event_page
+    backfilled = 0
+    for ride in rides:
+        if ride.get("image"):
+            continue
+        page_url = ride.get("rsvp_url") or derive_partiful_url(ride.get("uid", ""))
+        if not page_url or not page_url.startswith(PARTIFUL_EVENT_URL):
+            continue
+        try:
+            image = _extract_event_image(fetch_page(page_url))
+        except (requests.RequestException, ValueError, TypeError):
+            image = None  # soft: enrichment must never break the sync
+        if image:
+            ride["image"] = image
+            backfilled += 1
+    return backfilled
 
 
 def _strip_rsvp(description: str) -> str:
@@ -298,6 +407,16 @@ def main(argv: list[str] | None = None) -> int:
     except FeedError as exc:
         print(f"fetch_rides: {exc}", file=sys.stderr)
         return 1
+
+    if not args.ics_file:
+        # Only a live-feed run reaches out to the public event pages; local
+        # --ics-file runs stay offline (fixture UIDs aren't real event ids).
+        backfilled = enrich_rides(rides)
+        if backfilled:
+            print(
+                f"fetch_rides: pulled images for {backfilled} ride(s) "
+                "from their Partiful event pages"
+            )
 
     payload = build_payload(rides)
     try:
