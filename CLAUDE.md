@@ -97,6 +97,15 @@ Everything below is headless — nothing here needs the GitHub web UI.
   - The actions (`actions/checkout@v4` et al.) target deprecated Node 20 and
     run on Node 24 on the runners — harmless today; a future pass can bump the
     action majors.
+- **Calendar refresh/fetch backend (2026-08-13): keep the cron.** There is no
+  public, unauthenticated Partiful endpoint that lists an org's events (the
+  profile page SSR carries no events and its events-list callable returns 401
+  without a Firebase token), so a client-side fetch can't replace the secret
+  ICS; a serverless proxy would mean porting the tested Python parsing for
+  marginal freshness gain. Public per-event pages *do* expose full data + a
+  CORS-enabled per-event ICS (`calendarFile`) — a possible future
+  `events.json` enrichment (e.g. ride images), not a feed replacement. Full
+  comparison: ralph.log.
 - `PARTIFUL_ICS_URL` is **set** (as of 2026-07-20); the sync bot commits real
   feed updates every 6h. `site/events.json` currently has 3 future rides
   (2026-08-15, 2026-08-16, 2026-08-23).
