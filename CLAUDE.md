@@ -287,8 +287,14 @@ unavailable. The node DOM-shim loads the same three files in the same order
 
 - **Shared tab header nav.** All five pages (`index.html`, `gallery.html`,
   `shopify.html`, `meta-business.html`, `donate.html`) carry the same `.nav` —
-  an espresso bar with five relative `.tabs` links (Rides / Gallery / Shop /
-  Meta Business / Donate). The nav is **static and scrolls with the page**: the
+  an espresso bar with **three** relative `.tabs` links (Rides / Gallery /
+  Donate). Shop and Meta Business were removed from the top tabs on 2026-08-13
+  ("remove shop, meta business from top tabs for now. keep on footer.") — they
+  remain reachable only from the `.footer-nav` (see the Shared footer bullet),
+  so `shopify.html` and `meta-business.html` have **no** `.is-active` link in
+  the top nav; the three tabs each carry `.is-active` on their own page (Rides
+  on `index.html`, Gallery on `gallery.html`, Donate on `donate.html`). The nav
+  is **static and scrolls with the page**: the
   organizer re-opened the earlier "keep the nav pinned" request as its opposite
   ("make top navigation bar not stay permanently on screen"), so
   `position: sticky; top: 0` were removed from `.nav` in `site/styles.css`
@@ -299,8 +305,7 @@ unavailable. The node DOM-shim loads the same three files in the same order
   `site/styles.css` (linked by all five pages); each page keeps only its
   page-specific rules (rides/calendar on `index.html`, gallery grid, the
   `.btn { margin-top: 1rem }` CTA spacing on the sub-pages) in a small inline
-  `<style>`. Keep links relative — never root-relative — and keep the
-  `.is-active`/`aria-current` on exactly one link per page.
+  `<style>`. Keep links relative — never root-relative.
 - **Index hero is compact (index only, 2026-08-13).** The shared `.hero` in
   `styles.css` is tall (`padding: 56px 0 48px`, bumping to `80px 0 64px` at
   ≥560px; a `2.5rem` mark; `clamp(2rem, 9vw, 3rem)` h1). The organizer asked to
@@ -313,11 +318,14 @@ unavailable. The node DOM-shim loads the same three files in the same order
   doesn't exist.
 - **Shared footer.** All five pages end with the same `<footer>`: a
   `.footer-brand` tagline ("…exploring the city one café at a time"), a
-  `.footer-nav` mirroring the five tab links (relative, no `.is-active`), and a
-  `.footer-social` row (Instagram + Partiful, separated by a `.sep`). The footer
-  styles live once in `site/styles.css` next to the nav; each page just repeats
-  the shared markup. Keep the three footers on the WIP sub-pages identical to
-  the home page's — no per-page footer divergence.
+  `.footer-nav` carrying **all five** links (Rides / Gallery / Shop / Meta
+  Business / Donate — relative, no `.is-active`), and a `.footer-social` row
+  (Instagram + Partiful, separated by a `.sep`). Shop and Meta Business were
+  removed from the top tabs (2026-08-13) but **kept here** — the footer is
+  their only nav home. The footer styles live once in `site/styles.css` next to
+  the nav; each page just repeats the shared markup. Keep the three footers on
+  the WIP sub-pages identical to the home page's — no per-page footer
+  divergence.
 - CSS custom properties on `:root` are the warm café palette (`--espresso`,
   `--roast`, `--crema`, `--latte`, `--foam`, `--oat`, `--ink`, `--muted`).
   Reuse them; don't introduce new hex values.

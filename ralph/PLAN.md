@@ -7,7 +7,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 
 - [x] I like how it looks on mobile, but the text is harder to read on desktop.
 - [x] Reduce size of hero section on index
-- [ ] remove shop, meta business from top tabs for now. keep on footer.
+- [x] remove shop, meta business from top tabs for now. keep on footer.
 
 > **Note convention (2026-08-13):** completed bullets keep their original
 > task wording — just flip `[ ]` to `[x]`, with no `(Done: …)` write-up
