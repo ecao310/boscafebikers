@@ -287,20 +287,20 @@ unavailable. The node DOM-shim loads the same three files in the same order
 
 - **Shared tab header nav.** All five pages (`index.html`, `gallery.html`,
   `shopify.html`, `meta-business.html`, `donate.html`) carry the same `.nav` —
-  a sticky espresso bar with five relative `.tabs` links (Rides / Gallery /
-  Shop / Meta Business / Donate). The sticky behavior (`position: sticky;
-  top: 0`) is intentional and satisfies the organizer's "top nav doesn't
-  scroll with the page" backlog item — verified in headless Chromium on the
-  live site (2026-08-13). If that request is ever re-opened to mean the
-  OPPOSITE (nav scrolls away), the revert is removing those two declarations. The current page's link gets `.is-active` +
+  an espresso bar with five relative `.tabs` links (Rides / Gallery / Shop /
+  Meta Business / Donate). The nav is **static and scrolls with the page**: the
+  organizer re-opened the earlier "keep the nav pinned" request as its opposite
+  ("make top navigation bar not stay permanently on screen"), so
+  `position: sticky; top: 0` were removed from `.nav` in `site/styles.css`
+  (2026-08-13); the `.is-active`/`aria-current` + `section { scroll-margin-top:
+  64px }` clearance for the sticky nav were removed from `index.html` at the
+  same time. The current page's link gets `.is-active` +
   `aria-current="page"`; the others are plain. The nav CSS lives once in
   `site/styles.css` (linked by all five pages); each page keeps only its
   page-specific rules (rides/calendar on `index.html`, gallery grid, the
   `.btn { margin-top: 1rem }` CTA spacing on the sub-pages) in a small inline
   `<style>`. Keep links relative — never root-relative — and keep the
-  `.is-active`/`aria-current` on exactly one link per page. `section {
-  scroll-margin-top: 64px }` on the home page keeps the sticky nav from covering
-  in-page anchor targets (`#rides`).
+  `.is-active`/`aria-current` on exactly one link per page.
 - **Shared footer.** All five pages end with the same `<footer>`: a
   `.footer-brand` tagline ("…exploring the city one café at a time"), a
   `.footer-nav` mirroring the five tab links (relative, no `.is-active`), and a
@@ -390,7 +390,7 @@ unavailable. The node DOM-shim loads the same three files in the same order
     the close button. `closeRideModal()` restores focus to the opener. Closing:
     the `×` button, Escape (a `keydown` listener), or clicking the backdrop
     (any click in the overlay whose target isn't inside `.modal-dialog`). The
-    modal sits at `z-index: 100` (above the sticky nav's 10) and relies on the
+    modal sits at `z-index: 100` (above the nav) and relies on the
     `[hidden]` rule to beat its `display: flex`. The dialog is a **flex column**
     with `#ride-modal-content` as its scrollport (`min-height: 0;
     overflow-y: auto`), so it fits within `max-height: 88vh` and the 44px

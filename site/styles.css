@@ -115,10 +115,11 @@ a { color: var(--roast); }
 .btn:active { filter: brightness(.92); }
 
 /* --- tab header nav --- */
+/* Static espresso bar that scrolls with the page — the organizer re-opened
+   the earlier "keep the nav pinned" request as its opposite ("make top nav
+   not stay permanently on screen"), so position: sticky / top: 0 were
+   removed (2026-08-13). No JS or page CSS depends on the nav being pinned. */
 .nav {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   background: var(--espresso);
   border-bottom: 1px solid rgba(246, 236, 224, .15);
 }
