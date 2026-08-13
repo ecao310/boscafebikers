@@ -18,7 +18,8 @@ Tagline: "exploring the city one café at a time".
 | `tests/fixtures/sample.ics` | Offline fixture (2 future, 1 past, 1 cancelled). See table below. |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
 | `site/styles.css` | Shared stylesheet: café palette + base/nav/hero/footer styles, linked by every page. |
-| `site/index.html` | Home: rides list/calendar, page-specific inline CSS + shared `styles.css`, JS. |
+| `site/index.html` | Home: rides list/calendar, page-specific inline CSS + shared `styles.css`. Loads the ride JS as `js/app.js`. |
+| `site/js/app.js` | The ride-rendering script (extracted from `index.html`'s inline block; see the `site/index.html` section). |
 | `site/gallery.html` | Ride-photo gallery (empty state → Instagram CTA). |
 | `site/shopify.html` | WIP shop page (placeholder only). |
 | `site/meta-business.html` | WIP Meta Business page (placeholder only). |
@@ -248,8 +249,13 @@ each iteration changed.
 ## `site/index.html`
 
 No build step: `site/styles.css` linked in `<head>` (the shared base — palette,
-nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
-`<script>` just before `</body>`.
+nav, hero, footer), a small page-specific inline `<style>`, and the ride script
+loaded as `<script src="js/app.js" defer></script>` at the end of `<body>` (the
+IIFE lives in `site/js/app.js` — see the "Verifying the JS" note for how the
+node DOM-shim loads it directly). The `defer`'d FullCalendar CDN script sits in
+`<head>`; both are deferred, so FC executes before app.js on a real page and the
+calendar takes the FullCalendar path directly, falling back to the hand-rolled
+grid only when the CDN is unavailable.
 
 - **Shared tab header nav.** All five pages (`index.html`, `gallery.html`,
   `shopify.html`, `meta-business.html`, `donate.html`) carry the same `.nav` —
@@ -276,7 +282,7 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
 - Layout is mobile-first: `.wrap` (max-width 680px, 20px gutters) and one
   `@media (min-width: 560px)` block that only bumps vertical padding. Verified
   readable at 380px.
-- **Rendering script** (bottom of the file): `fetch("events.json")` →
+- **Rendering script** (`site/js/app.js`, loaded as `js/app.js` with `defer`): `fetch("events.json")` →
   - The **next-ride section** (`#next-ride`, the first section in `<main>`,
     right under the hero — whose CTA anchors to `#next-ride`) shows the nearest
     upcoming ride as a featured card. `setNextRide()` renders `events[0]`
@@ -396,11 +402,13 @@ nav, hero, footer), a small page-specific inline `<style>`, and one IIFE
   keep it that way.
 - The DOM is built with `createElement`/`textContent`, never `innerHTML`, so
   feed text can't inject markup. Keep that.
-- Verifying the JS: no browser here, but `node` (v25) is installed. Shim a
-  tiny `document`/`fetch`, pull the script out of the HTML with a regex, and
-  `eval` it — that's how the happy path, empty, missing-rsvp, 404, and the
-  ride-detail modal (open via chip / FullCalendar `eventClick`, close via
-  backdrop / Escape / `×`, re-render-destroys) cases were checked.
+- Verifying the JS: no browser here, but `node` (v25) is installed. The script
+  now lives in `site/js/app.js`, so the node DOM-shim `readFileSync`s that file
+  directly and evals it against a shimmed `document`/`fetch` (no regex-pulling
+  out of the HTML) — that's how the happy path, empty, missing-rsvp, 404, and
+  the ride-detail modal (open via chip / FullCalendar `eventClick`, close via
+  backdrop / Escape / `×`, stale-instance-destroyed-on-re-render) cases are
+  checked.
 - Sections/ids: `#next-ride`, `#rides`, `#first-ride`, `#about`, `#links`,
   `#contact`; the ride-detail overlay is `#ride-modal` (not a `<section>`).
   The hero CTA anchors to `#next-ride`.
