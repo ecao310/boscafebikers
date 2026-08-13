@@ -314,6 +314,14 @@ unavailable. The node DOM-shim loads the same three files in the same order
 - Layout is mobile-first: `.wrap` (max-width 680px, 20px gutters) and one
   `@media (min-width: 560px)` block that only bumps vertical padding. Verified
   readable at 380px.
+- **Desktop typography (2026-08-13):** the base font is `1rem` (16px on mobile),
+  and a `@media (min-width: 760px)` block in `styles.css` bumps the **root**
+  font to `18px`, so every rem-based size (body copy, notes, nav, footer,
+  calendar labels) scales up ~12.5% on desktop. Rationale: at 16px the 680px
+  wrap measured ~85 chars/line — past the ~75-char reading-comfort limit — and
+  the small print stayed tiny; at 18px the measure is ~75 chars. Keep `body`
+  font-size as `1rem`, never a px literal — an explicit px would pin inherited
+  prose at 16px on desktop. Mobile (below 760px) is byte-for-byte unchanged.
 - **Photos load last (`data-bg`), backing four sections.** Photos are *not*
   `background-image`s in the stylesheet — `app.js` reads the `data-bg`
   attribute on any matching element and copies it into `background-image` only

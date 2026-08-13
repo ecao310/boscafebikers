@@ -31,7 +31,9 @@ body {
   margin: 0;
   background: var(--latte);
   color: var(--ink);
-  font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  /* 1rem (not a px literal) so inherited body copy scales with the desktop
+     root-font bump at ≥760px below — 16px on mobile, 18px on desktop. */
+  font: 1rem/1.6 ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 .wrap {
@@ -230,4 +232,17 @@ footer .footer-social .sep {
 @media (min-width: 560px) {
   .hero { padding: 80px 0 64px; }
   section { padding: 56px 0; }
+}
+
+/* --- desktop typography (2026-08-13) --- */
+/* The mobile-first base is 16px, which reads comfortably on a phone (~45
+   chars/line at 380px). On a desktop the same 16px in the 680px wrap
+   stretches to ~85 chars/line — past the ~75-char reading-comfort limit —
+   and the rem-based small print (notes, calendar labels, footer) stays tiny.
+   Bumping the root font-size at desktop widths scales every rem-based size
+   proportionally (body copy, nav, notes, calendar), so text on a big monitor
+   is at least as readable as on a phone. The wrap stays 680px: at 18px the
+   measure is ~75 chars, the top of the comfortable range. */
+@media (min-width: 760px) {
+  html { font-size: 18px; }
 }

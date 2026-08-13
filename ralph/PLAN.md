@@ -3,6 +3,12 @@
 Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
+## Backlog 6
+
+- [x] I like how it looks on mobile, but the text is harder to read on desktop.
+- [ ] Reduce size of hero section on index
+- [ ] remove shop, meta business from top tabs for now. keep on footer.
+
 > **Note convention (2026-08-13):** completed bullets keep their original
 > task wording — just flip `[ ]` to `[x]`, with no `(Done: …)` write-up
 > appended to the bullet. Per-iteration notes go in `ralph/ralph.log`
