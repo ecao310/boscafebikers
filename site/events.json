@@ -1,20 +1,7 @@
 {
-  "updated_at": "2026-08-15T14:22:27.461859-04:00",
-  "count": 2,
+  "updated_at": "2026-08-16T14:22:14.118570-04:00",
+  "count": 1,
   "events": [
-    {
-      "uid": "a0gbEpda9D8KPbQfY275",
-      "title": "Let’s go to Localito",
-      "start": "2026-08-16T11:00:00-04:00",
-      "end": null,
-      "date_display": "Sunday, August 16",
-      "time_display": "11:00 am",
-      "location": "Localito Cafe, 30 Riverside Ave, Medford, MA",
-      "location_hidden": false,
-      "description": "Come out and explore your city… or another city right next door!\n\nThis gorgeous little ride will take us from Charlestown up to Localito Cafe in Medford.",
-      "rsvp_url": "https://partiful.com/e/a0gbEpda9D8KPbQfY275",
-      "image": "https://assets.getpartiful.com/posters/yes.png"
-    },
     {
       "uid": "5I2Zwclcs30LUlbOjjeb",
       "title": "O’Some Sunday",
