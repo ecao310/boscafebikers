@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-16T14:22:14.118570-04:00",
-  "count": 1,
+  "updated_at": "2026-08-17T14:32:22.344921-04:00",
+  "count": 2,
   "events": [
     {
       "uid": "5I2Zwclcs30LUlbOjjeb",
@@ -14,6 +14,19 @@
       "description": "Watertown? How about we call it coffee town just for today? 🤫 This jaunt will start in Brookline and end at O’Some Cafe in Watertown.\n\nH.A.G.S.",
       "rsvp_url": "https://partiful.com/e/5I2Zwclcs30LUlbOjjeb",
       "image": "https://assets.getpartiful.com/posters/hot-drinks-plain-2.png"
+    },
+    {
+      "uid": "0kgziJu0xvnL3SBCeuU7",
+      "title": "Meet Cute @ Meet Point",
+      "start": "2026-08-29T11:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, August 29",
+      "time_display": "11:00 am",
+      "location": "Meet Point Patisserie Brookline, 3 Kendall St, Brookline, MA",
+      "location_hidden": false,
+      "description": "Let’s meet for a ride westward from Downtown Crossing to Meet Point Patisserie in Brookline. Mmmmmmm pastry!\n\nSavor the moment to bike with your neighbors in the sun as the last ride of August.",
+      "rsvp_url": "https://partiful.com/e/0kgziJu0xvnL3SBCeuU7",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2Fa_n4RCOs-b0-vLrAAPmsK?alt=media&token=431384ca-cce9-4556-968e-657167941507"
     }
   ]
 }
