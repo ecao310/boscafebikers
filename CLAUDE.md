@@ -74,7 +74,7 @@ Run on the fixture (never the live feed) with:
 ```
 
 - CLI: `--ics-file PATH` (bypasses the network), `--out PATH` (default `site/events.json`), `--ride-images PATH` (default `scripts/ride_images.json`). With no `--ics-file` it reads `PARTIFUL_ICS_URL`, rewriting a leading `webcal://` to `https://`. **`--ics-file` runs never enrich** — they stay fully offline (zero network calls).
-- Importable API for tests: `parse_events(data: bytes, now=None, images=None) -> list[dict]`, `extract_rsvp_url(description)`, `derive_partiful_url(uid) -> str | None`, `load_ride_images(path=None) -> dict`, `enrich_rides(rides, fetch_page=None) -> int`, `build_payload(rides, now=None)`, `write_events(payload, path)`, `main(argv) -> int`, and `FeedError`. Injecting `now` pins "future" without depending on the clock.
+- Importable API for tests: see the function defs and docstrings in `fetch_rides.py`. Injecting `now` pins "future" without depending on the clock.
 - **Never echo `requests` exception text** — it embeds the request URL. The fetch path reports only `type(exc).__name__` (+ HTTP status when present). `scrub()` strips URLs from any other surfaced text.
 - Output shape: `{"updated_at", "count", "events": [...]}`; each event has `uid, title, start (ISO+offset), end (ISO+offset, may be null), date_display, time_display, location (may be null), location_hidden (bool), description (RSVP/invite line stripped), rsvp_url (may be null), image (may be null)`. Display strings are precomputed in Python so the page doesn't render in the visitor's tz.
 - **`rsvp_url` from the feed text:** Partiful descriptions carry the event page as `RSVP: <url>` / `RSVP at <url>` / `View this event on Partiful at <url>`, line-folded across the phrase/URL boundary — `extract_rsvp_url` matches all three on the unfolded `str(event['DESCRIPTION'])`, never raw lines. `_strip_rsvp` drops the invite line from the displayed description. If there's no link at all, `derive_partiful_url` falls back to `https://partiful.com/e/<uid>` **only** for a bare UID (no `@` — descriptive `<name>@partiful.com` UIDs are never treated as ids). This is what makes the site's "RSVP on Partiful" button link to the actual event.
@@ -87,13 +87,6 @@ Run on the fixture (never the live feed) with:
 ## Fixture contents (`tests/fixtures/sample.ics`)
 
 Partiful-style feed, 4 VEVENTs, deliberately **not** chronological so sorting is exercised. All `DTSTART;TZID=America/New_York` (VTIMEZONE included, so `icalendar` returns tz-aware datetimes directly).
-
-| UID prefix | Summary | Start | Status | Expected |
-| --- | --- | --- | --- | --- |
-| `evt-past-jamaica-pond` | Jamaica Pond Loop ☕ | 2024-05-04 09:00 | CONFIRMED | dropped (past) |
-| `evt-cancelled-blue-hills` | Blue Hills Coffee Climb | 2030-09-14 08:30 | CANCELLED | dropped |
-| `evt-future-charles-loop` | Charles River Loop → Tatte \| Partiful | 2030-06-22 09:30 | CONFIRMED | **kept, 1st** |
-| `evt-future-minuteman` | Minuteman Bikeway to Lexington | 2030-07-06 10:00 | CONFIRMED | **kept, 2nd** |
 
 - Future dates are **2030** on purpose, so the fixture doesn't rot.
 - Charles carries the ` | Partiful` suffix (exercises `_clean_title`); Minuteman's LOCATION is the real `Location available once RSVP'd` placeholder while Charles has a public address — the shared `rides` fixture exercises `_clean_location` both ways.
@@ -110,10 +103,6 @@ Cron `0 */6 * * *` (UTC) + `workflow_dispatch`. Ubuntu, Python 3.11, pip cache k
 - Committer identity is the `github-actions[bot]` noreply address.
 - The secret is passed as `env: PARTIFUL_ICS_URL: ${{ secrets.PARTIFUL_ICS_URL }}` on the fetch step only — never as a CLI arg (args show up in logs).
 - No `yaml` module in the venv; validate the workflow with `ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load_file(".github/workflows/sync.yml"))'`.
-
-## `.github/workflows/pages.yml`
-
-`checkout` (with `ref: ${{ github.ref }}`) → `actions/configure-pages@v5` → `actions/upload-pages-artifact@v3` (`path: site`) → `actions/deploy-pages@v4`, with `permissions: contents: read / pages: write / id-token: write`, `concurrency: pages` (`cancel-in-progress: false`), and the `github-pages` environment carrying the deploy URL. Triggers: `push` on **`master`** (the default branch — there is no `main`), `workflow_dispatch`, and `workflow_call` (from sync.yml).
 
 ## Status
 
@@ -153,5 +142,5 @@ Run with `.venv/bin/python -m pytest tests/ -q` (69 passing).
 
 - No `conftest.py` / packaging; the test file puts `scripts/` on `sys.path` itself and does `import fetch_rides`.
 - Pinned clock: `NOW = 2025-01-01 12:00 America/New_York`, passed as `parse_events(..., now=NOW)`. Never call the parser without `now` in a test.
-- Coverage: past + cancelled filtering, sort order, folded-RSVP extraction, RSVP line stripped from description, `-04:00` offsets, precomputed display strings, non-ASCII round-trip, `now` boundary (`>=` keeps an event starting exactly now), empty result, malformed feed → `FeedError`, `main()` exit codes (0 happy path, 1 for broken feed / missing file / unset env var), `end` extraction (fixture DTEND → ISO, missing DTEND → null), hidden-location placeholder → `location: null` + `location_hidden: true`, two leak tests asserting the feed URL never reaches an error message, and the event-page enrichment (fixture `event-page.html` → image extracted; sidecar wins; fetch failure soft; `--ics-file` runs never enrich, live-feed runs do).
+- Coverage: the full suite in `tests/test_fetch_rides.py` (incl. leak tests that the feed URL never reaches an error message).
 - The suite passes under any system timezone (verified with `TZ=Asia/Tokyo`) — keep it that way; assert on explicit offsets, not on local time.
