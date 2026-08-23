@@ -168,6 +168,15 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   fields already in the file (no live-feed access). `rsvp_url` now points at
   the actual event page and the invite line is stripped. The next scheduled
   sync reconciles with the live feed either way.
+- [x] The first live sync of the new past-rides archive revealed the Partiful
+  feed carries **34** past events (back to 2025-09-19), not the 6 recoverable
+  from git history — and they arrive **unenriched**, because only the upcoming
+  list is enriched. 28 archived rides therefore had no image, no route and no
+  map. Fixed with `scripts/enrich_archive.py`: a bounded backfill that walks
+  the archive newest-first and enriches at most 8 never-checked rides per sync,
+  so the whole archive fills in over a few runs and then costs nothing.
+  (Backfilled locally: 34/34 archived rides now have an image, 7 have routes
+  and maps — the older rides never had a route link on Partiful.)
 - [x] Post-`RALPH_DONE`, a fresh iteration found an **uncommitted copy edit** in
   `site/index.html` (removed the "We're run by volunteers, so" intro from the
   Contact-copy paragraph and reflowed the `#updated-link` anchor attributes —

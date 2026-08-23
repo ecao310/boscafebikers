@@ -49,6 +49,14 @@ jobs:
           python scripts/archive_events.py --archive site/events-past.json \
             site/events.json "$RUNNER_TEMP/events-past.json"
 
+      # Rides that land in the archive straight from the feed's past export were
+      # never enriched (only the upcoming list is). The feed carries years of
+      # them, so fill in a few per run rather than re-fetching all of them every
+      # 6 hours; once the archive is checked this step is a no-op.
+      # No secret here: enrichment only ever touches public event pages.
+      - name: Backfill images and routes on a few archived rides
+        run: python scripts/enrich_archive.py --limit 8 site/events-past.json
+
       - name: Update site/events.json only if the rides changed
         run: python scripts/promote_events.py "$RUNNER_TEMP/events.json" site/events.json
 

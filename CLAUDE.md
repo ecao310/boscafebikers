@@ -15,6 +15,7 @@ Tagline: "exploring the city one café at a time".
 | `scripts/fetch_rides.py` | Fetches + parses the ICS feed → `site/events.json`; enriches ride images from public Partiful pages on live syncs. |
 | `scripts/promote_events.py` | Copies fetched JSON over the committed one only if `events` differ. |
 | `scripts/archive_events.py` | Accumulates already-happened rides into `site/events-past.json` (stdlib only). |
+| `scripts/enrich_archive.py` | Backfills images/routes onto archived rides, a few per sync run. |
 | `scripts/route_map.py` | Draws a ride's route as a self-contained SVG (stdlib only, no network). |
 | `scripts/render_route_maps.py` | Fetches route geometry and writes `site/maps/<uid>.svg`; sets `map_image`. |
 | `scripts/ride_images.json` | Optional sidecar: ride UID → image URL; an explicit entry wins over auto-enrichment. |
@@ -23,6 +24,7 @@ Tagline: "exploring the city one café at a time".
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
 | `tests/test_archive_events.py` | pytest suite for the past-rides archive merge. |
 | `tests/test_route_map.py` | pytest suite for the route-map projection, SVG, and renderer. |
+| `tests/test_enrich_archive.py` | pytest suite for the bounded archive backfill. |
 | `site/styles.css` | Shared stylesheet: café palette + base/nav/hero/footer, linked by every page. |
 | `site/index.html` | Home: rides calendar, page-specific inline CSS + shared `styles.css`, three ride JS files in dependency order. |
 | `site/js/ride-card.js` | `window.BCB` module: `rideCard()` builder, `.ics`/Google Calendar exports, shared constants (`PARTIFUL`, `MONTHS`, `DOW`), `el()` helper. Loaded first. |
@@ -121,6 +123,7 @@ python scripts/archive_events.py --archive site/events-past.json <source.json> [
 - Sources are events payloads, **oldest first**. Only their already-happened rides are absorbed; the archive's own entries are never re-filtered on `now` (a clock skew must not drop history we already keep).
 - Dedupe key: `uid`, else `start|title`. A later source wins field by field **except that `None` never overwrites a value** — that's what keeps a ride's enriched `image` after it moves into the past, since the feed's past export carries no photo and enrichment only runs on the upcoming list.
 - Rewrites the file only when the `events` list changed (same no-churn guard as `promote_events.py`). Stdlib only; exits nonzero only on a missing/malformed source.
+- **The feed carries years of past events** — the first live run archived **34**, back to 2025-09-19, not the 6 that git history had. They arrive from `--past-out` **unenriched** (only the upcoming list is enriched), so `scripts/enrich_archive.py` fills them in **newest-first, `--limit 8` per sync**: enriching 34 event pages every 6 hours would be pointless traffic for data that never changes. `routes is None` is the "never checked" marker it selects on, so once the archive is filled the step is a no-op. Result today: 34/34 have an image, 7 have route links (older rides simply had no route custom field).
 - **The archive must accumulate** — don't "simplify" it into a plain past-events dump from the feed. Partiful gives no guarantee it keeps exporting old events, and once one falls out of the feed the archive is the only copy.
 - `fetch_rides.py --past-out PATH` writes the feed's already-happened rides for it; `parse_events(..., past=True)` is the same parse with the filter flipped.
 - Seeded 2026-08-22 from the 23 historical versions of `site/events.json` in `git log` (6 rides back to 2026-07-25), then re-cleaned through `_clean_title`/`_clean_description` and enriched — the four oldest predate the text-cleanup code, so they carried ` | Partiful` titles, the invite line, and `rsvp_url: null`.
@@ -195,7 +198,7 @@ Its own page as of 2026-08-22; the slot it vacated on `index.html` is now the `#
 
 ## `tests/test_fetch_rides.py`
 
-Run with `.venv/bin/python -m pytest tests/ -q` (140 passing, incl. `tests/test_archive_events.py` and `tests/test_route_map.py`).
+Run with `.venv/bin/python -m pytest tests/ -q` (149 passing, incl. `tests/test_archive_events.py`, `tests/test_route_map.py`, `tests/test_enrich_archive.py`).
 
 - No `conftest.py` / packaging; the test file puts `scripts/` on `sys.path` itself and does `import fetch_rides`.
 - Pinned clock: `NOW = 2025-01-01 12:00 America/New_York`, passed as `parse_events(..., now=NOW)`. Never call the parser without `now` in a test.

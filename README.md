@@ -222,6 +222,7 @@ needs touching.
 | `scripts/fetch_rides.py` | Fetch + parse the ICS feed → `site/events.json` |
 | `scripts/promote_events.py` | Copy fetched JSON into place only if the rides changed |
 | `scripts/archive_events.py` | Fold already-happened rides into `site/events-past.json` |
+| `scripts/enrich_archive.py` | Backfill images/routes onto archived rides, a few per run |
 | `scripts/route_map.py` | Draw a route as an SVG (stdlib only) |
 | `scripts/render_route_maps.py` | Fetch route geometry and write `site/maps/<uid>.svg` |
 | `site/index.html` | The rides page (calendar, next ride, about, contact) |
