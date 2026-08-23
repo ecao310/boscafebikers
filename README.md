@@ -176,6 +176,24 @@ The test suite is fully offline: it parses `tests/fixtures/sample.ics` with a
 pinned clock, so it never touches the network and never depends on the system
 timezone.
 
+## Contacting the group
+
+`site/contact.html` has a real "send us a message" form. GitHub Pages is static
+— there's no server to POST to and nowhere to keep an API key — so submitting
+composes a message in the visitor's own mail app (`js/contact.js` builds a
+prefilled `mailto:` URL).
+
+**To change who receives it, edit one attribute** — the form's action in
+`site/contact.html`:
+
+```html
+<form id="contact-form" ... action="mailto:ecao.csindie@gmail.com" ...>
+```
+
+`contact.js` reads the address back out of that action for both the prefilled
+message and the "Prefer your own mail app?" fallback link, so nothing else
+needs touching.
+
 ## Repo layout
 
 | Path | Purpose |
@@ -183,7 +201,8 @@ timezone.
 | `scripts/fetch_rides.py` | Fetch + parse the ICS feed → `site/events.json` |
 | `scripts/promote_events.py` | Copy fetched JSON into place only if the rides changed |
 | `scripts/archive_events.py` | Fold already-happened rides into `site/events-past.json` |
-| `site/index.html` | The whole site |
+| `site/index.html` | The rides page (calendar, next ride, about, contact) |
+| `site/contact.html` | Contact page — email form that composes a `mailto:` |
 | `site/events.json` | Generated ride data — upcoming rides (committed; CI updates it) |
 | `site/events-past.json` | Accumulating archive of rides that already happened |
 | `tests/fixtures/sample.ics` | Offline fixture: 2 future, 1 past, 1 cancelled |
