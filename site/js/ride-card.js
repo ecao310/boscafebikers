@@ -145,7 +145,7 @@
   // The shared ride-card builder — used by the featured next-ride card AND the
   // ride-detail modal, so the details and add-to-calendar exports can't drift.
   BCB.rideCard = (ev, extraClass) => {
-    const card = BCB.el("div", "ride" + (extraClass ? " " + extraClass : ""));
+    const card = BCB.el("div", "ride" + (ev.past ? " is-past" : "") + (extraClass ? " " + extraClass : ""));
     if (ev.image) {
       // Photo banner, linked to the same RSVP target as the button below.
       const imgLink = BCB.el("a", "ride-img-link");
@@ -159,7 +159,13 @@
       card.appendChild(imgLink);
     }
     const when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
-    if (when) { card.appendChild(BCB.el("p", "when", when)); }
+    if (when || ev.past) {
+      const whenLine = BCB.el("p", "when", when);
+      // A ride pulled off the archive needs to say so: the date alone doesn't
+      // read as "already happened" when you land on it from the calendar.
+      if (ev.past) { whenLine.appendChild(BCB.el("span", "ride-tag", "Past ride")); }
+      card.appendChild(whenLine);
+    }
     card.appendChild(BCB.el("h3", null, ev.title || "Café ride"));
     if (ev.location) {
       card.appendChild(BCB.el("p", "where", ev.location));
@@ -170,10 +176,16 @@
     }
     if (ev.description) { card.appendChild(BCB.el("p", null, ev.description)); }
     const actions = BCB.el("div", "ride-actions");
-    const link = BCB.el("a", "btn", "RSVP on Partiful");
+    const link = BCB.el("a", "btn", ev.past ? "See it on Partiful" : "RSVP on Partiful");
     link.href = ev.rsvp_url || BCB.PARTIFUL;
     link.rel = "noopener";
     actions.appendChild(link);
+    if (ev.past) {
+      // No RSVP, and nothing to add to a calendar — the ride is over. The
+      // Partiful link still works, and that's where the photos are.
+      card.appendChild(actions);
+      return card;
+    }
     const ics = BCB.el("button", "btn btn-ghost", "Add to calendar");
     ics.type = "button";
     ics.setAttribute("aria-label", "Download .ics for " + (ev.title || "this ride"));

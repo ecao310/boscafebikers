@@ -7,6 +7,10 @@ at a file instead:
 
     python scripts/fetch_rides.py --ics-file tests/fixtures/sample.ics
 
+--past-out additionally writes the feed's already-happened rides, which
+scripts/archive_events.py folds into site/events-past.json so the calendar can
+keep showing them.
+
 Exits nonzero on any fetch or parse failure.
 """
 
@@ -297,9 +301,16 @@ def _clean_description(description: str) -> str:
 
 
 def parse_events(
-    data: bytes, now: datetime | None = None, images: dict | None = None
+    data: bytes,
+    now: datetime | None = None,
+    images: dict | None = None,
+    past: bool = False,
 ) -> list[dict]:
-    """Parse feed bytes into a sorted list of upcoming, non-cancelled rides.
+    """Parse feed bytes into a sorted list of non-cancelled rides.
+
+    By default only rides that haven't happened yet; `past=True` returns the
+    ones that already have, so the site can keep showing them on the calendar
+    (see scripts/archive_events.py). Either way the list is sorted by start.
 
     `images` is the optional UID → image-URL sidecar; each ride carries its
     photo URL as `image` (None when absent).
@@ -319,7 +330,7 @@ def parse_events(
         if dtstart is None:
             raise FeedError("an event in the feed has no DTSTART")
         start = _as_local_datetime(dtstart.dt)
-        if start < now:
+        if (start < now) != past:
             continue
         uid = _text(component, "UID")
         description = _text(component, "DESCRIPTION")
@@ -399,11 +410,25 @@ def main(argv: list[str] | None = None) -> int:
         default=str(RIDE_IMAGES_PATH),
         help=f"UID → image-URL sidecar JSON (default: {RIDE_IMAGES_PATH})",
     )
+    parser.add_argument(
+        "--past-out",
+        help="also write the feed's already-happened rides here, for the "
+             "archive scripts/archive_events.py merges into events-past.json",
+    )
     args = parser.parse_args(argv)
 
+    # One `now` for both passes: computing it twice could drop (or duplicate) a
+    # ride that starts between the two calls.
+    now = datetime.now(timezone.utc).astimezone(LOCAL_TZ)
     try:
         data = load_source(args)
-        rides = parse_events(data, images=load_ride_images(args.ride_images))
+        images = load_ride_images(args.ride_images)
+        rides = parse_events(data, now=now, images=images)
+        past_rides = (
+            parse_events(data, now=now, images=images, past=True)
+            if args.past_out
+            else []
+        )
     except FeedError as exc:
         print(f"fetch_rides: {exc}", file=sys.stderr)
         return 1
@@ -418,14 +443,18 @@ def main(argv: list[str] | None = None) -> int:
                 "from their Partiful event pages"
             )
 
-    payload = build_payload(rides)
     try:
-        write_events(payload, Path(args.out))
+        write_events(build_payload(rides, now=now), Path(args.out))
+        if args.past_out:
+            write_events(build_payload(past_rides, now=now), Path(args.past_out))
     except OSError as exc:
-        print(f"fetch_rides: could not write {args.out}: {exc.strerror}", file=sys.stderr)
+        target = exc.filename or args.out
+        print(f"fetch_rides: could not write {target}: {exc.strerror}", file=sys.stderr)
         return 1
 
     print(f"fetch_rides: wrote {len(rides)} upcoming ride(s) to {args.out}")
+    if args.past_out:
+        print(f"fetch_rides: wrote {len(past_rides)} past ride(s) to {args.past_out}")
     return 0
 
 

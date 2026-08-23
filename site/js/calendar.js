@@ -69,9 +69,10 @@
         byDay[dayNum].forEach((ev) => {
           // A button (not a link) so clicking shows the detail modal; the
           // modal carries the RSVP / add-to-calendar actions.
-          const chip = BCB.el("button", "ride-chip", ev.title);
+          const chip = BCB.el("button", "ride-chip" + (ev.past ? " is-past" : ""), ev.title);
           chip.type = "button";
-          chip.setAttribute("aria-label", "View details for " + (ev.title || "this ride"));
+          chip.setAttribute("aria-label", (ev.past ? "View details for past ride " : "View details for ") +
+            (ev.title || "this ride"));
           chip.addEventListener("click", () => { BCB.openRideModal(ev); });
           cell.appendChild(chip);
         });
@@ -97,8 +98,10 @@
   // overridden in <head>. If the CDN script hasn't run yet (or is blocked),
   // app.js falls back to the hand-rolled month grid above. `mountEl` is the
   // element the resulting .calendar box is appended to (app.js passes
-  // #schedule); returns the box element as well.
-  function renderCalendarFull(events, mountEl) {
+  // #schedule); returns the box element as well. `focusIso` is the ride whose
+  // month should open first — events[0] is the oldest *past* ride now that the
+  // archive is on the calendar, so the caller passes the next upcoming one.
+  function renderCalendarFull(events, mountEl, focusIso) {
     const box = BCB.el("div", "calendar");
     const holder = document.createElement("div");
     holder.id = "ride-calendar";
@@ -112,11 +115,14 @@
     if (mountEl) { mountEl.appendChild(box); }
 
     const first = events[0];
-    const initial = first && easternParts(first.start);
+    const initial = easternParts(focusIso || (first && first.start));
     const fcEvents = events.map((ev) => {
       // extendedProps carries the full event so eventClick can open the modal.
       const out = { title: ev.title || "Café ride", start: ev.start, url: ev.rsvp_url || BCB.PARTIFUL, extendedProps: { data: ev } };
       if (ev.end) { out.end = ev.end; }
+      // Rides that already happened are dimmed, so the upcoming ones stay the
+      // ones that catch the eye on a month full of history.
+      if (ev.past) { out.classNames = ["is-past"]; }
       return out;
     });
 

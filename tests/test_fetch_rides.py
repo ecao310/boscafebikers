@@ -573,3 +573,53 @@ def test_scrub_removes_urls():
     scrubbed = fetch_rides.scrub("failed: webcal://p.com/a.ics and https://p.com/b")
     assert "p.com" not in scrubbed
     assert "<url redacted>" in scrubbed
+
+
+# --- past rides: the feed's already-happened events and the archive ---
+
+
+@pytest.fixture(scope="module")
+def past_rides(feed_bytes: bytes) -> list[dict]:
+    return fetch_rides.parse_events(feed_bytes, now=NOW, past=True)
+
+
+def test_past_mode_returns_only_the_past_ride(past_rides):
+    assert [ride["uid"] for ride in past_rides] == [
+        "evt-past-jamaica-pond@partiful.com"
+    ]
+
+
+def test_past_mode_still_drops_cancelled_events(feed_bytes):
+    """The cancelled Blue Hills ride is in 2030 — past-mode from 2031 skips it."""
+    later = datetime(2031, 1, 1, 12, 0, tzinfo=EASTERN)
+    uids = [r["uid"] for r in fetch_rides.parse_events(feed_bytes, now=later, past=True)]
+    assert all("blue-hills" not in uid for uid in uids)
+    assert len(uids) == 3  # the past ride plus the two 2030 rides
+
+
+def test_past_and_upcoming_partition_the_feed(feed_bytes, rides, past_rides):
+    """Every non-cancelled event lands in exactly one of the two lists."""
+    both = {r["uid"] for r in rides} & {r["uid"] for r in past_rides}
+    assert both == set()
+    assert len(rides) + len(past_rides) == 3
+
+
+def test_past_ride_carries_the_same_shape(past_rides):
+    ride = past_rides[0]
+    assert set(ride) == {
+        "uid", "title", "start", "end", "date_display", "time_display",
+        "location", "location_hidden", "description", "rsvp_url", "image",
+    }
+
+
+def test_main_writes_the_past_file_only_when_asked(tmp_path):
+    out = tmp_path / "events.json"
+    past_out = tmp_path / "events-past.json"
+    assert fetch_rides.main(["--ics-file", str(FIXTURE), "--out", str(out)]) == 0
+    assert not past_out.exists()
+    assert fetch_rides.main(
+        ["--ics-file", str(FIXTURE), "--out", str(out), "--past-out", str(past_out)]
+    ) == 0
+    payload = json.loads(past_out.read_text(encoding="utf-8"))
+    assert payload["count"] == len(payload["events"]) == 1
+    assert payload["events"][0]["uid"] == "evt-past-jamaica-pond@partiful.com"

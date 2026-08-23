@@ -36,22 +36,33 @@ jobs:
           PARTIFUL_ICS_URL: ${{ secrets.PARTIFUL_ICS_URL }}
         # Write to a scratch file first: build_payload() stamps a fresh
         # updated_at every run, so site/events.json would always look changed.
-        run: python scripts/fetch_rides.py --out "$RUNNER_TEMP/events.json"
+        run: |
+          python scripts/fetch_rides.py \
+            --out "$RUNNER_TEMP/events.json" \
+            --past-out "$RUNNER_TEMP/events-past.json"
+
+      # Runs BEFORE the promote: site/events.json still holds the previous
+      # upcoming list, so any ride that has since started gets archived even if
+      # Partiful has already dropped it from the feed.
+      - name: Archive rides that have already happened
+        run: |
+          python scripts/archive_events.py --archive site/events-past.json \
+            site/events.json "$RUNNER_TEMP/events-past.json"
 
       - name: Update site/events.json only if the rides changed
         run: python scripts/promote_events.py "$RUNNER_TEMP/events.json" site/events.json
 
-      - name: Commit site/events.json if changed
+      - name: Commit the ride data if changed
         id: commit
         run: |
-          if git diff --quiet -- site/events.json; then
+          if git diff --quiet -- site/events.json site/events-past.json; then
             echo "No ride changes; nothing to commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/events.json
+          git add site/events.json site/events-past.json
           git commit -m "Sync rides from Partiful feed"
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"

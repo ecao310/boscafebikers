@@ -106,6 +106,20 @@
       letter-spacing: .06em;
     }
 
+    /* "Past ride" pill on the date line of an archived ride, so a card opened
+     from the calendar's history reads as history at a glance. */
+    .ride .when .ride-tag {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: 1px 8px;
+      border: 1px solid var(--crema);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: .72rem;
+      letter-spacing: .04em;
+      vertical-align: 1px;
+    }
+
     .ride .where {
       color: var(--muted);
       margin: .4rem 0;
@@ -290,9 +304,29 @@
       min-height: 28px;
     }
 
+    /* Rides that already happened stay on the calendar, but muted, so a month
+     of history doesn't compete with the ride you can still show up for. */
+    .cal-day .ride-chip.is-past,
+    .fc .fc-daygrid-event.is-past {
+      background: transparent;
+      border: 1px dashed var(--crema);
+      color: var(--muted);
+    }
+
+    .fc .fc-daygrid-event.is-past .fc-event-title,
+    .fc .fc-daygrid-event.is-past .fc-event-time {
+      color: var(--muted) !important;
+    }
+
     .cal-day .ride-chip:hover,
     .cal-day .ride-chip:focus {
       background: #c68f5d;
+    }
+
+    .cal-day .ride-chip.is-past:hover,
+    .cal-day .ride-chip.is-past:focus {
+      background: var(--crema);
+      color: #2b1a10;
     }
 
     .cal-day .ride-chip:active {
