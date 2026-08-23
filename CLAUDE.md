@@ -15,11 +15,14 @@ Tagline: "exploring the city one café at a time".
 | `scripts/fetch_rides.py` | Fetches + parses the ICS feed → `site/events.json`; enriches ride images from public Partiful pages on live syncs. |
 | `scripts/promote_events.py` | Copies fetched JSON over the committed one only if `events` differ. |
 | `scripts/archive_events.py` | Accumulates already-happened rides into `site/events-past.json` (stdlib only). |
+| `scripts/route_map.py` | Draws a ride's route as a self-contained SVG (stdlib only, no network). |
+| `scripts/render_route_maps.py` | Fetches route geometry and writes `site/maps/<uid>.svg`; sets `map_image`. |
 | `scripts/ride_images.json` | Optional sidecar: ride UID → image URL; an explicit entry wins over auto-enrichment. |
 | `tests/fixtures/sample.ics` | Offline fixture (2 future, 1 past, 1 cancelled). |
 | `tests/fixtures/event-page.html` | Offline fixture: a Partiful event page (`__NEXT_DATA__`) — image + `customFields` route links. |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script (offline only). |
 | `tests/test_archive_events.py` | pytest suite for the past-rides archive merge. |
+| `tests/test_route_map.py` | pytest suite for the route-map projection, SVG, and renderer. |
 | `site/styles.css` | Shared stylesheet: café palette + base/nav/hero/footer, linked by every page. |
 | `site/index.html` | Home: rides calendar, page-specific inline CSS + shared `styles.css`, three ride JS files in dependency order. |
 | `site/js/ride-card.js` | `window.BCB` module: `rideCard()` builder, `.ics`/Google Calendar exports, shared constants (`PARTIFUL`, `MONTHS`, `DOW`), `el()` helper. Loaded first. |
@@ -34,6 +37,7 @@ Tagline: "exploring the city one café at a time".
 | `site/donate.html` | WIP donate page (placeholder only). |
 | `site/events.json` | Generated ride data — **upcoming only** (committed; the workflow updates it). |
 | `site/events-past.json` | Accumulating archive of rides that already happened; the calendar shows them dimmed. |
+| `site/maps/*.svg` | Generated route maps, one per ride (committed; the sync draws the missing ones). |
 | `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch. |
 | `.github/workflows/pages.yml` | Assembles the Pages artifact (`master` at root + `dev` under `/preview/`) and deploys it. |
 | `README.md` | Human-facing: how it works, ICS URL, secret, Pages deploy, local dev. |
@@ -121,6 +125,20 @@ python scripts/archive_events.py --archive site/events-past.json <source.json> [
 - `fetch_rides.py --past-out PATH` writes the feed's already-happened rides for it; `parse_events(..., past=True)` is the same parse with the filter flipped.
 - Seeded 2026-08-22 from the 23 historical versions of `site/events.json` in `git log` (6 rides back to 2026-07-25), then re-cleaned through `_clean_title`/`_clean_description` and enriched — the four oldest predate the text-cleanup code, so they carried ` | Partiful` titles, the invite line, and `rsvp_url: null`.
 
+## Route maps (`scripts/route_map.py`, `scripts/render_route_maps.py`)
+
+Each ride's card banner is a **drawn map of its route**, not the Partiful poster (2026-08-22). `render_route_maps.py` asks BRouter for the route geometry, `route_map.py` projects it to Web Mercator and emits an SVG in the café palette, and the ride gets `map_image: "maps/<uid>.svg"`.
+
+- **Why drawn and not a screenshot.** No browser in the sync to screenshot with; Google's Static Maps API needs a billed key; hotlinking a public OSM static-map service would aim every visitor's browser at someone else's tile server. Embedding raster tiles is the remaining option and costs 100-500KB per ride, committed forever and growing with the archive — the drawn SVGs are 6-19KB each (66KB for all six). **The trade-off to know: there is no basemap**, so the route is a shape without streets around it. Adding tiles later means embedding them as data URIs in the same SVG; nothing else would have to change.
+- `site/maps/*.svg` are **committed**, and the render step is **idempotent** — a ride whose SVG exists is skipped and only re-pointed at it, so the 6-hour sync draws only genuinely new rides.
+- **The canvas shape follows the route** (`canvas_size`): height/width clamped to `[0.45, 1.0]`, so a north-south ride gets a near-square frame instead of a hairline down the middle of a letterbox. The card therefore renders map images with **`object-fit: contain`** (`.ride-img.is-map`), not the `cover` a photo gets — cropping a map loses its endpoints.
+- The distance badge sits **top-left**, not centred at the bottom: a long café name in the "… · End" label ran straight over it there. `fit_labels()` clips the two bottom labels until their estimated widths fit side by side.
+- One scale for both axes — never stretch to fill, that would be a map that lies. `PAD_TOP` (66) reserves the badge's corner; `PAD_BOTTOM` (74) the label row.
+- Feed text (title, place names) goes through `xml.sax.saxutils.escape` — same no-injection rule as the DOM.
+- ODbL: the geometry is derived from OpenStreetMap, so every map carries "Route © OpenStreetMap contributors".
+- `sync.yml`'s commit step **stages before diffing** (`git add -A … && git diff --cached --quiet`): the maps are *new* files and a plain `git diff` doesn't see untracked ones.
+- No rasterizer here, but `qlmanage -t -s 900 -o <dir> map.svg` renders an SVG to PNG so a map can actually be looked at.
+
 ## `.github/workflows/sync.yml`
 
 Cron `0 */6 * * *` (UTC) + `workflow_dispatch`. Ubuntu, Python 3.11, pip cache keyed on `requirements.txt`, `concurrency: sync-rides` so two runs can't race a push. `sync` job carries `permissions: contents: write`; the `deploy` job carries the Pages permissions.
@@ -150,6 +168,7 @@ No build step: `site/styles.css` in `<head>` (shared base — palette, nav, hero
 - **Rendering script** (`app.js`, loads last; `ride-card.js`/`calendar.js` supply helpers via `window.BCB`): `fetch("events.json")` →
   - **Next-ride section** (`#next-ride`, first section in `<main>`, under the photo-free hero): `setNextRide()` renders `events[0]` (events.json is start-sorted and the sync filters to future) into `#next-ride-card` via the shared `rideCard(ev, "next-ride")`; nothing upcoming → note + "See all rides on Partiful" button.
   - **Schedule section** (`#rides`) is **calendar-only** — the list view and its `#view-toggle` were removed in favor of the next-ride card. `<div id="schedule">` gets the month calendar (FullCalendar 6 primary, grid fallback); `<p class="note" id="updated">` holds the "Last updated … ET." stamp as a clickable link (`#updated-link`) to the `sync.yml` workflow — the "Sync rides now" button is gone. The line stays `hidden` until `updated_at` renders (failed load leaves no empty focusable link). Zero events / non-OK response / bad JSON → note + Partiful button pointing at the profile URL.
+  - **Card banner:** `map_image` (the drawn route map) wins over `image` (the Partiful poster). A map banner links to the **route** and opens in a new tab; a poster links to RSVP. `.ride-img.is-map` switches to `object-fit: contain`.
   - **`rideCard(ev, extraClass)`** renders one `.ride` card: `.when` = `date_display · time_display`, `.where` = location or "Location shared after you RSVP" when `location_hidden`, a `.route` line per entry in `routes` (the host's Google Maps link, `target="_blank"`, a `.route-distance` pill when `distance_display` is set, plus a `.route-ends` "Start → End" — with "· N stops on the way" when the route has `via` using `placeName()` — the leading comma-segment of each address, since `saddr`/`daddr` are full postal addresses; the untrimmed pair stays in the link's `title`), a `<p>` description, and `<a class="btn">RSVP on Partiful` (missing `rsvp_url` → profile URL). With `image`, the card starts with a `.ride-img-link` banner wrapping `<img class="ride-img" loading="lazy">` (alt = ride title) linked to the RSVP target; omitted entirely when no image. Each card ends with `.ride-actions`: the RSVP button plus `btn btn-ghost` "Add to calendar" (browser-generated per-event `.ics` via `buildIcs`/`downloadIcs` — `DTSTART`/`DTEND` use the Eastern wall-clock ISO prefix as `;TZID=America/New_York:…`, no `new Date(start)`; long lines folded per RFC 5545 `foldIcsLine`, text escaped `icsEscape`, RSVP URL appended + emitted as `URL:`) and `btn btn-ghost` "Google Calendar" `<a>` (new tab) mirroring the BCU export — `googleCalUrl(ev)` builds a `calendar.google.com/calendar/render?action=TEMPLATE` URL from the same Eastern wall-clock fields (`ctz=America/New_York`; `end` null → +1h via `icsDateTimePlusHour` Date.UTC arithmetic so a near-midnight ride rolls into the next day). The action row is **mobile-first stacked**: below 560px the three `.btn`s are full-width (`flex: 1 1 100%`), so the primary CTA spans the card; `@media (min-width: 560px)` restores compact inline pills (`flex: 0 1 auto`).
   - **Ride-detail modal** (`#ride-modal`, `.modal` overlay with `.modal-backdrop` + `.modal-dialog`): clicking a calendar event (FullCalendar `eventClick` or a fallback `.ride-chip`) opens it instead of navigating to RSVP. Content is built by the *same* `rideCard(ev, "modal-ride")` builder as the featured card, so details and exports can't drift; `.modal .ride` drops the card chrome so the dialog is the single container. `openRideModal(ev)` stores `document.activeElement`, sets the dialog's `aria-label` to the ride title, hides body scroll, focuses the close button; `closeRideModal()` restores focus to the opener. Closing: the `×` button, Escape (`keydown`), or a backdrop click (target not inside `.modal-dialog`). Modal at `z-index: 100` (above the nav), relies on `[hidden]` to beat `display: flex`. The dialog is a **flex column** with `#ride-modal-content` as its scrollport (`min-height: 0; overflow-y: auto`) within `max-height: 88vh`, so the pinned 44px `.modal-close` stays visible while a long description scrolls — don't revert to `overflow-y: auto` on the whole dialog.
 - **Past rides are on the calendar** (2026-08-22). `app.js` fetches `events-past.json` alongside `events.json`; a 404 is fine (fail-soft to no past rides), but a failed `events.json` stays an error rather than falling back to the archive — "here are last month's rides" would read as upcoming. Each archived ride is **copied** with `past: true`, which drives: a dimmed `.is-past` chip / FC `classNames`, and a `rideCard` variant with a "Past ride" pill on the `.when` line and a single "See it on Partiful" action (no RSVP wording, no .ics / Google Calendar — the ride is over). The next-ride card only ever reads the upcoming list. `renderCalendarFull(events, mountEl, focusIso)` takes the focus date explicitly: `events[0]` is now the **oldest archived** ride, so app.js passes the next upcoming start (or the newest past one when nothing is upcoming) — otherwise the calendar opens months in the past.
@@ -176,7 +195,7 @@ Its own page as of 2026-08-22; the slot it vacated on `index.html` is now the `#
 
 ## `tests/test_fetch_rides.py`
 
-Run with `.venv/bin/python -m pytest tests/ -q` (115 passing, incl. `tests/test_archive_events.py`).
+Run with `.venv/bin/python -m pytest tests/ -q` (140 passing, incl. `tests/test_archive_events.py` and `tests/test_route_map.py`).
 
 - No `conftest.py` / packaging; the test file puts `scripts/` on `sys.path` itself and does `import fetch_rides`.
 - Pinned clock: `NOW = 2025-01-01 12:00 America/New_York`, passed as `parse_events(..., now=NOW)`. Never call the parser without `now` in a test.

@@ -34,7 +34,8 @@
           "distance_m": 6448,
           "distance_display": "~4.0 mi"
         }
-      ]
+      ],
+      "map_image": "maps/5I2Zwclcs30LUlbOjjeb.svg"
     },
     {
       "uid": "0kgziJu0xvnL3SBCeuU7",
@@ -68,7 +69,8 @@
           "distance_m": 7884,
           "distance_display": "~4.9 mi"
         }
-      ]
+      ],
+      "map_image": "maps/0kgziJu0xvnL3SBCeuU7.svg"
     }
   ]
 }

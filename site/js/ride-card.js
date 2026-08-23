@@ -152,14 +152,22 @@
   // ride-detail modal, so the details and add-to-calendar exports can't drift.
   BCB.rideCard = (ev, extraClass) => {
     const card = BCB.el("div", "ride" + (ev.past ? " is-past" : "") + (extraClass ? " " + extraClass : ""));
-    if (ev.image) {
-      // Photo banner, linked to the same RSVP target as the button below.
+    // The drawn route map wins over the Partiful poster: it says something
+    // about *this* ride. It also links to the route rather than to RSVP, and
+    // is shown whole (object-fit: contain) instead of cropped like a photo.
+    const firstRoute = (ev.routes || [])[0];
+    const banner = ev.map_image || ev.image;
+    if (banner) {
+      const isMap = Boolean(ev.map_image);
       const imgLink = BCB.el("a", "ride-img-link");
-      imgLink.href = ev.rsvp_url || BCB.PARTIFUL;
+      imgLink.href = (isMap && firstRoute && firstRoute.url) || ev.rsvp_url || BCB.PARTIFUL;
       imgLink.rel = "noopener";
-      const img = BCB.el("img", "ride-img");
-      img.src = ev.image;
-      img.alt = ev.title || "Café ride";
+      if (isMap) { imgLink.target = "_blank"; }
+      const img = BCB.el("img", "ride-img" + (isMap ? " is-map" : ""));
+      img.src = banner;
+      img.alt = isMap
+        ? "Route map for " + (ev.title || "this café ride")
+        : (ev.title || "Café ride");
       img.loading = "lazy";
       imgLink.appendChild(img);
       card.appendChild(imgLink);

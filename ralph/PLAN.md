@@ -11,7 +11,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Replace the Contact Us section with "Help Cafe Bikers Behind the Scenes". Every ride has a crew with ride leaders and sweepers, people filming and editing. If that's you, we'd love to meet you. Then the 3 buttons already there.
 - [x] From partiful, grab the link to the Google Maps route. 
 - [x] Extract distance from map and add to ride details
-- [ ] Use map screenshot as image
+- [x] Use map screenshot as image
 
 ## Backlog 6
 

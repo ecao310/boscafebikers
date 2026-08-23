@@ -52,17 +52,27 @@ jobs:
       - name: Update site/events.json only if the rides changed
         run: python scripts/promote_events.py "$RUNNER_TEMP/events.json" site/events.json
 
+      # Idempotent: a ride whose SVG is already committed is skipped, so this
+      # only draws maps for rides that turned up since the last sync.
+      - name: Draw a route map for any ride that doesn't have one
+        run: |
+          python scripts/render_route_maps.py \
+            --out-dir site/maps --url-prefix maps \
+            site/events.json site/events-past.json
+
       - name: Commit the ride data if changed
         id: commit
         run: |
-          if git diff --quiet -- site/events.json site/events-past.json; then
+          # Stage first, then diff the index: the route maps are *new* files,
+          # and a plain `git diff` doesn't see untracked ones.
+          git add -A site/events.json site/events-past.json site/maps
+          if git diff --cached --quiet; then
             echo "No ride changes; nothing to commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/events.json site/events-past.json
           git commit -m "Sync rides from Partiful feed"
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"

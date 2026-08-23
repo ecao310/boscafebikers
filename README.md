@@ -52,6 +52,13 @@ unreachable the ride simply shows no distance.
 
 Nothing to configure — add the link on Partiful and the next sync picks it up.
 
+**Route maps.** Each ride's card shows a drawn map of its route rather than the
+Partiful poster. The sync fetches the route's shape from BRouter and draws it as
+an SVG in `site/maps/`, committed alongside the ride data — so the page loads no
+tiles and calls no map service. There's no street basemap behind the route: a
+tiled one would mean either an API key or hotlinking someone else's tile server
+from every visitor's browser.
+
 **Ride photos.** The ICS feed doesn't carry images. To put a photo on a ride
 card, add an entry to `scripts/ride_images.json` mapping the ride's `uid`
 (shown in `site/events.json`) to an image URL, and commit it — the next sync
@@ -215,10 +222,13 @@ needs touching.
 | `scripts/fetch_rides.py` | Fetch + parse the ICS feed → `site/events.json` |
 | `scripts/promote_events.py` | Copy fetched JSON into place only if the rides changed |
 | `scripts/archive_events.py` | Fold already-happened rides into `site/events-past.json` |
+| `scripts/route_map.py` | Draw a route as an SVG (stdlib only) |
+| `scripts/render_route_maps.py` | Fetch route geometry and write `site/maps/<uid>.svg` |
 | `site/index.html` | The rides page (calendar, next ride, about, contact) |
 | `site/contact.html` | Contact page — email form that composes a `mailto:` |
 | `site/events.json` | Generated ride data — upcoming rides (committed; CI updates it) |
 | `site/events-past.json` | Accumulating archive of rides that already happened |
+| `site/maps/*.svg` | Generated route maps, one per ride (committed) |
 | `tests/fixtures/sample.ics` | Offline fixture: 2 future, 1 past, 1 cancelled |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script |
 | `tests/test_archive_events.py` | pytest suite for the past-rides archive |

@@ -76,7 +76,8 @@
           "distance_m": 17258,
           "distance_display": "~10.7 mi"
         }
-      ]
+      ],
+      "map_image": "maps/Z50H1Zr8gbbyZtSyH75e.svg"
     },
     {
       "uid": "LjbmPGgu1Z3Zc7bJTibI",
@@ -122,7 +123,8 @@
           "distance_m": 5883,
           "distance_display": "~3.7 mi"
         }
-      ]
+      ],
+      "map_image": "maps/6MBKxp6PQGamcBZsOi2r.svg"
     },
     {
       "uid": "TskpmnYxmCi7eGn1mb0G",
@@ -169,7 +171,8 @@
           "distance_m": 8071,
           "distance_display": "~5.0 mi"
         }
-      ]
+      ],
+      "map_image": "maps/gRzH7L3EoMRl3q8pl7OS.svg"
     },
     {
       "uid": "a0gbEpda9D8KPbQfY275",
@@ -203,7 +206,8 @@
           "distance_m": 7467,
           "distance_display": "~4.6 mi"
         }
-      ]
+      ],
+      "map_image": "maps/a0gbEpda9D8KPbQfY275.svg"
     }
   ]
 }

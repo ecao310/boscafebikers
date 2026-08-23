@@ -227,6 +227,14 @@
       object-fit: cover;
     }
 
+    /* The route map is drawn to fit its own route, so show it whole rather
+       than cropping it like a photo — a cropped map loses its endpoints. */
+    .ride-img.is-map {
+      max-height: 300px;
+      object-fit: contain;
+      background: var(--latte);
+    }
+
     .note {
       color: var(--muted);
       font-size: .9rem;
