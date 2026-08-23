@@ -6,7 +6,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 ## Backlog 7
 - [x] find a way to deploy this dev branch without disturbing main. 
 - [x] I want past rides to stay on the calendar. Do this by moving old rides from events.json to events-past.json. Or do it some other way if there's a better way.
-- [ ] remove the background images from all sections below the calendar. Reset colors to be readable like the calendar.
+- [x] remove the background images from all sections below the calendar. Reset colors to be readable like the calendar.
 - [ ] Move the Contact Us section to its own page. Keep the section too because we'll change it in the next loop. Set up a way to send an email directly from the page. Make it email me at ecao.csindie@gmail.com for now, but make the email changeable.
 - [ ] Replace the Contact Us section with "Help Cafe Bikers Behind the Scenes". Every ride has a crew with ride leaders and sweepers, people filming and editing. If that's you, we'd love to meet you. Then the 3 buttons already there.
 - [ ] From partiful, grab the link to the Google Maps route. 
