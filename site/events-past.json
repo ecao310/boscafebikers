@@ -16,17 +16,65 @@
       "routes": [
         {
           "start": "J.P. Licks, 659 Centre St, Boston, MA 02130",
-          "end": "Gracie's Ice Cream, 22 Union Square, Somerville, MA 02143 to:Honeycomb Creamery, 1702 Massachusetts Ave, Cambridge, MA 02138 to:The Charles River Speedway, Western Avenue, Brighton, MA",
+          "end": "The Charles River Speedway, Western Avenue, Brighton, MA",
+          "via": [
+            "Gracie's Ice Cream, 22 Union Square, Somerville, MA 02143",
+            "Honeycomb Creamery, 1702 Massachusetts Ave, Cambridge, MA 02138"
+          ],
+          "points": [
+            [
+              42.312827,
+              -71.114291
+            ],
+            [
+              42.379797,
+              -71.09665
+            ],
+            [
+              42.383189,
+              -71.119832
+            ],
+            [
+              42.361816,
+              -71.144681
+            ]
+          ],
           "mode": "b",
           "label": "Team A & C Route",
-          "url": "https://maps.app.goo.gl/BP5hWjmFCwQoiXPS9?g_st=ic"
+          "url": "https://maps.app.goo.gl/BP5hWjmFCwQoiXPS9?g_st=ic",
+          "distance_m": 15852,
+          "distance_display": "~9.8 mi"
         },
         {
           "start": "J.P. Licks, 659 Centre St, Boston, MA 02130",
-          "end": "Honeycomb Creamery, 1702 Massachusetts Ave, Cambridge, MA 02138 to:Gracie's Ice Cream, 22 Union Square, Somerville, MA 02143 to:The Charles River Speedway, Western Avenue, Brighton, MA",
+          "end": "The Charles River Speedway, Western Avenue, Brighton, MA",
+          "via": [
+            "Honeycomb Creamery, 1702 Massachusetts Ave, Cambridge, MA 02138",
+            "Gracie's Ice Cream, 22 Union Square, Somerville, MA 02143"
+          ],
+          "points": [
+            [
+              42.312827,
+              -71.114291
+            ],
+            [
+              42.383189,
+              -71.119832
+            ],
+            [
+              42.379797,
+              -71.09665
+            ],
+            [
+              42.361816,
+              -71.144681
+            ]
+          ],
           "mode": "b",
           "label": "Team B & D Route",
-          "url": "https://maps.app.goo.gl/FZVoPKDh4zNkXyPu8?g_st=ic"
+          "url": "https://maps.app.goo.gl/FZVoPKDh4zNkXyPu8?g_st=ic",
+          "distance_m": 17258,
+          "distance_display": "~10.7 mi"
         }
       ]
     },
@@ -58,9 +106,21 @@
         {
           "start": "Bluebikes, Boylston St at Arlington St, Boston, MA 02116",
           "end": "Merai, Harvard Street, Brookline, MA",
+          "points": [
+            [
+              42.352585,
+              -71.067615
+            ],
+            [
+              42.333675,
+              -71.118981
+            ]
+          ],
           "mode": "b",
           "label": "Estimated Route",
-          "url": "https://maps.app.goo.gl/a2m4UHaPUFRMs8B49?g_st=ic"
+          "url": "https://maps.app.goo.gl/a2m4UHaPUFRMs8B49?g_st=ic",
+          "distance_m": 5883,
+          "distance_display": "~3.7 mi"
         }
       ]
     },
@@ -93,9 +153,21 @@
         {
           "start": "Bluebikes, 175 N Harvard St, Boston, MA 02134",
           "end": "Koko Coffee | Causeway, Causeway Street, Boston, MA",
+          "points": [
+            [
+              42.364475,
+              -71.128407
+            ],
+            [
+              42.366443,
+              -71.05973
+            ]
+          ],
           "mode": "b",
           "label": "Estimated Route",
-          "url": "https://maps.app.goo.gl/sDT69q7Ddc8yNTKT8?g_st=ic"
+          "url": "https://maps.app.goo.gl/sDT69q7Ddc8yNTKT8?g_st=ic",
+          "distance_m": 8071,
+          "distance_display": "~5.0 mi"
         }
       ]
     },
@@ -115,9 +187,21 @@
         {
           "start": "Localito, Riverside Avenue, Medford, MA",
           "end": "Bluebikes, Bunker Hill Mall, Main St at Austin St, Boston, MA 02129",
+          "points": [
+            [
+              42.418175,
+              -71.108716
+            ],
+            [
+              42.375603,
+              -71.064607
+            ]
+          ],
           "mode": "b",
           "label": "Estimated Route",
-          "url": "https://maps.app.goo.gl/F8doBU6KC1DTpZEf9?g_st=ic"
+          "url": "https://maps.app.goo.gl/F8doBU6KC1DTpZEf9?g_st=ic",
+          "distance_m": 7467,
+          "distance_display": "~4.6 mi"
         }
       ]
     }

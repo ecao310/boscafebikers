@@ -18,9 +18,21 @@
         {
           "start": "Bluebikes, Cleveland Circle, Boston, MA 02135",
           "end": "O'Some Café, 100 Main St, Watertown, MA 02472",
+          "points": [
+            [
+              42.335543,
+              -71.150614
+            ],
+            [
+              42.366823,
+              -71.186803
+            ]
+          ],
           "mode": "b",
           "label": "Estimated Route",
-          "url": "https://maps.app.goo.gl/VV3qNaJZ6M2qBmnP8?g_st=ic"
+          "url": "https://maps.app.goo.gl/VV3qNaJZ6M2qBmnP8?g_st=ic",
+          "distance_m": 6448,
+          "distance_display": "~4.0 mi"
         }
       ]
     },
@@ -40,9 +52,21 @@
         {
           "start": "Bluebikes, Washington St at Temple Pl, Boston, MA 02111",
           "end": "Meet Point Patisserie, Kendall Street, Brookline, MA",
+          "points": [
+            [
+              42.354968,
+              -71.060976
+            ],
+            [
+              42.327051,
+              -71.124506
+            ]
+          ],
           "mode": "b",
           "label": "Estimated Route",
-          "url": "https://maps.app.goo.gl/cYsc93yx96y2BybN8?g_st=ic"
+          "url": "https://maps.app.goo.gl/cYsc93yx96y2BybN8?g_st=ic",
+          "distance_m": 7884,
+          "distance_display": "~4.9 mi"
         }
       ]
     }

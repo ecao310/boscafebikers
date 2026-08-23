@@ -194,9 +194,16 @@
         ? route.start + " → " + route.end
         : "Open this route in Google Maps";
       line.appendChild(link);
+      // Distance is measured from the route's own stops (see fetch_rides.py),
+      // not quoted from Google — the "~" in the string is doing real work.
+      if (route.distance_display) {
+        line.appendChild(BCB.el("span", "route-distance", route.distance_display));
+      }
       const ends = [placeName(route.start), placeName(route.end)].filter(Boolean);
       if (ends.length === 2) {
-        line.appendChild(BCB.el("span", "route-ends", ends.join(" → ")));
+        const stops = (route.via || []).length;
+        line.appendChild(BCB.el("span", "route-ends",
+          ends.join(" → ") + (stops ? " · " + stops + (stops === 1 ? " stop" : " stops") + " on the way" : "")));
       }
       card.appendChild(line);
     });

@@ -42,8 +42,15 @@ simply shows what's coming up.
 event page does: the host attaches the route as a labelled link ("Estimated
 Route") in the event's custom fields. The sync resolves each one and keeps the
 links that are really Google Maps *directions*, so every ride card can show its
-route with the start and end points. Nothing to configure — add the link on
-Partiful and the next sync picks it up.
+route with the start and end points, and its distance.
+
+The distance is *measured*, not read off Google — Google only publishes it
+through its billed Directions API. The sync pulls each stop's coordinates out
+of the maps URL and asks [BRouter](https://brouter.de) (keyless, cycling
+profile) how far that is, which is why the site says "~4.0 mi". If BRouter is
+unreachable the ride simply shows no distance.
+
+Nothing to configure — add the link on Partiful and the next sync picks it up.
 
 **Ride photos.** The ICS feed doesn't carry images. To put a photo on a ride
 card, add an entry to `scripts/ride_images.json` mapping the ride's `uid`

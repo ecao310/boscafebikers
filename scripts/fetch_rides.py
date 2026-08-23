@@ -17,9 +17,12 @@ Exits nonzero on any fetch or parse failure.
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import json
 import os
 import re
+import struct
 import sys
 from collections.abc import Callable
 from datetime import date, datetime, timezone
@@ -277,8 +280,44 @@ def _resolve_link(url: str) -> str:
     return response.url
 
 
+def maps_geocode_points(query: dict) -> list[tuple[float, float]]:
+    """Endpoint coordinates out of a maps URL's ``geocode`` token list.
+
+    Google pairs each stop with a base64 token in ``geocode=t1;t2;…``. Each one
+    is a tiny protobuf whose first two fields are 32-bit fixed ints: field 2
+    (tag ``0x15``) is latitude and field 3 (tag ``0x1d``) longitude, both scaled
+    by 1e6. Reading them beats geocoding the address strings — Nominatim
+    resolves fewer than half of Google's free-form place names ("Bluebikes,
+    Washington St at Temple Pl" and friends come back empty) — and beats
+    scraping coordinates out of the maps page's minified JavaScript.
+
+    Returns [] unless every token parses, so a partial read never produces a
+    route that silently skips a stop.
+    """
+    raw_tokens = (query.get("geocode") or [""])[0]
+    if not raw_tokens:
+        return []
+    points = []
+    for token in raw_tokens.split(";"):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            blob = base64.urlsafe_b64decode(token + "=" * (-len(token) % 4))
+        except (ValueError, binascii.Error):
+            return []
+        if len(blob) < 10 or blob[0] != 0x15 or blob[5] != 0x1D:
+            return []
+        lat = struct.unpack("<i", blob[1:5])[0] / 1e6
+        lon = struct.unpack("<i", blob[6:10])[0] / 1e6
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            return []
+        points.append((round(lat, 6), round(lon, 6)))
+    return points
+
+
 def route_from_maps_url(url: str) -> dict | None:
-    """Start/end (and travel mode) out of a Google Maps directions URL.
+    """Start, end, stops and coordinates out of a Google Maps directions URL.
 
     Returns None for a maps link that only points at a place — that's how a
     "Start/Bluebikes" pin is told apart from an actual route.
@@ -289,16 +328,25 @@ def route_from_maps_url(url: str) -> dict | None:
         return None
     query = parse_qs(parts.query)
     start = (query.get("saddr") or [""])[0].strip()
-    end = (query.get("daddr") or [""])[0].strip()
-    if not (start and end):
+    destination = (query.get("daddr") or [""])[0].strip()
+    if not (start and destination):
         match = MAPS_DIR_PATH_RE.search(parts.path)
         if not match:
             return None
         start = unquote_plus(match.group(1)).strip()
-        end = unquote_plus(match.group(2)).strip()
-        if not (start and end):
+        destination = unquote_plus(match.group(2)).strip()
+        if not (start and destination):
             return None
-    route = {"start": start, "end": end}
+    # A multi-stop route packs its waypoints into daddr as "A to:B to:C": the
+    # last one is where the ride ends, the rest are stops along the way.
+    stops = [stop.strip() for stop in destination.split(" to:") if stop.strip()]
+    route = {"start": start, "end": stops[-1] if stops else destination}
+    if len(stops) > 1:
+        route["via"] = stops[:-1]
+    points = maps_geocode_points(query)
+    # One coordinate per stop, or we don't trust the pairing.
+    if len(points) == len(stops) + 1:
+        route["points"] = [list(point) for point in points]
     # dirflg=b is Google's bicycling mode; keep whatever it says, if anything.
     mode = (query.get("dirflg") or [""])[0].strip()
     if mode:
@@ -306,13 +354,69 @@ def route_from_maps_url(url: str) -> dict | None:
     return route
 
 
-def rides_routes(event: dict, resolve_link: Callable[[str], str]) -> list[dict]:
+# --- route distance ----------------------------------------------------------
+# Google publishes a route's distance only through its billed Directions API —
+# the maps page computes it in JavaScript and the HTML carries no number. So the
+# distance is *measured*, from the same stops Google was given, by BRouter: a
+# keyless public cycling router (the `trekking` profile). It won't match
+# Google's figure to the tenth of a mile, which is why the site says "~4.0 mi".
+BROUTER_URL = "https://brouter.de/brouter"
+BROUTER_PROFILE = "trekking"
+METRES_PER_MILE = 1609.344
+
+
+def _fetch_route_length(points: list) -> float | None:
+    """Metres for a cycling route through `points`, or None. Never raises."""
+    lonlats = "|".join(f"{point[1]},{point[0]}" for point in points)
+    try:
+        response = requests.get(
+            BROUTER_URL,
+            params={
+                "lonlats": lonlats,
+                "profile": BROUTER_PROFILE,
+                "alternativeidx": "0",
+                "format": "geojson",
+            },
+            timeout=ENRICH_TIMEOUT_SECONDS,
+            headers={"User-Agent": "boscafebikers-sync/1.0"},
+        )
+        response.raise_for_status()
+        properties = response.json()["features"][0]["properties"]
+        return float(properties["track-length"])
+    except (requests.RequestException, ValueError, KeyError, IndexError, TypeError):
+        return None  # soft: a ride without a distance just doesn't show one
+
+
+def format_distance(metres: float) -> str:
+    """Metres → the display string, e.g. '~4.0 mi'."""
+    return f"~{metres / METRES_PER_MILE:.1f} mi"
+
+
+def measure_route(route: dict, fetch_length: Callable[[list], float | None]) -> None:
+    """Add `distance_m` / `distance_display` to a route, when it can be had."""
+    points = route.get("points") or []
+    if len(points) < 2:
+        return
+    metres = fetch_length(points)
+    if metres and metres > 0:
+        route["distance_m"] = round(metres)
+        route["distance_display"] = format_distance(metres)
+
+
+def rides_routes(
+    event: dict,
+    resolve_link: Callable[[str], str],
+    fetch_length: Callable[[list], float | None] | None = None,
+) -> list[dict]:
     """Every custom-field link on the event that is really a route.
 
     The `url` kept is the organizer's original short link, not the resolved
     one: it's what belongs behind a "Route" button, and it survives Google
-    rewriting its long-URL format.
+    rewriting its long-URL format. Routes whose stops carry coordinates are
+    also measured (see `measure_route`).
     """
+    if fetch_length is None:
+        fetch_length = _fetch_route_length
     routes = []
     for link in _extract_custom_links(event):
         if not _is_maps_link(link["url"]):
@@ -325,6 +429,7 @@ def rides_routes(event: dict, resolve_link: Callable[[str], str]) -> list[dict]:
         if route:
             route["label"] = link["label"]
             route["url"] = link["url"]
+            measure_route(route, fetch_length)
             routes.append(route)
     return routes
 
@@ -343,6 +448,7 @@ def enrich_rides(
     rides: list[dict],
     fetch_page: Callable[[str], str] | None = None,
     resolve_link: Callable[[str], str] | None = None,
+    fetch_length: Callable[[list], float | None] | None = None,
 ) -> int:
     """Backfill each ride from its public Partiful event page.
 
@@ -378,7 +484,7 @@ def enrich_rides(
                 backfilled += 1
         event = _event_from_page(html)
         if event is not None:
-            ride["routes"] = rides_routes(event, resolve_link)
+            ride["routes"] = rides_routes(event, resolve_link, fetch_length)
     return backfilled
 
 

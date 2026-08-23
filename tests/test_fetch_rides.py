@@ -409,6 +409,10 @@ RESOLVED_LINKS = {
     "https://maps.app.goo.gl/RouteShortLink1?g_st=ic": (
         "https://maps.google.com/?saddr=Bluebikes,+Cleveland+Circle,+Boston,+MA"
         "&daddr=Tatte+Bakery,+Boston,+MA&dirflg=b"
+        # Real geocode tokens for those two points (42.335543,-71.150614 and
+        # 42.366823,-71.186803) — see maps_geocode_points.
+        "&geocode=FTf9hQId6lPC-ylRGlXiU3jjiTGY1w16bG3cRw%3D%3D;"
+        "FWd3hgIdjcbB-ykdbpobJHnjiTGRSDuTYi0pzA%3D%3D"
     ),
     "https://maps.app.goo.gl/PlaceShortLink1?g_st=ic": (
         "https://maps.google.com?q=Bluebikes,+Cleveland+Circle&entry=gps"
@@ -422,11 +426,16 @@ def _fake_resolve_link(url: str) -> str:
     raise fetch_rides.requests.RequestException(f"cannot resolve {url}")
 
 
+def _fake_route_length(points: list) -> float:
+    """Stand-in for BRouter: 1 km per leg, so the maths stays checkable."""
+    return 1000.0 * (len(points) - 1)
+
+
 def test_enrich_rides_sets_image_on_fixture_ride(feed_bytes):
     """The sync pipeline over the fixture + a stubbed transport backfills image."""
     rides = fetch_rides.parse_events(feed_bytes, now=NOW)
     assert all(ride["image"] is None for ride in rides)
-    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link) == 1
+    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link, fetch_length=_fake_route_length) == 1
     charles, minuteman = rides
     assert charles["image"] == CHARLES_IMAGE
     assert minuteman["image"] is None  # page fetch failed → soft, stays null
@@ -442,7 +451,7 @@ def test_enrich_rides_sidecar_wins(feed_bytes):
         },
     )
     charles, minuteman = rides
-    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link) == 0
+    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link, fetch_length=_fake_route_length) == 0
     assert charles["image"] == "https://example.com/img/curated.jpg"
     assert minuteman["image"] is None
 
@@ -452,7 +461,7 @@ def test_enrich_rides_fetch_failure_is_soft(feed_bytes):
         raise fetch_rides.requests.RequestException("nope")
 
     rides = fetch_rides.parse_events(feed_bytes, now=NOW)
-    assert fetch_rides.enrich_rides(rides, fetch_page=boom, resolve_link=_fake_resolve_link) == 0
+    assert fetch_rides.enrich_rides(rides, fetch_page=boom, resolve_link=_fake_resolve_link, fetch_length=_fake_route_length) == 0
     assert all(ride["image"] is None for ride in rides)
 
 
@@ -472,7 +481,7 @@ def test_enrich_rides_skips_rides_without_event_page():
     def unreachable(url: str) -> str:  # pragma: no cover - must not be called
         raise AssertionError("fetch_page must not be called for a ride with no page")
 
-    assert fetch_rides.enrich_rides(rides, fetch_page=unreachable, resolve_link=_fake_resolve_link) == 0
+    assert fetch_rides.enrich_rides(rides, fetch_page=unreachable, resolve_link=_fake_resolve_link, fetch_length=_fake_route_length) == 0
     assert rides[0]["image"] is None
 
 
@@ -689,7 +698,7 @@ def test_is_maps_link_filters_out_other_hosts():
 def test_rides_routes_keeps_the_short_link_not_the_resolved_one():
     """The organizer's own link is what belongs behind a Route button."""
     event = fetch_rides._event_from_page(EVENT_PAGE.read_text(encoding="utf-8"))
-    routes = fetch_rides.rides_routes(event, _fake_resolve_link)
+    routes = fetch_rides.rides_routes(event, _fake_resolve_link, _fake_route_length)
     assert len(routes) == 1
     assert routes[0]["url"] == "https://maps.app.goo.gl/RouteShortLink1?g_st=ic"
     assert routes[0]["label"] == "Estimated Route"
@@ -708,7 +717,7 @@ def test_rides_routes_skips_non_maps_links_without_resolving_them():
         seen.append(url)
         return _fake_resolve_link(url)
 
-    fetch_rides.rides_routes(event, watching)
+    fetch_rides.rides_routes(event, watching, _fake_route_length)
     assert all("spotify" not in url for url in seen)
     assert len(seen) == 2  # the two maps links only
 
@@ -719,17 +728,17 @@ def test_rides_routes_is_soft_on_an_unresolvable_link():
     def boom(url: str) -> str:
         raise fetch_rides.requests.RequestException("nope")
 
-    assert fetch_rides.rides_routes(event, boom) == []
+    assert fetch_rides.rides_routes(event, boom, _fake_route_length) == []
 
 
 def test_rides_routes_on_an_event_with_no_custom_fields():
-    assert fetch_rides.rides_routes({}, _fake_resolve_link) == []
+    assert fetch_rides.rides_routes({}, _fake_resolve_link, _fake_route_length) == []
 
 
 def test_enrich_rides_sets_routes(feed_bytes):
     rides = fetch_rides.parse_events(feed_bytes, now=NOW)
     assert all(ride["routes"] is None for ride in rides)
-    fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link)
+    fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link, fetch_length=_fake_route_length)
     charles, minuteman = rides
     assert [r["label"] for r in charles["routes"]] == ["Estimated Route"]
     # The page fetch failed for this one, so it was never checked — None, not [].
@@ -743,7 +752,7 @@ def test_enrich_rides_sets_routes_even_when_the_image_is_already_known(feed_byte
         now=NOW,
         images={"evt-future-charles-loop@partiful.com": "https://example.invalid/x.jpg"},
     )
-    fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link)
+    fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link, fetch_length=_fake_route_length)
     assert rides[0]["image"] == "https://example.invalid/x.jpg"
     assert len(rides[0]["routes"]) == 1
 
@@ -754,6 +763,109 @@ def test_enrich_rides_records_an_empty_route_list_when_there_are_none(feed_bytes
            '{"props":{"pageProps":{"event":{"id":"x"}}}}</script>'
     rides = fetch_rides.parse_events(feed_bytes, now=NOW)
     fetch_rides.enrich_rides(
-        rides, fetch_page=lambda url: page, resolve_link=_fake_resolve_link
+        rides, fetch_page=lambda url: page, resolve_link=_fake_resolve_link,
+        fetch_length=_fake_route_length,
     )
     assert rides[0]["routes"] == []
+
+
+# --- route distance ---------------------------------------------------------
+
+# The real geocode tokens for 42.335543,-71.150614 and 42.366823,-71.186803.
+GEOCODE_PAIR = (
+    "FTf9hQId6lPC-ylRGlXiU3jjiTGY1w16bG3cRw==;"
+    "FWd3hgIdjcbB-ykdbpobJHnjiTGRSDuTYi0pzA=="
+)
+
+
+def test_maps_geocode_points_decodes_google_tokens():
+    points = fetch_rides.maps_geocode_points({"geocode": [GEOCODE_PAIR]})
+    assert points == [(42.335543, -71.150614), (42.366823, -71.186803)]
+
+
+def test_maps_geocode_points_without_a_token():
+    assert fetch_rides.maps_geocode_points({}) == []
+    assert fetch_rides.maps_geocode_points({"geocode": [""]}) == []
+
+
+def test_maps_geocode_points_rejects_a_partial_read():
+    """One bad token drops them all — a route must never skip a stop silently."""
+    good = GEOCODE_PAIR.split(";")[0]
+    assert fetch_rides.maps_geocode_points({"geocode": [good + ";not-a-token"]}) == []
+
+
+def test_maps_geocode_points_rejects_an_unexpected_layout():
+    """A blob whose field tags aren't 0x15 / 0x1d isn't a coordinate pair."""
+    import base64
+    blob = base64.urlsafe_b64encode(b"\x09" + b"\x00" * 12).decode().rstrip("=")
+    assert fetch_rides.maps_geocode_points({"geocode": [blob]}) == []
+
+
+def test_route_carries_points_when_the_counts_line_up():
+    route = fetch_rides.route_from_maps_url(
+        "https://maps.google.com/?saddr=A&daddr=B&geocode=" + GEOCODE_PAIR
+    )
+    assert route["points"] == [[42.335543, -71.150614], [42.366823, -71.186803]]
+
+
+def test_route_drops_points_when_they_do_not_match_the_stops():
+    """Two tokens, three stops → don't guess which stop is which."""
+    route = fetch_rides.route_from_maps_url(
+        "https://maps.google.com/?saddr=A&daddr=B to:C&geocode=" + GEOCODE_PAIR
+    )
+    assert "points" not in route
+
+
+def test_route_splits_waypoints_out_of_daddr():
+    route = fetch_rides.route_from_maps_url(
+        "https://maps.google.com/?saddr=JP Licks&daddr=Gracie's to:Honeycomb to:Speedway"
+    )
+    assert route["start"] == "JP Licks"
+    assert route["end"] == "Speedway"
+    assert route["via"] == ["Gracie's", "Honeycomb"]
+
+
+def test_a_two_point_route_has_no_via():
+    route = fetch_rides.route_from_maps_url("https://maps.google.com/?saddr=A&daddr=B")
+    assert "via" not in route
+
+
+def test_measure_route_adds_distance():
+    route = {"points": [[42.0, -71.0], [42.1, -71.1]]}
+    fetch_rides.measure_route(route, lambda points: 6448.0)
+    assert route["distance_m"] == 6448
+    assert route["distance_display"] == "~4.0 mi"
+
+
+def test_measure_route_without_coordinates_does_not_call_the_router():
+    def unreachable(points):
+        raise AssertionError("no coordinates → no routing request")
+
+    route = {"start": "A", "end": "B"}
+    fetch_rides.measure_route(route, unreachable)
+    assert "distance_m" not in route
+
+
+def test_measure_route_is_soft_when_the_router_is_down():
+    route = {"points": [[42.0, -71.0], [42.1, -71.1]]}
+    fetch_rides.measure_route(route, lambda points: None)
+    assert "distance_m" not in route
+    assert "distance_display" not in route
+
+
+def test_measure_route_ignores_a_zero_length():
+    route = {"points": [[42.0, -71.0], [42.0, -71.0]]}
+    fetch_rides.measure_route(route, lambda points: 0.0)
+    assert "distance_m" not in route
+
+
+def test_format_distance_is_approximate_and_in_miles():
+    assert fetch_rides.format_distance(1609.344) == "~1.0 mi"
+    assert fetch_rides.format_distance(15852) == "~9.8 mi"
+
+
+def test_rides_routes_measures_the_fixture_route():
+    event = fetch_rides._event_from_page(EVENT_PAGE.read_text(encoding="utf-8"))
+    routes = fetch_rides.rides_routes(event, _fake_resolve_link, _fake_route_length)
+    assert routes[0]["distance_m"] == 1000  # one leg, 1 km from the stub
+    assert routes[0]["distance_display"] == "~0.6 mi"

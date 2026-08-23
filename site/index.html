@@ -141,6 +141,21 @@
       padding: 4px 0;
     }
 
+    /* Distance pill — measured, not Google's own number, hence the "~". */
+    .ride .route .route-distance {
+      background: var(--oat);
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--roast);
+      white-space: nowrap;
+    }
+
+    .ride.next-ride .route .route-distance {
+      background: var(--foam);
+    }
+
     .ride .route .route-ends {
       color: var(--muted);
       font-size: .9rem;
