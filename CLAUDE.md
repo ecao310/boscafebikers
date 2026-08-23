@@ -30,7 +30,7 @@ Tagline: "exploring the city one café at a time".
 | `site/donate.html` | WIP donate page (placeholder only). |
 | `site/events.json` | Generated ride data (committed; the workflow updates it). |
 | `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch. |
-| `.github/workflows/pages.yml` | Builds `site/` and deploys it to GitHub Pages. |
+| `.github/workflows/pages.yml` | Assembles the Pages artifact (`master` at root + `dev` under `/preview/`) and deploys it. |
 | `README.md` | Human-facing: how it works, ICS URL, secret, Pages deploy, local dev. |
 
 ## Conventions & decisions
@@ -54,14 +54,16 @@ Tagline: "exploring the city one café at a time".
 **Live: <https://ecao310.github.io/boscafebikers/>** (also `/events.json`). Everything headless.
 
 - **Pages source: GitHub Actions**, not "deploy from a branch" (that source only offers `/` or `/docs`; the site lives in `site/`). Check with `gh api repos/:owner/:repo/pages` (`build_type` must be `"workflow"`); set it with `gh api -X PUT repos/:owner/:repo/pages -f build_type=workflow`. The leftover `source: {branch: master, path: "/"}` is ignored — don't fix it.
-- **What deploys:** `.github/workflows/pages.yml` uploads `site/` via `actions/upload-pages-artifact` and publishes it with `actions/deploy-pages`.
+- **What deploys:** `.github/workflows/pages.yml` assembles `_site/` (see the preview bullet), uploads it via `actions/upload-pages-artifact` and publishes it with `actions/deploy-pages`.
 - **Trigger chain — three ways in:**
   1. `push` on `master` (a human commit) → deploy.
   2. `sync.yml` (cron `0 */6 * * *` / dispatch) fetches, promotes `site/events.json` only if the rides changed, and if it committed, its `deploy` job calls `pages.yml` via `workflow_call` (bot commits made with `GITHUB_TOKEN` don't fire `push`).
   3. `workflow_dispatch` on `pages.yml`.
+  4. `push` on `dev` → same deploy, but only the `/preview/` subtree changes.
 - **Redeploy by hand:** `gh workflow run pages.yml --ref master` then `gh run watch <id> --exit-status` (~15s).
+- **`dev` preview: <https://ecao310.github.io/boscafebikers/preview/>** (2026-08-22). A repo has exactly one Pages site, so `dev` gets no deployment of its own: every run of `pages.yml` builds **one artifact with two trees** — `master`'s `site/` at the root, `dev`'s `site/` under `preview/`. The root is always checked out from `master` whatever branch triggered the run, so a `dev` push cannot change the live site; no `dev` branch just means no preview. The artifact copy of each preview page gets a `<meta name="robots" content="noindex, nofollow">` injected after the **first** `<head>` (a plain substring swap would also hit `<header class="hero">`); the files on `dev` are untouched. The `github-pages` environment allow-lists deploying branches — `dev` was added with `gh api -X POST repos/:owner/:repo/environments/github-pages/deployment-branch-policies -f name=dev -f type=branch`; without it a `dev` push fails the environment gate. Preview only works because no URL in `site/` is root-relative.
 - **Never use root-relative (`/…`) URLs in `site/`** — served from the `/boscafebikers/` subpath, so a leading slash 404s.
-- **Sync→deploy gotchas (keep them):** `pages.yml`'s checkout must pass `ref: ${{ github.ref }}` (else a `workflow_call` deploys the pre-bot-commit SHA); sync's `deploy` job carries `contents: read / pages: write / id-token: write`; the actions (`actions/checkout@v4` et al.) target deprecated Node 20 and run on Node 24 — harmless today.
+- **Sync→deploy gotchas (keep them):** `pages.yml` checks both branches out **by name** (`ref: master` / `ref: dev`), never `github.sha` — when `sync.yml` calls it, that SHA still points at the commit before the bot pushed `site/events.json`. sync's `deploy` job carries `contents: read / pages: write / id-token: write`; the actions (`actions/checkout@v4` et al.) target deprecated Node 20 and run on Node 24 — harmless today.
 - **Calendar refresh/fetch backend (2026-08-13): keep the cron.** There is no public, unauthenticated Partiful endpoint that lists an org's events (the profile page SSR carries none; its events-list callable 401s without a Firebase token), so client-side fetch can't replace the secret ICS; a serverless proxy isn't worth porting the tested parsing for marginal freshness. Public per-event pages *do* expose full data + a CORS-enabled per-event ICS (`calendarFile`) — the sync uses them to backfill ride `image` (see the "Ride photos" bullet), but they are not a feed replacement.
 - `PARTIFUL_ICS_URL` **is set**; the sync bot commits real updates every 6h. `site/events.json` currently has 3 future rides (2026-08-15, 2026-08-16, 2026-08-23).
 

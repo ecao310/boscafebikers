@@ -69,9 +69,10 @@ Run workflow**.
 **Live: <https://ecao310.github.io/boscafebikers/>**
 
 The site is deployed by `.github/workflows/pages.yml` using the **GitHub
-Actions** Pages source — `actions/upload-pages-artifact` with `path: site`, then
-`actions/deploy-pages`. The "Deploy from a branch" source can't be used here: it
-only offers `/` or `/docs` as the publish folder, and the site lives in `site/`.
+Actions** Pages source — it assembles the artifact itself and hands it to
+`actions/upload-pages-artifact`, then `actions/deploy-pages`. The "Deploy from a
+branch" source can't be used here: it only offers `/` or `/docs` as the publish
+folder, and the site lives in `site/`.
 
 One-time setup on a fresh fork:
 
@@ -88,6 +89,33 @@ Redeploy by hand:
 gh workflow run pages.yml --ref master
 gh run watch <run-id>
 ```
+
+### Previewing the `dev` branch
+
+**Preview: <https://ecao310.github.io/boscafebikers/preview/>**
+
+A repo gets exactly one Pages site, so `dev` can't have a deployment of its own.
+Instead every deploy publishes **one artifact with two trees**: `master`'s
+`site/` at the root and `dev`'s `site/` under `/preview/`. Both branches are
+checked out by name inside `pages.yml`, so the live root is always built from
+`master` no matter which branch triggered the run — pushing to `dev` only ever
+changes what's under `/preview/`. If there is no `dev` branch, the preview is
+skipped and only `master` is published.
+
+Preview pages get a `<meta name="robots" content="noindex, nofollow">` injected
+into the artifact copy (the file in `dev` is untouched) so the preview doesn't
+compete with the real site in search results.
+
+The `github-pages` environment restricts which branches may deploy, so `dev` had
+to be added to its allow-list:
+
+```bash
+gh api -X POST repos/:owner/:repo/environments/github-pages/deployment-branch-policies \
+  -f name=dev -f type=branch
+```
+
+Ship a preview by merging `dev` into `master` as usual; nothing about the
+preview needs undoing.
 
 **Staying fresh.** Commits made by a workflow's `GITHUB_TOKEN` do not fire
 `push` triggers, so the sync bot's commit can't redeploy the site that way.

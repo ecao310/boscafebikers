@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+      # A dev push republishes the same artifact; only the /preview/ subtree
+      # changes, so master's live site is untouched.
+      - dev
   workflow_dispatch:
   # Callable by sync.yml: commits pushed with GITHUB_TOKEN do not fire the
   # `push` trigger above, so the sync workflow has to invoke this one directly.
@@ -26,23 +29,70 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Check out repository
+      # A repo gets exactly one Pages site, so the preview cannot be its own
+      # deployment: the artifact carries master at the root and dev under
+      # /preview/. Both branches are checked out by *name* (never github.sha —
+      # when sync.yml calls this workflow that SHA still points at the commit
+      # from before the bot pushed the new site/events.json).
+      - name: Check out master (production root)
         uses: actions/checkout@v4
         with:
-          # Deploy the branch tip, not the SHA that started the run: when
-          # sync.yml calls this workflow, github.sha still points at the commit
-          # from *before* the bot pushed the new site/events.json.
-          ref: ${{ github.ref }}
+          ref: master
+          path: prod-src
+
+      - name: Check whether a dev branch exists
+        id: devcheck
+        run: |
+          if git ls-remote --exit-code --heads \
+              "https://github.com/${{ github.repository }}.git" dev >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No dev branch; publishing master only."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out dev (preview)
+        if: steps.devcheck.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          path: dev-src
+
+      - name: Assemble the Pages artifact
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+          cp -R prod-src/site/. _site/
+          if [ -d dev-src/site ]; then
+            mkdir -p _site/preview
+            cp -R dev-src/site/. _site/preview/
+            # A preview is not a second public site: keep it out of search
+            # results. Only the copy in the artifact is touched, and only the
+            # first <head> — a plain substring swap would also hit <header>.
+            python3 - <<'PY'
+          import pathlib
+          tag = '<meta name="robots" content="noindex, nofollow">'
+          for page in sorted(pathlib.Path("_site/preview").glob("*.html")):
+              html = page.read_text(encoding="utf-8")
+              if tag in html:
+                  continue
+              page.write_text(html.replace("<head>", "<head>\n  " + tag, 1), encoding="utf-8")
+              print("noindex:", page)
+          PY
+            echo "Preview published at <base>/preview/"
+          fi
+          find _site -maxdepth 2 -name '*.html' | sort
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
       # The site lives in site/, which "deploy from a branch" cannot publish
       # (it only offers / and /docs) — hence the Actions source.
-      - name: Upload site/ as the Pages artifact
+      - name: Upload the assembled site as the Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
