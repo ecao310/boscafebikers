@@ -38,6 +38,13 @@ instead of an RSVP button; the featured next-ride card only ever reads the
 upcoming list. `events-past.json` is optional: with no archive yet the calendar
 simply shows what's coming up.
 
+**Ride routes.** The ICS feed doesn't carry them either, but the Partiful
+event page does: the host attaches the route as a labelled link ("Estimated
+Route") in the event's custom fields. The sync resolves each one and keeps the
+links that are really Google Maps *directions*, so every ride card can show its
+route with the start and end points. Nothing to configure — add the link on
+Partiful and the next sync picks it up.
+
 **Ride photos.** The ICS feed doesn't carry images. To put a photo on a ride
 card, add an entry to `scripts/ride_images.json` mapping the ride's `uid`
 (shown in `site/events.json`) to an image URL, and commit it — the next sync

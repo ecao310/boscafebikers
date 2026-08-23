@@ -125,6 +125,30 @@
       margin: .4rem 0;
     }
 
+    /* Route line: the host's Google Maps link, then the two endpoints. */
+    .ride .route {
+      margin: .4rem 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 8px;
+    }
+
+    .ride .route a {
+      font-weight: 600;
+      /* 44px is the touch target for the whole line; the link itself just
+         needs enough padding not to sit flush against the endpoints. */
+      padding: 4px 0;
+    }
+
+    .ride .route .route-ends {
+      color: var(--muted);
+      font-size: .9rem;
+      /* Long café names shouldn't push the card wide on a phone. */
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
     .ride p {
       margin: .4rem 0 1rem;
     }

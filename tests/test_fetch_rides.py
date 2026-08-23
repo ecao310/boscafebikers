@@ -402,11 +402,31 @@ def _fake_event_page(url: str) -> str:
     raise fetch_rides.requests.RequestException(f"no page at {url}")
 
 
+# The fixture page's custom fields carry maps.app.goo.gl short links. Resolving
+# one is a network call, so every enrich_rides() test injects this instead —
+# the suite must stay fully offline.
+RESOLVED_LINKS = {
+    "https://maps.app.goo.gl/RouteShortLink1?g_st=ic": (
+        "https://maps.google.com/?saddr=Bluebikes,+Cleveland+Circle,+Boston,+MA"
+        "&daddr=Tatte+Bakery,+Boston,+MA&dirflg=b"
+    ),
+    "https://maps.app.goo.gl/PlaceShortLink1?g_st=ic": (
+        "https://maps.google.com?q=Bluebikes,+Cleveland+Circle&entry=gps"
+    ),
+}
+
+
+def _fake_resolve_link(url: str) -> str:
+    if url in RESOLVED_LINKS:
+        return RESOLVED_LINKS[url]
+    raise fetch_rides.requests.RequestException(f"cannot resolve {url}")
+
+
 def test_enrich_rides_sets_image_on_fixture_ride(feed_bytes):
     """The sync pipeline over the fixture + a stubbed transport backfills image."""
     rides = fetch_rides.parse_events(feed_bytes, now=NOW)
     assert all(ride["image"] is None for ride in rides)
-    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page) == 1
+    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link) == 1
     charles, minuteman = rides
     assert charles["image"] == CHARLES_IMAGE
     assert minuteman["image"] is None  # page fetch failed → soft, stays null
@@ -422,7 +442,7 @@ def test_enrich_rides_sidecar_wins(feed_bytes):
         },
     )
     charles, minuteman = rides
-    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page) == 0
+    assert fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link) == 0
     assert charles["image"] == "https://example.com/img/curated.jpg"
     assert minuteman["image"] is None
 
@@ -432,7 +452,7 @@ def test_enrich_rides_fetch_failure_is_soft(feed_bytes):
         raise fetch_rides.requests.RequestException("nope")
 
     rides = fetch_rides.parse_events(feed_bytes, now=NOW)
-    assert fetch_rides.enrich_rides(rides, fetch_page=boom) == 0
+    assert fetch_rides.enrich_rides(rides, fetch_page=boom, resolve_link=_fake_resolve_link) == 0
     assert all(ride["image"] is None for ride in rides)
 
 
@@ -452,7 +472,7 @@ def test_enrich_rides_skips_rides_without_event_page():
     def unreachable(url: str) -> str:  # pragma: no cover - must not be called
         raise AssertionError("fetch_page must not be called for a ride with no page")
 
-    assert fetch_rides.enrich_rides(rides, fetch_page=unreachable) == 0
+    assert fetch_rides.enrich_rides(rides, fetch_page=unreachable, resolve_link=_fake_resolve_link) == 0
     assert rides[0]["image"] is None
 
 
@@ -609,7 +629,11 @@ def test_past_ride_carries_the_same_shape(past_rides):
     assert set(ride) == {
         "uid", "title", "start", "end", "date_display", "time_display",
         "location", "location_hidden", "description", "rsvp_url", "image",
+        "routes",
     }
+    # None, not [] — "never enriched" has to stay distinguishable from
+    # "checked, and this ride has no route links" (see archive_events).
+    assert ride["routes"] is None
 
 
 def test_main_writes_the_past_file_only_when_asked(tmp_path):
@@ -623,3 +647,113 @@ def test_main_writes_the_past_file_only_when_asked(tmp_path):
     payload = json.loads(past_out.read_text(encoding="utf-8"))
     assert payload["count"] == len(payload["events"]) == 1
     assert payload["events"][0]["uid"] == "evt-past-jamaica-pond@partiful.com"
+
+
+# --- Google Maps route links (event customFields) ---------------------------
+
+
+def test_route_from_maps_url_reads_saddr_and_daddr():
+    route = fetch_rides.route_from_maps_url(
+        "https://maps.google.com/?saddr=Cleveland+Circle&daddr=O'Some+Cafe&dirflg=b"
+    )
+    assert route == {"start": "Cleveland Circle", "end": "O'Some Cafe", "mode": "b"}
+
+
+def test_route_from_maps_url_reads_the_dir_path_form():
+    route = fetch_rides.route_from_maps_url(
+        "https://www.google.com/maps/dir/Cleveland+Circle/Tatte+Bakery/@42.3,-71.1,13z"
+    )
+    assert route == {"start": "Cleveland Circle", "end": "Tatte Bakery"}
+
+
+def test_a_place_link_is_not_a_route():
+    """The 'Start/Bluebikes' pin points at one place — not a route."""
+    assert fetch_rides.route_from_maps_url(
+        "https://maps.google.com?q=Bluebikes,+Cleveland+Circle&entry=gps"
+    ) is None
+
+
+def test_route_from_maps_url_needs_both_ends():
+    assert fetch_rides.route_from_maps_url("https://maps.google.com/?saddr=A") is None
+    assert fetch_rides.route_from_maps_url("https://maps.google.com/?daddr=B") is None
+
+
+def test_is_maps_link_filters_out_other_hosts():
+    assert fetch_rides._is_maps_link("https://maps.app.goo.gl/abc")
+    assert fetch_rides._is_maps_link("https://www.google.com/maps/dir/a/b")
+    assert not fetch_rides._is_maps_link("https://open.spotify.com/playlist/x")
+    assert not fetch_rides._is_maps_link("https://www.google.com/search?q=maps")
+    assert not fetch_rides._is_maps_link("")
+
+
+def test_rides_routes_keeps_the_short_link_not_the_resolved_one():
+    """The organizer's own link is what belongs behind a Route button."""
+    event = fetch_rides._event_from_page(EVENT_PAGE.read_text(encoding="utf-8"))
+    routes = fetch_rides.rides_routes(event, _fake_resolve_link)
+    assert len(routes) == 1
+    assert routes[0]["url"] == "https://maps.app.goo.gl/RouteShortLink1?g_st=ic"
+    assert routes[0]["label"] == "Estimated Route"
+    assert routes[0]["start"] == "Bluebikes, Cleveland Circle, Boston, MA"
+    assert routes[0]["end"] == "Tatte Bakery, Boston, MA"
+    assert routes[0]["mode"] == "b"
+
+
+def test_rides_routes_skips_non_maps_links_without_resolving_them():
+    """A Spotify link in customFields must not cost a request."""
+    event = fetch_rides._event_from_page(EVENT_PAGE.read_text(encoding="utf-8"))
+
+    seen = []
+
+    def watching(url: str) -> str:
+        seen.append(url)
+        return _fake_resolve_link(url)
+
+    fetch_rides.rides_routes(event, watching)
+    assert all("spotify" not in url for url in seen)
+    assert len(seen) == 2  # the two maps links only
+
+
+def test_rides_routes_is_soft_on_an_unresolvable_link():
+    event = {"customFields": [{"value": "Route", "url": "https://maps.app.goo.gl/gone"}]}
+
+    def boom(url: str) -> str:
+        raise fetch_rides.requests.RequestException("nope")
+
+    assert fetch_rides.rides_routes(event, boom) == []
+
+
+def test_rides_routes_on_an_event_with_no_custom_fields():
+    assert fetch_rides.rides_routes({}, _fake_resolve_link) == []
+
+
+def test_enrich_rides_sets_routes(feed_bytes):
+    rides = fetch_rides.parse_events(feed_bytes, now=NOW)
+    assert all(ride["routes"] is None for ride in rides)
+    fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link)
+    charles, minuteman = rides
+    assert [r["label"] for r in charles["routes"]] == ["Estimated Route"]
+    # The page fetch failed for this one, so it was never checked — None, not [].
+    assert minuteman["routes"] is None
+
+
+def test_enrich_rides_sets_routes_even_when_the_image_is_already_known(feed_bytes):
+    """The sidecar short-circuits the image, not the whole event page."""
+    rides = fetch_rides.parse_events(
+        feed_bytes,
+        now=NOW,
+        images={"evt-future-charles-loop@partiful.com": "https://example.invalid/x.jpg"},
+    )
+    fetch_rides.enrich_rides(rides, fetch_page=_fake_event_page, resolve_link=_fake_resolve_link)
+    assert rides[0]["image"] == "https://example.invalid/x.jpg"
+    assert len(rides[0]["routes"]) == 1
+
+
+def test_enrich_rides_records_an_empty_route_list_when_there_are_none(feed_bytes):
+    """"Checked, and there are no routes" must not read as "never checked"."""
+    page = '<script id="__NEXT_DATA__" type="application/json">' \
+           '{"props":{"pageProps":{"event":{"id":"x"}}}}</script>'
+    rides = fetch_rides.parse_events(feed_bytes, now=NOW)
+    fetch_rides.enrich_rides(
+        rides, fetch_page=lambda url: page, resolve_link=_fake_resolve_link
+    )
+    assert rides[0]["routes"] == []

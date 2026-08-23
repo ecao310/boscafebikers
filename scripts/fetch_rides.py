@@ -24,6 +24,7 @@ import sys
 from collections.abc import Callable
 from datetime import date, datetime, timezone
 from pathlib import Path
+from urllib.parse import parse_qs, unquote_plus, urlsplit
 from zoneinfo import ZoneInfo
 
 import requests
@@ -148,6 +149,18 @@ def load_ride_images(path: Path | None = None) -> dict:
     return data
 
 
+def _event_from_page(html: str) -> dict | None:
+    """The `event` object out of a Partiful event page's __NEXT_DATA__."""
+    data = _extract_next_data(html)
+    if data is None:
+        return None
+    try:
+        event = data["props"]["pageProps"]["event"]
+    except (KeyError, TypeError):
+        return None
+    return event if isinstance(event, dict) else None
+
+
 def _extract_next_data(html: str) -> dict | None:
     """The parsed __NEXT_DATA__ blob from a Partiful event page, or None."""
     match = NEXT_DATA_RE.search(html)
@@ -202,6 +215,120 @@ def _extract_event_image(html: str) -> str | None:
     return _first_image_url(html)
 
 
+# --- Google Maps route links -------------------------------------------------
+# The organizer attaches the ride's route to the Partiful event as a "custom
+# field" — a labelled link ("Estimated Route", "Team A & C Route") pointing at
+# a maps.app.goo.gl short link. Those live in __NEXT_DATA__ alongside the image
+# the enrichment already reads, so grabbing them costs no new secret and no new
+# page fetch; only resolving each short link needs a request of its own.
+MAPS_LINK_HOSTS = (
+    "maps.app.goo.gl",
+    "goo.gl",
+    "maps.google.com",
+    "www.google.com",
+    "google.com",
+)
+# A resolved Google Maps *directions* URL carries both endpoints. Two shapes
+# turn up: the classic ?saddr=…&daddr=… query and the newer /maps/dir/A/B path.
+MAPS_DIR_PATH_RE = re.compile(r"/maps/dir/+([^/@?]+)/+([^/@?]+)")
+
+
+def _extract_custom_links(event: dict) -> list[dict]:
+    """The event's labelled custom-field links, in the order the host set them."""
+    links = []
+    for field in event.get("customFields") or []:
+        if not isinstance(field, dict):
+            continue
+        url = (field.get("url") or "").strip()
+        label = (field.get("value") or "").strip()
+        if url:
+            links.append({"label": label or "Route", "url": url})
+    return links
+
+
+def _is_maps_link(url: str) -> bool:
+    """True for a link worth resolving — anything Google Maps could shorten."""
+    try:
+        host = urlsplit(url).hostname or ""
+    except ValueError:
+        return False
+    host = host.lower()
+    if host not in MAPS_LINK_HOSTS:
+        return False
+    if host in ("goo.gl", "www.google.com", "google.com"):
+        # Only the maps paths on these hosts; goo.gl also shortens other things.
+        return "/maps" in urlsplit(url).path
+    return True
+
+
+def _resolve_link(url: str) -> str:
+    """Follow a short link to its final URL.
+
+    maps.app.goo.gl serves a JavaScript interstitial to browser user-agents and
+    a plain 302 to everyone else — so the sync's own User-Agent is what makes
+    this work without running a browser.
+    """
+    response = requests.get(
+        url,
+        timeout=ENRICH_TIMEOUT_SECONDS,
+        headers={"User-Agent": "boscafebikers-sync/1.0"},
+        allow_redirects=True,
+    )
+    return response.url
+
+
+def route_from_maps_url(url: str) -> dict | None:
+    """Start/end (and travel mode) out of a Google Maps directions URL.
+
+    Returns None for a maps link that only points at a place — that's how a
+    "Start/Bluebikes" pin is told apart from an actual route.
+    """
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return None
+    query = parse_qs(parts.query)
+    start = (query.get("saddr") or [""])[0].strip()
+    end = (query.get("daddr") or [""])[0].strip()
+    if not (start and end):
+        match = MAPS_DIR_PATH_RE.search(parts.path)
+        if not match:
+            return None
+        start = unquote_plus(match.group(1)).strip()
+        end = unquote_plus(match.group(2)).strip()
+        if not (start and end):
+            return None
+    route = {"start": start, "end": end}
+    # dirflg=b is Google's bicycling mode; keep whatever it says, if anything.
+    mode = (query.get("dirflg") or [""])[0].strip()
+    if mode:
+        route["mode"] = mode
+    return route
+
+
+def rides_routes(event: dict, resolve_link: Callable[[str], str]) -> list[dict]:
+    """Every custom-field link on the event that is really a route.
+
+    The `url` kept is the organizer's original short link, not the resolved
+    one: it's what belongs behind a "Route" button, and it survives Google
+    rewriting its long-URL format.
+    """
+    routes = []
+    for link in _extract_custom_links(event):
+        if not _is_maps_link(link["url"]):
+            continue
+        try:
+            resolved = resolve_link(link["url"])
+        except (requests.RequestException, ValueError, TypeError):
+            continue  # soft: an unresolvable link is just not a route
+        route = route_from_maps_url(resolved or "")
+        if route:
+            route["label"] = link["label"]
+            route["url"] = link["url"]
+            routes.append(route)
+    return routes
+
+
 def _fetch_event_page(url: str) -> str:
     response = requests.get(
         url,
@@ -213,31 +340,45 @@ def _fetch_event_page(url: str) -> str:
 
 
 def enrich_rides(
-    rides: list[dict], fetch_page: Callable[[str], str] | None = None
+    rides: list[dict],
+    fetch_page: Callable[[str], str] | None = None,
+    resolve_link: Callable[[str], str] | None = None,
 ) -> int:
-    """Backfill each ride's ``image`` from its public Partiful event page.
+    """Backfill each ride from its public Partiful event page.
 
+    Two things come off the page: ``image`` (the cover photo) and ``routes``
+    (the host's labelled Google Maps route links — see ``rides_routes``).
     Rides whose ``image`` is already set (the explicit ``ride_images.json``
-    sidecar wins) are left alone, as are rides with no event-page URL. A fetch
-    or parse failure is *not* a sync failure — a ride that can't be enriched
-    keeps its current ``image`` (None). Returns how many rides were backfilled.
+    sidecar wins) keep it, as do rides with no event-page URL. A fetch or parse
+    failure is *not* a sync failure — a ride that can't be enriched keeps what
+    it has. Returns how many rides had an ``image`` backfilled; ``routes`` is
+    set as a side effect (to a list, empty when the event has none, which is
+    how it's told apart from the None of a never-enriched ride).
     """
     if fetch_page is None:
         fetch_page = _fetch_event_page
+    if resolve_link is None:
+        resolve_link = _resolve_link
     backfilled = 0
     for ride in rides:
-        if ride.get("image"):
-            continue
         page_url = ride.get("rsvp_url") or derive_partiful_url(ride.get("uid", ""))
         if not page_url or not page_url.startswith(PARTIFUL_EVENT_URL):
             continue
         try:
-            image = _extract_event_image(fetch_page(page_url))
+            html = fetch_page(page_url)
         except (requests.RequestException, ValueError, TypeError):
-            image = None  # soft: enrichment must never break the sync
-        if image:
-            ride["image"] = image
-            backfilled += 1
+            continue  # soft: enrichment must never break the sync
+        if not ride.get("image"):
+            # _extract_event_image keeps its raw-URL regex fallback for pages
+            # whose __NEXT_DATA__ doesn't parse — don't reach into the event
+            # object for this.
+            image = _extract_event_image(html)
+            if image:
+                ride["image"] = image
+                backfilled += 1
+        event = _event_from_page(html)
+        if event is not None:
+            ride["routes"] = rides_routes(event, resolve_link)
     return backfilled
 
 
@@ -353,6 +494,10 @@ def parse_events(
                 "description": _clean_description(description),
                 "rsvp_url": extract_rsvp_url(description) or derive_partiful_url(uid),
                 "image": images.get(uid),
+                # None until enrichment looks at the event page; a list (even
+                # an empty one) means "we checked". archive_events relies on
+                # that difference so a re-export can't erase known routes.
+                "routes": None,
             }
         )
 

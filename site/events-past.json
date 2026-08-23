@@ -12,7 +12,23 @@
       "description": "Come hungry! We'll start at the original JP Licks and make our way up to Gracie's in Union Square before stopping at Honeycomb on Mass Ave. and ending at the Speedway in Brighton from a Maple Creemee.\n\nUPDATE: Moved to Saturday July 25th",
       "rsvp_url": "https://partiful.com/e/Z50H1Zr8gbbyZtSyH75e",
       "location_hidden": false,
-      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FCqkYfBErmt6N5OTzDfadq?alt=media&token=42b18587-5129-4a81-b6bb-ad1fb0aa557d"
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FCqkYfBErmt6N5OTzDfadq?alt=media&token=42b18587-5129-4a81-b6bb-ad1fb0aa557d",
+      "routes": [
+        {
+          "start": "J.P. Licks, 659 Centre St, Boston, MA 02130",
+          "end": "Gracie's Ice Cream, 22 Union Square, Somerville, MA 02143 to:Honeycomb Creamery, 1702 Massachusetts Ave, Cambridge, MA 02138 to:The Charles River Speedway, Western Avenue, Brighton, MA",
+          "mode": "b",
+          "label": "Team A & C Route",
+          "url": "https://maps.app.goo.gl/BP5hWjmFCwQoiXPS9?g_st=ic"
+        },
+        {
+          "start": "J.P. Licks, 659 Centre St, Boston, MA 02130",
+          "end": "Honeycomb Creamery, 1702 Massachusetts Ave, Cambridge, MA 02138 to:Gracie's Ice Cream, 22 Union Square, Somerville, MA 02143 to:The Charles River Speedway, Western Avenue, Brighton, MA",
+          "mode": "b",
+          "label": "Team B & D Route",
+          "url": "https://maps.app.goo.gl/FZVoPKDh4zNkXyPu8?g_st=ic"
+        }
+      ]
     },
     {
       "uid": "LjbmPGgu1Z3Zc7bJTibI",
@@ -24,7 +40,8 @@
       "description": "Come celebrate Jude's 50 mile ride for the PMC!",
       "rsvp_url": "https://partiful.com/e/LjbmPGgu1Z3Zc7bJTibI",
       "location_hidden": false,
-      "image": "https://assets.getpartiful.com/posters/Let's%20Celebrate%207"
+      "image": "https://assets.getpartiful.com/posters/Let's%20Celebrate%207",
+      "routes": []
     },
     {
       "uid": "6MBKxp6PQGamcBZsOi2r",
@@ -36,7 +53,16 @@
       "description": "Ride with us from the lovely Boston Common to Newbery St. Coffee pop up cafe in Brookline Village. Travel through Fenway and the riverway on this route.",
       "rsvp_url": "https://partiful.com/e/6MBKxp6PQGamcBZsOi2r",
       "location_hidden": true,
-      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FgEguXCr0K9wsGIgXm4Rbn?alt=media&token=60610c5a-8636-4b23-a648-0af570cf87f5"
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FgEguXCr0K9wsGIgXm4Rbn?alt=media&token=60610c5a-8636-4b23-a648-0af570cf87f5",
+      "routes": [
+        {
+          "start": "Bluebikes, Boylston St at Arlington St, Boston, MA 02116",
+          "end": "Merai, Harvard Street, Brookline, MA",
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/a2m4UHaPUFRMs8B49?g_st=ic"
+        }
+      ]
     },
     {
       "uid": "TskpmnYxmCi7eGn1mb0G",
@@ -48,7 +74,8 @@
       "description": "You are cordially invited to an Indian food dinner party at mine! I will be making the mains and apps but please feel free to bring a dish or a drink!. Just showing up for the good food + vibes is totally a valid option!\n\nIf guest count exceeds 8-10 we will move to a nearby park - please keep an eye out for venue changes! 😄",
       "rsvp_url": "https://partiful.com/e/TskpmnYxmCi7eGn1mb0G",
       "location_hidden": true,
-      "image": "https://assets.getpartiful.com/posters/Dinner%20Party%20Feast"
+      "image": "https://assets.getpartiful.com/posters/Dinner%20Party%20Feast",
+      "routes": []
     },
     {
       "uid": "gRzH7L3EoMRl3q8pl7OS",
@@ -61,7 +88,16 @@
       "rsvp_url": "https://partiful.com/e/gRzH7L3EoMRl3q8pl7OS",
       "end": null,
       "location_hidden": false,
-      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FZjqrASzKptaWblqVVRqtb?alt=media&token=02154fd4-5f38-4a7a-a9fc-67c77518238f"
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FZjqrASzKptaWblqVVRqtb?alt=media&token=02154fd4-5f38-4a7a-a9fc-67c77518238f",
+      "routes": [
+        {
+          "start": "Bluebikes, 175 N Harvard St, Boston, MA 02134",
+          "end": "Koko Coffee | Causeway, Causeway Street, Boston, MA",
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/sDT69q7Ddc8yNTKT8?g_st=ic"
+        }
+      ]
     },
     {
       "uid": "a0gbEpda9D8KPbQfY275",
@@ -74,7 +110,16 @@
       "location_hidden": false,
       "description": "Come out and explore your city… or another city right next door!\n\nThis gorgeous little ride will take us from Charlestown up to Localito Cafe in Medford.",
       "rsvp_url": "https://partiful.com/e/a0gbEpda9D8KPbQfY275",
-      "image": "https://assets.getpartiful.com/posters/yes.png"
+      "image": "https://assets.getpartiful.com/posters/yes.png",
+      "routes": [
+        {
+          "start": "Localito, Riverside Avenue, Medford, MA",
+          "end": "Bluebikes, Bunker Hill Mall, Main St at Austin St, Boston, MA 02129",
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/F8doBU6KC1DTpZEf9?g_st=ic"
+        }
+      ]
     }
   ]
 }

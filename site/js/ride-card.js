@@ -142,6 +142,12 @@
     return "https://calendar.google.com/calendar/render?" + parts.join("&");
   };
 
+  // "O'Some Café, 100 Main St, Watertown, MA 02472" → "O'Some Café". Google's
+  // saddr/daddr are full addresses; only the leading place name fits a card.
+  function placeName(address) {
+    return String(address || "").split(",")[0].trim();
+  }
+
   // The shared ride-card builder — used by the featured next-ride card AND the
   // ride-detail modal, so the details and add-to-calendar exports can't drift.
   BCB.rideCard = (ev, extraClass) => {
@@ -174,6 +180,26 @@
       // of the feed's "Location available once RSVP'd" template text.
       card.appendChild(BCB.el("p", "where", "Location shared after you RSVP"));
     }
+    // Route links come from the host's Partiful custom fields ("Estimated
+    // Route", "Team A & C Route", …) and open Google Maps. The endpoints are
+    // full postal addresses, so show just the place name — the whole thing is
+    // one tap away in Maps, and in the link's title.
+    (ev.routes || []).forEach((route) => {
+      const line = BCB.el("p", "route");
+      const link = BCB.el("a", null, route.label || "Route");
+      link.href = route.url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.title = placeName(route.start) && placeName(route.end)
+        ? route.start + " → " + route.end
+        : "Open this route in Google Maps";
+      line.appendChild(link);
+      const ends = [placeName(route.start), placeName(route.end)].filter(Boolean);
+      if (ends.length === 2) {
+        line.appendChild(BCB.el("span", "route-ends", ends.join(" → ")));
+      }
+      card.appendChild(line);
+    });
     if (ev.description) { card.appendChild(BCB.el("p", null, ev.description)); }
     const actions = BCB.el("div", "ride-actions");
     const link = BCB.el("a", "btn", ev.past ? "See it on Partiful" : "RSVP on Partiful");
