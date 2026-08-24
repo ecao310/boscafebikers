@@ -69,6 +69,7 @@ a { color: var(--roast); }
   margin: 0;
 }
 .hero .mark { font-size: 2rem; display: block; margin-bottom: .4rem; }
+.hero .mark svg { height: 2rem; width: auto; display: block; margin: 0 auto; color: var(--crema); }
 .hero a { color: var(--foam); }
 
 /* --- photo-backed sections ([data-bg]) --- */

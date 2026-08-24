@@ -10,7 +10,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] On a phone the next-ride card leads with the map, so the date/title sit below the fold at 380px. Put the .when line and title above the banner in rideCard (or cap the map's height ~260px below 560px) so the key info shows first.
 - [x] The distance badge (top-left) covers the basemap's own place label on some maps ("Watertown" on the O'Some map). Adjust the badge inset / PAD_TOP in route_map.py so the badge clears the tile labels, and redraw only the affected maps.
 - [x] The gallery grid leaves a hole with 5 mixed-orientation photos. Give tiles a uniform aspect-ratio (e.g. 4/3 with object-fit: cover) or a 2-column desktop layout so rows align.
-- [ ] Replace the ☕🚲 emoji hero mark with a simple one-colour SVG mark (cup + bike wheel, in --crema) and use it as the favicon too, so the brand doesn't depend on OS emoji rendering.
+- [x] Replace the ☕🚲 emoji hero mark with a simple one-colour SVG mark (cup + bike wheel, in --crema) and use it as the favicon too, so the brand doesn't depend on OS emoji rendering.
 - [x] meta theme-color is #7a4a2b, which isn't a palette value — use --roast (#4a2c1a) on all pages so mobile browser chrome matches the nav.
 - [x] Calendar weekday labels are ~10px on a phone (.64rem) — bump toward .7rem. Also add a visible :focus-visible ring to .btn / .ride-chip / calendar links: hover styles exist but keyboard focus is invisible.
 - [ ] Social preview meta: add an absolute og:image and og:url (and canonical) to every page — a shared link currently shows no preview image. A JSON-LD Event for the next ride can be a later sync-time follow-up.
