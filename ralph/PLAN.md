@@ -12,7 +12,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] The gallery grid leaves a hole with 5 mixed-orientation photos. Give tiles a uniform aspect-ratio (e.g. 4/3 with object-fit: cover) or a 2-column desktop layout so rows align.
 - [ ] Replace the ☕🚲 emoji hero mark with a simple one-colour SVG mark (cup + bike wheel, in --crema) and use it as the favicon too, so the brand doesn't depend on OS emoji rendering.
 - [ ] meta theme-color is #7a4a2b, which isn't a palette value — use --roast (#4a2c1a) on all pages so mobile browser chrome matches the nav.
-- [ ] Calendar weekday labels are ~10px on a phone (.64rem) — bump toward .7rem. Also add a visible :focus-visible ring to .btn / .ride-chip / calendar links: hover styles exist but keyboard focus is invisible.
+- [x] Calendar weekday labels are ~10px on a phone (.64rem) — bump toward .7rem. Also add a visible :focus-visible ring to .btn / .ride-chip / calendar links: hover styles exist but keyboard focus is invisible.
 - [ ] Social preview meta: add an absolute og:image and og:url (and canonical) to every page — a shared link currently shows no preview image. A JSON-LD Event for the next ride can be a later sync-time follow-up.
 - [ ] Map bytes: site/maps is ~1 MB for nine SVGs and each new ride commits 55-290 KB forever. Raise MIN_TILE_SIDE from 320 to 400-450 in route_map.py to roughly halve the bytes (tradeoff: softer tiles on desktop) and --redraw the existing maps.
 

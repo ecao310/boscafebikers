@@ -35,6 +35,11 @@
       filter: brightness(.92);
     }
 
+    .btn-ghost:focus-visible {
+      outline: 2px solid var(--crema);
+      outline-offset: 2px;
+    }
+
     ul.checks {
       list-style: none;
       padding: 0;
@@ -225,17 +230,26 @@
 
     /* The "Last updated …" stamp doubles as a link to the sync workflow on
        GitHub Actions (the "Sync rides now" button it used to sit next to is
-       gone). Keep the muted note look; the underline hints it's clickable. */
-    #updated .updated-link {
+       gone). Keep the muted note look; the underline hints it's clickable.
+       Selector is #updated-link (an id, not a .updated-link class — the
+       anchor only carries id="updated-link"); the old "#updated .updated-link"
+       descendant-class selector never matched anything, so this rule (and
+       hover/focus below) was dead code until this fix (2026-08-24). */
+    #updated-link {
       color: inherit;
       text-decoration: underline;
       text-decoration-color: var(--oat);
     }
 
-    #updated .updated-link:hover,
-    #updated .updated-link:focus {
+    #updated-link:hover,
+    #updated-link:focus {
       color: var(--roast);
       text-decoration-color: var(--crema);
+    }
+
+    #updated-link:focus-visible {
+      outline: 2px solid var(--crema);
+      outline-offset: 2px;
     }
 
     /* --- subscribe row ---
@@ -280,7 +294,7 @@
 
     .cal-dow {
       text-align: center;
-      font-size: .68rem;
+      font-size: .7rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .04em;
@@ -376,6 +390,14 @@
       filter: brightness(.92);
     }
 
+    /* Ring color is roast, not crema — the chip's own fill is crema, so a
+       crema ring would read as a slightly bigger chip rather than a focus
+       indicator. */
+    .cal-day .ride-chip:focus-visible {
+      outline: 2px solid var(--roast);
+      outline-offset: 2px;
+    }
+
     /* --- ride detail modal (calendar event click) --- */
     /* Opened by clicking a calendar event; reuses the rideCard builder. The
      [hidden] rule (display:none !important) wins over this display:flex, so
@@ -438,6 +460,11 @@
 
     .modal-close:active {
       filter: brightness(.92);
+    }
+
+    .modal-close:focus-visible {
+      outline: 2px solid var(--crema);
+      outline-offset: 2px;
     }
 
     /* The ride content is the dialog's scrollport: the flex-column parent
@@ -547,7 +574,7 @@
     .fc .fc-col-header-cell-cushion {
       padding: 4px 2px !important;
       color: var(--muted) !important;
-      font-size: .64rem !important;
+      font-size: .7rem !important;
       font-weight: 700 !important;
       text-transform: uppercase;
       letter-spacing: .04em;
@@ -577,6 +604,15 @@
 
     .fc .fc-daygrid-event:active {
       filter: brightness(.92);
+    }
+
+    /* Roast, not crema — the chip's fill is --fc-event-bg-color (crema), so a
+       crema ring wouldn't read as distinct from the fill. !important for the
+       same reason as the rest of this block: FC's own injected <style> lands
+       after this one. */
+    .fc .fc-daygrid-event:focus-visible {
+      outline: 2px solid var(--roast) !important;
+      outline-offset: 2px !important;
     }
 
     /* The event title must be free to shrink so its ellipsis can take over;
@@ -609,6 +645,11 @@
       padding: 0 4px;
     }
 
+    .fc .fc-daygrid-more-link:focus-visible {
+      outline: 2px solid var(--crema) !important;
+      outline-offset: 2px !important;
+    }
+
     .fc .fc-button {
       font-size: .78rem !important;
       padding: 4px 8px !important;
@@ -619,6 +660,13 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+    }
+
+    /* Roast, not crema — --fc-button-bg-color is crema, same reasoning as
+       the day-grid event ring above. */
+    .fc .fc-button:focus-visible {
+      outline: 2px solid var(--roast) !important;
+      outline-offset: 2px !important;
     }
 
     /* --- calendar at ≥560px --- */
