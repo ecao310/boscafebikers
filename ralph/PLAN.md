@@ -3,6 +3,11 @@
 Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
+## Backlog 10
+- [ ] Clean up code for the calendar legend now that I've removed it.
+- [ ] Every page's hero section should be a standardized size. use the size from the main page.
+- [ ] Cafe page should have a map with pins at each location. Embed from a 3P mapping app. Verify it's zoomable, scrollable. Each pin is clickable. Decide whether clicking shows the ride that got there or a link to the destination itself.
+
 ## Backlog 9
 - [x] Verify the dev branch still publishes to a /preview page.
 - [x] Bug: on mobile the FullCalendar chips only show the clipped time ("1 O…") — the ride title never appears. Hide the event time on chips (displayEventTime: false or list-item dots below 560px); the time is already on the card and in the modal.
