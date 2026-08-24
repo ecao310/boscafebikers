@@ -3,6 +3,12 @@
 Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
+## Backlog 11
+- [ ] Create system for when next ride gets updated. People can be late to rides and still join, so keep it around for at least 1 hour after the ride, but the exact system is up to you.
+- [ ] Preview branch should also get its rides synced.
+- [ ] Cafes map looks messy with the red and orange highlights and hill markers. remove them. also consider removing some of the neighborhood labels.
+- [ ] I like that the RSVP button call to action stays on screen now. Make it work that way for the "next ride" section too. 
+
 ## Backlog 10
 - [x] Clean up code for the calendar legend now that I've removed it.
 - [x] Every page's hero section should be a standardized size. use the size from the main page.
