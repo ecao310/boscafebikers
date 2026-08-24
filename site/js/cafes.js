@@ -3,8 +3,9 @@
 // field here (café address, date_display, rsvp_url) is already in the archive.
 //
 // It also draws the map above that list: one pin per café, from the sync's
-// geocode cache (cafe-points.json), on Leaflet + OpenStreetMap tiles. That is
-// the whole reason this page loads a library at all — see buildMap() below.
+// geocode cache (cafe-points.json), on MapLibre GL JS + OpenFreeMap's vector
+// tiles. That is the whole reason this page loads a library at all — see
+// buildMap() below.
 //
 // Standalone on purpose: this page has no calendar, no modal and no ride
 // cards, so it does NOT join the window.BCB namespace the three rides scripts
@@ -30,13 +31,37 @@
   const MAPS_URL_RE =
     /^https?:\/\/(?:maps\.app\.goo\.gl\/|maps\.google\.[a-z.]+\/|(?:www\.)?goo\.gl\/maps|(?:www\.)?google\.[a-z.]+\/maps)/i;
 
-  // OpenStreetMap's standard tiles: keyless, and requested by the visitor's
-  // own browser only when they open this page. (The committed route-map SVGs
-  // embed their tiles instead — that is a *stored* copy, which is a licensing
-  // question; this is the ordinary interactive use the tile policy describes.)
-  const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-  const TILE_ATTRIBUTION =
-    "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors";
+  // OpenFreeMap's "positron" vector style: keyless, unlimited, and fetched by
+  // the visitor's own browser only when they open this page. The data is
+  // OpenStreetMap's, served through OpenMapTiles' schema; attribution comes
+  // back with the tiles and MapLibre prints it on the map.
+  //
+  // Why a vector style and not the raster tiles the route-map SVGs embed: the
+  // organizer asked for the red/orange highways, the hill markers and some of
+  // the neighbourhood labels to go, and a raster tile is a finished picture —
+  // nothing in it can be removed. A vector style is a list of layers, so the
+  // ones we don't want are simply dropped before the map is built (DROP_LAYERS).
+  const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
+  // Layers deleted from that style, by id. Positron is already grey-on-grey
+  // with no motorway colour, no hillshade and no POI symbols; these are what
+  // was left of the clutter:
+  //   label_other  — every place label that isn't a city/town/village/state/
+  //                  country, i.e. the italic uppercase neighbourhood and
+  //                  suburb names ("EAGLE HILL", "JEFFRIES POINT"). Boston,
+  //                  Cambridge and Somerville still get their names.
+  //   *shield*     — the little route badges (the US interstate one is red,
+  //                  white and blue: the last loud colour on the map).
+  //   airport      — an aeroplane icon plus a three-line "Boston Harbor
+  //                  Seaplane Base (Cape Air Seaplanes)": the wordiest thing
+  //                  left, and a symbol at the same size as our café pins.
+  //                  Logan's runways still draw, so the airport is still there.
+  const DROP_LAYERS = [
+    "label_other",
+    "highway-shield-us-interstate",
+    "highway-shield-non-us",
+    "road_shield_us",
+    "airport"
+  ];
   // Deep enough to read a street, shallow enough that one café doesn't open
   // the map on somebody's front door.
   const FIT_MAX_ZOOM = 15;
@@ -45,15 +70,13 @@
   // framing on open. ~0.6° is about 65km — the whole of greater Boston, and
   // not the one ride that ended at somebody's place in New Haven. See fitPoints().
   const FIT_OUTLIER_DEGREES = .6;
-  // ~18px across. A map pin is conventionally small, but a finger still has to
-  // land on it — and much bigger than this and the downtown cafés merge into
-  // one blob at the opening zoom.
-  const PIN_RADIUS = 9;
+  // How far above the pin its popup floats. The pin is an 18px circle centred
+  // on the café (see .cafe-pin), so half of it plus a hair clears the bubble.
+  const PIN_OFFSET = 13;
 
   const list = document.getElementById("cafe-list");
   const countLine = document.getElementById("cafe-count");
   const mapBox = document.getElementById("cafe-map");
-  const mapHint = document.getElementById("cafe-map-hint");
   if (!list) { return; }
 
   // Everything is built with createElement/textContent, never innerHTML, so
@@ -174,16 +197,11 @@
   // ------------------------------------------------------------------
   // The map
 
-  // Read the café palette out of the stylesheet rather than repeating hex
-  // values here — styles.css stays the single source for the colours.
-  function palette(name, fallback) {
-    try {
-      const value = getComputedStyle(document.documentElement)
-        .getPropertyValue(name).trim();
-      return value || fallback;
-    } catch (err) {
-      return fallback;
-    }
+  // cafe-points.json stores each café as [lat, lon]; MapLibre speaks
+  // [lng, lat]. Every point that crosses into the library goes through here,
+  // so the two orders can't quietly get mixed up.
+  function lngLat(point) {
+    return [point[1], point[0]];
   }
 
   // One pin per *coordinate*, not per location string. The organizer typed
@@ -272,57 +290,97 @@
     return near.length >= 2 ? near : all;
   }
 
-  function buildMap(groups) {
-    if (!mapBox || !window.L || !groups.length) { return; }
-    // Unhide BEFORE Leaflet measures the container. A display:none box is
+  // The style JSON, minus the layers we don't want. Fetching it here rather
+  // than handing MapLibre the URL is what makes the deletion possible at all:
+  // the library takes a style *object* just as happily, and the layers are
+  // gone before the first frame is drawn (removing them afterwards would show
+  // them for a moment first).
+  //
+  // A style we can't fetch means the tile host is unreachable, so there is no
+  // map to build: null, and the box stays hidden. Same bargain as a CDN
+  // outage — the list below is the page.
+  async function loadStyle() {
+    try {
+      const res = await fetch(STYLE_URL);
+      if (!res.ok) { throw new Error("HTTP " + res.status); }
+      const style = await res.json();
+      if (!style || !Array.isArray(style.layers)) { throw new Error("no layers"); }
+      style.layers = style.layers.filter((layer) =>
+        DROP_LAYERS.indexOf(layer.id) === -1);
+      return style;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async function buildMap(groups) {
+    if (!mapBox || !window.maplibregl || !groups.length) { return; }
+    const gl = window.maplibregl;
+    const style = await loadStyle();
+    if (!style) { return; }
+
+    const bounds = new gl.LngLatBounds();
+    fitPoints(groups).forEach((point) => bounds.extend(lngLat(point)));
+
+    // Unhide BEFORE MapLibre measures the container. A display:none box is
     // 0×0, and the map would mount at zero size — the same trap the rides
     // page hits when FullCalendar renders into a detached node.
     mapBox.hidden = false;
 
-    const map = window.L.map(mapBox, {
-      // A map that eats the wheel is a map you can't scroll past. Click it
-      // first and wheel zoom turns on, which is the usual bargain for an
-      // embedded map; the +/− buttons and pinch work from the start.
-      scrollWheelZoom: false
-    });
-    map.on("click", function () { map.scrollWheelZoom.enable(); });
+    let map;
+    try {
+      map = new gl.Map({
+        container: mapBox,
+        style: style,
+        // Framed on open, so the map never flashes the whole world first.
+        bounds: bounds,
+        fitBoundsOptions: { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM },
+        // A map that eats the wheel is a map you can't scroll past. Click it
+        // first and wheel zoom turns on, which is the usual bargain for an
+        // embedded map; the +/− buttons and pinch work from the start.
+        scrollZoom: false,
+        // A café map that can end up facing south-west is just confusing.
+        dragRotate: false,
+        pitchWithRotate: false,
+        attributionControl: { compact: false }
+      });
+    } catch (err) {
+      // No WebGL (an old phone, a locked-down browser) and the constructor
+      // throws. Put the box back the way it was rather than leave an empty one.
+      mapBox.hidden = true;
+      return;
+    }
+    map.touchZoomRotate.disableRotation();
+    map.on("click", function () { map.scrollZoom.enable(); });
+    map.addControl(new gl.NavigationControl({ showCompass: false }), "top-left");
 
-    window.L.tileLayer(TILE_URL, {
-      maxZoom: 19,
-      attribution: TILE_ATTRIBUTION
-    }).addTo(map);
-
-    const stroke = palette("--roast", "#4a2c1a");
-    const fill = palette("--crema", "#b07a4a");
     groups.forEach((group) => {
-      window.L.circleMarker(group.point, {
-        radius: PIN_RADIUS,
-        color: stroke,
-        weight: 2,
-        fillColor: fill,
-        fillOpacity: .9
-      }).addTo(map).bindPopup(pinPopup(group));
+      // A real <button>, so the pin is reachable by keyboard and announces
+      // itself; MapLibre positions whatever element it is handed.
+      const pin = el("button", "cafe-pin");
+      pin.type = "button";
+      pin.setAttribute("aria-label", group.name);
+      // setDOMContent takes a real element, so café names out of the feed go
+      // in as text nodes — never as a concatenated HTML string.
+      const popup = new gl.Popup({ offset: PIN_OFFSET, maxWidth: "260px" })
+        .setDOMContent(pinPopup(group));
+      new gl.Marker({ element: pin })
+        .setLngLat(lngLat(group.point))
+        .setPopup(popup)
+        .addTo(map);
     });
-
-    // bindPopup takes a real element, so café names out of the feed go in as
-    // text nodes — never as a concatenated HTML string.
-    map.fitBounds(fitPoints(groups), {
-      padding: [FIT_PADDING, FIT_PADDING],
-      maxZoom: FIT_MAX_ZOOM
-    });
-    if (mapHint) { mapHint.hidden = false; }
   }
 
-  // Leaflet is a deferred CDN script in <head>, so on a real page it has run
+  // MapLibre is a deferred CDN script in <head>, so on a real page it has run
   // long before this fetch resolves. If it hasn't — slow CDN — wait for its
   // load event once. If it never arrives, the map box just stays hidden and
   // the list below is the page, exactly as it was before there was a map.
-  function whenLeafletReady(callback) {
-    if (window.L) { callback(); return; }
-    const tag = document.getElementById("leaflet-js");
+  function whenMapReady(callback) {
+    if (window.maplibregl) { callback(); return; }
+    const tag = document.getElementById("maplibre-js");
     if (!tag) { return; }
     tag.addEventListener("load", function () {
-      if (window.L) { callback(); }
+      if (window.maplibregl) { callback(); }
     }, { once: true });
   }
 
@@ -364,7 +422,13 @@
     // built last and every failure along the way is silent.
     const points = await loadPoints();
     const groups = pinGroups(sorted, points);
-    if (groups.length) { whenLeafletReady(function () { buildMap(groups); }); }
+    if (groups.length) {
+      whenMapReady(function () {
+        buildMap(groups).catch(function () {
+          if (mapBox) { mapBox.hidden = true; }
+        });
+      });
+    }
   }
 
   load();

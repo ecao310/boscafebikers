@@ -17,15 +17,20 @@
   <link rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 32'%3E%3Crect x='2' y='7' width='14' height='17' rx='2.5' fill='%23b07a4a'/%3E%3Cpath d='M16 11 h3.5 a4.5 4.5 0 0 1 0 9 h-3.5' fill='none' stroke='%23b07a4a' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='16' r='10' fill='none' stroke='%23b07a4a' stroke-width='3.5'/%3E%3Cline x1='32' y1='6' x2='32' y2='26' stroke='%23b07a4a' stroke-width='3'/%3E%3Cline x1='22' y1='16' x2='42' y2='16' stroke='%23b07a4a' stroke-width='3'/%3E%3Ccircle cx='32' cy='16' r='2.2' fill='%23b07a4a'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
-  <!-- Leaflet 1.9.4 (BSD-2-Clause) from jsDelivr, pinned + SRI, `defer` like the
-       rides page's FullCalendar — the site's one framework exception, and the
-       only way to get a real pan/zoom map with no build step and no API key.
+  <!-- MapLibre GL JS 5.24.0 (BSD-3-Clause) from jsDelivr, pinned + SRI, `defer`
+       like the rides page's FullCalendar — the site's one framework exception,
+       and the only way to get a real pan/zoom map with no build step and no API
+       key. It replaced Leaflet (2026-08-24) because the basemap had to become a
+       *vector* style: raster tiles are finished pictures, so the red highways,
+       the hill markers and the neighbourhood labels the organizer asked us to
+       drop could not be removed from them. See js/cafes.js DROP_LAYERS.
        If the CDN is unreachable the script simply never runs: cafes.js leaves
        #cafe-map hidden and the café list below it is untouched. -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-  <script id="leaflet-js" src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous" defer></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css"
+    integrity="sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK" crossorigin="anonymous">
+  <script id="maplibre-js" src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"
+    integrity="sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp" crossorigin="anonymous"
+    defer></script>
   <style>
     /* --- cafés-page styles (shared base lives in styles.css) --- */
 
@@ -48,17 +53,18 @@
 
     /* --- the café map --- */
 
-    /* Starts hidden and is revealed by cafes.js only once Leaflet has loaded
-       AND at least one café has coordinates, so a CDN outage or an empty cache
-       leaves no grey box sitting above the list. */
+    /* Starts hidden and is revealed by cafes.js only once MapLibre has loaded,
+       the style has been fetched AND at least one café has coordinates, so a
+       CDN outage or an empty cache leaves no grey box sitting above the list. */
     .cafe-map {
       height: 340px;
-      margin: 0 0 .4rem;
+      margin: 0 0 1rem;
       border: 1px solid var(--oat);
       border-radius: var(--radius);
-      /* The tiles are square; the radius only bites if the box clips them. */
+      /* The map canvas is square-cornered; the radius only bites if the box
+         clips it. */
       overflow: hidden;
-      /* What shows through while the tiles are still arriving. */
+      /* What shows through while the map is still arriving. */
       background: var(--oat);
     }
 
@@ -68,21 +74,72 @@
       }
     }
 
-    #cafe-map-hint {
-      margin: 0 0 1rem;
+    /* One pin per café. cafes.js hands MapLibre this <button> as the marker
+       element, so the colours live here with the rest of the palette instead
+       of being read back out of the stylesheet in JS. 18px across: a map pin
+       is conventionally small, but a finger still has to land on it — and much
+       bigger and the downtown cafés merge into one blob at the opening zoom. */
+    .cafe-pin {
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 2px solid var(--roast);
+      border-radius: 50%;
+      background: var(--crema);
+      cursor: pointer;
+      /* A pale halo so a pin over water or a park still has an edge. */
+      box-shadow: 0 0 0 1px rgba(255, 250, 244, .7);
     }
 
-    /* Leaflet's popup in the café palette, so it reads as one of our cards. */
-    .leaflet-popup-content-wrapper,
-    .leaflet-popup-tip {
+    /* MapLibre's popup in the café palette, so it reads as one of our cards. */
+    .maplibregl-popup-content {
       background: var(--foam);
       color: var(--ink);
+      border-radius: 10px;
+      padding: 12px 14px;
+      /* MapLibre sizes the bubble from this; wide enough for an address line. */
+      min-width: 180px;
+      box-shadow: 0 2px 10px rgba(46, 29, 19, .18);
     }
 
-    .leaflet-popup-content {
-      margin: 12px 14px;
-      /* Leaflet sizes the bubble from this; wide enough for an address line. */
-      min-width: 180px;
+    /* The little triangle is a CSS border, so its colour lives on whichever
+       side faces the pin — and that depends on where the bubble ended up. */
+    .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+    .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+    .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+      border-bottom-color: var(--foam);
+    }
+
+    .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+    .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+    .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+      border-top-color: var(--foam);
+    }
+
+    .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+      border-right-color: var(--foam);
+    }
+
+    .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+      border-left-color: var(--foam);
+    }
+
+    .maplibregl-popup-close-button {
+      width: 30px;
+      height: 30px;
+      font-size: 1.1rem;
+      color: var(--muted);
+      border-radius: 0 10px 0 10px;
+    }
+
+    /* OpenFreeMap asks for its credit and OpenStreetMap's, and the tiles ship
+       both; keep the line small enough to sit on a 380px map without pushing
+       the zoom buttons around. */
+    .maplibregl-ctrl-attrib.maplibregl-compact-show,
+    .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+      font-size: 10px;
+      line-height: 1.35;
+      max-width: 100%;
     }
 
     .pin-name {
@@ -107,10 +164,10 @@
       margin: 0 0 .2rem;
     }
 
-    /* Both popup links are the touch target, so give them real height.
-       The colour has to be reclaimed: Leaflet ships `.leaflet-container a
-       { color: #0078A8 }`, which outranks styles.css's plain `a` rule and
-       would leave two bright blue links in the middle of the café palette. */
+    /* Both popup links are the touch target, so give them real height. The
+       colour is spelled out rather than inherited: a map library that ships
+       its own `a` colour (Leaflet did, #0078A8) would otherwise outrank
+       styles.css and leave bright blue links in the middle of the palette. */
     .pin-rides a,
     .pin-directions a {
       display: inline-block;
@@ -123,6 +180,18 @@
       margin: 0;
       padding-top: .3rem;
       border-top: 1px solid var(--oat);
+    }
+
+    /* Keyboard-focus ring in the palette, matching styles.css's :focus-visible
+       convention. It earns its place here because MapLibre moves focus into a
+       popup as it opens, so the ring shows on an ordinary mouse click too —
+       and the browser's default blue is the one colour the map got rid of. */
+    .cafe-pin:focus-visible,
+    .pin-rides a:focus-visible,
+    .pin-directions a:focus-visible,
+    .maplibregl-popup-close-button:focus-visible {
+      outline: 2px solid var(--roast);
+      outline-offset: 2px;
     }
 
     /* One h2 per year, so a long list still says at a glance which season
@@ -260,7 +329,7 @@
         <p class="note" id="cafe-count" hidden></p>
 
         <!-- One pin per café, drawn by js/cafes.js from site/cafe-points.json
-             (the sync's geocode cache). Both stay hidden until there is a real
+             (the sync's geocode cache). It stays hidden until there is a real
              map to show. -->
         <div id="cafe-map" class="cafe-map" role="region" aria-label="Map of the cafés we have ridden to" hidden></div>
 
