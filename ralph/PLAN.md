@@ -8,6 +8,16 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [ ] Every page's hero section should be a standardized size. use the size from the main page.
 - [ ] Cafe page should have a map with pins at each location. Embed from a 3P mapping app. Verify it's zoomable, scrollable. Each pin is clickable. Decide whether clicking shows the ride that got there or a link to the destination itself.
 
+## Backlog 10
+- [ ] On a phone the next-ride card leads with the map, so the date/title sit below the fold at 380px. Put the .when line and title above the banner in rideCard (or cap the map's height ~260px below 560px) so the key info shows first.
+- [ ] The distance badge (top-left) covers the basemap's own place label on some maps ("Watertown" on the O'Some map). Adjust the badge inset / PAD_TOP in route_map.py so the badge clears the tile labels, and redraw only the affected maps.
+- [ ] The gallery grid leaves a hole with 5 mixed-orientation photos. Give tiles a uniform aspect-ratio (e.g. 4/3 with object-fit: cover) or a 2-column desktop layout so rows align.
+- [ ] Replace the ☕🚲 emoji hero mark with a simple one-colour SVG mark (cup + bike wheel, in --crema) and use it as the favicon too, so the brand doesn't depend on OS emoji rendering.
+- [ ] meta theme-color is #7a4a2b, which isn't a palette value — use --roast (#4a2c1a) on all pages so mobile browser chrome matches the nav.
+- [ ] Calendar weekday labels are ~10px on a phone (.64rem) — bump toward .7rem. Also add a visible :focus-visible ring to .btn / .ride-chip / calendar links: hover styles exist but keyboard focus is invisible.
+- [ ] Social preview meta: add an absolute og:image and og:url (and canonical) to every page — a shared link currently shows no preview image. A JSON-LD Event for the next ride can be a later sync-time follow-up.
+- [ ] Map bytes: site/maps is ~1 MB for nine SVGs and each new ride commits 55-290 KB forever. Raise MIN_TILE_SIDE from 320 to 400-450 in route_map.py to roughly halve the bytes (tradeoff: softer tiles on desktop) and --redraw the existing maps.
+
 ## Backlog 9
 - [x] Verify the dev branch still publishes to a /preview page.
 - [x] Bug: on mobile the FullCalendar chips only show the clipped time ("1 O…") — the ride title never appears. Hide the event time on chips (displayEventTime: false or list-item dots below 560px); the time is already on the card and in the modal.
