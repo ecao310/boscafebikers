@@ -30,6 +30,7 @@ def ride(uid: str, start: str, **extra) -> dict:
         "time_display": "11:00 am",
         "location": None,
         "location_hidden": False,
+        "location_url": None,
         "description": "",
         "rsvp_url": None,
         "image": None,
@@ -94,6 +95,34 @@ def test_none_never_overwrites_an_existing_value():
     merged = archive_events.merge_archive(archived, from_feed, NOW)
     assert merged[0]["image"] == photo
     assert merged[0]["rsvp_url"] == "https://p/e/a"
+
+
+def test_a_known_location_url_survives_a_source_without_one():
+    """The pasted meeting-point link is kept when a re-export carries none.
+
+    The feed's past export re-derives `location_url` every time, but an older
+    archive entry may predate the key entirely — neither a null nor a missing
+    key may drop a link we already have.
+    """
+    link = "https://maps.app.goo.gl/7zBmEn5ZTHEhJtSZ7"
+    archived = [ride("a", "2026-05-02T11:00:00-04:00", location_url=link)]
+    with_null = [[ride("a", "2026-05-02T11:00:00-04:00", location_url=None)]]
+    assert archive_events.merge_archive(archived, with_null, NOW)[0]["location_url"] == link
+    # A source that never learned about the field at all.
+    without_key = [dict(ride("a", "2026-05-02T11:00:00-04:00"), title="Renamed")]
+    without_key[0].pop("location_url", None)
+    merged = archive_events.merge_archive(archived, [without_key], NOW)
+    assert merged[0]["location_url"] == link
+    assert merged[0]["title"] == "Renamed"
+
+
+def test_a_missing_location_url_is_filled_in_from_a_source():
+    """An archive entry from before the key gains it without a crash."""
+    old_entry = ride("a", "2026-05-02T11:00:00-04:00")
+    old_entry.pop("location_url", None)
+    link = "https://maps.app.goo.gl/KafN4kidaBpozyew9?g_st=ic"
+    fresh = [[ride("a", "2026-05-02T11:00:00-04:00", location_url=link)]]
+    assert archive_events.merge_archive([old_entry], fresh, NOW)[0]["location_url"] == link
 
 
 def test_rides_without_uids_fall_back_to_start_and_title():

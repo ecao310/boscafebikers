@@ -70,6 +70,18 @@
     return "boscafebikers-" + (icsDateTime(ev.start) || "undated") + "-" +
       String(ev.title || "ride").toLowerCase().replace(/[^a-z0-9]+/g, "-");
   }
+  // The body both exports share: the ride blurb, the meeting-point link when
+  // the Location field held one instead of an address (calendar apps geocode a
+  // bare URL badly, so it stays in the description and out of LOCATION), and
+  // the RSVP link.
+  function exportDetails(ev) {
+    const parts = [];
+    if (ev.description) { parts.push(ev.description); }
+    if (!ev.location && ev.location_url) { parts.push("Meeting point: " + ev.location_url); }
+    if (ev.rsvp_url) { parts.push("RSVP: " + ev.rsvp_url); }
+    return parts.join("\n\n");
+  }
+
   BCB.buildIcs = (ev) => {
     const lines = [
       "BEGIN:VCALENDAR",
@@ -87,8 +99,7 @@
     if (end) { lines.push("DTEND;TZID=America/New_York:" + end); }
     lines.push("SUMMARY:" + icsEscape(ev.title || "Café ride"));
     if (ev.location) { lines.push("LOCATION:" + icsEscape(ev.location)); }
-    let desc = ev.description || "";
-    if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
+    const desc = exportDetails(ev);
     if (desc) { lines.push("DESCRIPTION:" + icsEscape(desc)); }
     if (ev.rsvp_url) { lines.push("URL:" + ev.rsvp_url); }
     lines.push("END:VEVENT", "END:VCALENDAR");
@@ -135,9 +146,7 @@
     const end = ev.end ? icsDateTime(ev.end) : icsDateTimePlusHour(ev.start);
     add("dates", start && end ? start + "/" + end : start);
     add("location", ev.location);
-    let desc = ev.description || "";
-    if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
-    add("details", desc);
+    add("details", exportDetails(ev));
     add("ctz", "America/New_York");
     return "https://calendar.google.com/calendar/render?" + parts.join("&");
   };
@@ -177,6 +186,15 @@
   }
   BCB.startName = startName;
 
+  // Some rides carry a link instead of an address in Partiful's Location field
+  // (fetch_rides.py turns that into `location_url`). Name the link for what it
+  // is rather than printing the URL, which overflows the card.
+  const MAPS_URL_RE =
+    /^https?:\/\/(?:maps\.app\.goo\.gl\/|maps\.google\.[a-z.]+\/|(?:www\.)?goo\.gl\/maps|(?:www\.)?google\.[a-z.]+\/maps)/i;
+  function meetingPointText(url) {
+    return MAPS_URL_RE.test(String(url || "")) ? "Meeting point on Google Maps" : "Meeting point";
+  }
+
   // The shared ride-card builder — used by the featured next-ride card AND the
   // ride-detail modal, so the details and add-to-calendar exports can't drift.
   BCB.rideCard = (ev, extraClass) => {
@@ -212,6 +230,16 @@
     card.appendChild(BCB.el("h3", null, ev.title || "Café ride"));
     if (ev.location) {
       card.appendChild(BCB.el("p", "where", ev.location));
+    } else if (ev.location_url) {
+      // The Location field held a map link, not an address — show it as a
+      // named link; the raw URL would run off the side of the card.
+      const whereLine = BCB.el("p", "where");
+      const whereLink = BCB.el("a", null, meetingPointText(ev.location_url));
+      whereLink.href = ev.location_url;
+      whereLink.target = "_blank";
+      whereLink.rel = "noopener";
+      whereLine.appendChild(whereLink);
+      card.appendChild(whereLine);
     } else if (ev.location_hidden) {
       // Partiful hides the address until RSVP; show a friendly note instead
       // of the feed's "Location available once RSVP'd" template text.

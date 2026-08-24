@@ -250,19 +250,61 @@ def test_fixture_title_suffix_stripped(rides):
 @pytest.mark.parametrize(
     "raw, expected",
     [
-        ("Location available once RSVP'd", ("", True)),
-        ("location available once rsvp'd", ("", True)),  # case-insensitive
-        ("Location available after RSVP", ("", True)),   # variant wording
+        ("Location available once RSVP'd", ("", True, None)),
+        ("location available once rsvp'd", ("", True, None)),  # case-insensitive
+        ("Location available after RSVP", ("", True, None)),   # variant wording
         (
             "Tatte Bakery & Café, 1003 Beacon St, Brookline, MA 02446",
-            ("Tatte Bakery & Café, 1003 Beacon St, Brookline, MA 02446", False),
+            ("Tatte Bakery & Café, 1003 Beacon St, Brookline, MA 02446", False, None),
         ),
-        ("   ", ("", False)),
-        ("", ("", False)),
+        ("   ", ("", False, None)),
+        ("", ("", False, None)),
+        # The organizer sometimes pastes the meeting point's map link into
+        # Partiful's Location field; that is a link, not an address.
+        (
+            "https://maps.app.goo.gl/7zBmEn5ZTHEhJtSZ7",
+            ("", False, "https://maps.app.goo.gl/7zBmEn5ZTHEhJtSZ7"),
+        ),
+        (
+            "  https://maps.app.goo.gl/KafN4kidaBpozyew9?g_st=ic  ",
+            ("", False, "https://maps.app.goo.gl/KafN4kidaBpozyew9?g_st=ic"),
+        ),
+        # Only a *bare* URL: prose around a link is still a location.
+        (
+            "Meet at https://maps.app.goo.gl/abc",
+            ("Meet at https://maps.app.goo.gl/abc", False, None),
+        ),
     ],
 )
 def test_clean_location(raw, expected):
     assert fetch_rides._clean_location(raw) == expected
+
+
+def test_a_pasted_map_link_becomes_location_url():
+    """A Location that is just a link renders as a link, not as raw text."""
+    data = (
+        b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+        b"BEGIN:VEVENT\r\nUID:M4psL0c8Zc7bJTibI\r\n"
+        b"DTSTART;TZID=America/New_York:20300808T180000\r\n"
+        b"SUMMARY:Better Buffers & Bagels\r\n"
+        b"LOCATION:https://maps.app.goo.gl/7zBmEn5ZTHEhJtSZ7\r\n"
+        b"DESCRIPTION:Meet at the dock.\r\n"
+        b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    rides = fetch_rides.parse_events(data, now=datetime(2029, 1, 1, tzinfo=EASTERN))
+    assert len(rides) == 1
+    assert rides[0]["location"] is None
+    assert rides[0]["location_url"] == "https://maps.app.goo.gl/7zBmEn5ZTHEhJtSZ7"
+    # It is not the hidden-address placeholder — the address just isn't one.
+    assert rides[0]["location_hidden"] is False
+
+
+def test_ordinary_rides_carry_a_null_location_url(rides):
+    """The key is always present, like location_hidden — never missing."""
+    charles, minuteman = rides
+    assert charles["location_url"] is None
+    assert minuteman["location_url"] is None
+    assert all("location_url" in ride for ride in rides)
 
 
 def test_hidden_placeholder_cleaned_from_fixture(rides):
@@ -292,6 +334,7 @@ def test_real_partiful_hidden_location():
     assert len(rides) == 1
     assert rides[0]["location"] is None
     assert rides[0]["location_hidden"] is True
+    assert rides[0]["location_url"] is None
 
 
 def test_missing_dtend_yields_null_end():
@@ -637,8 +680,8 @@ def test_past_ride_carries_the_same_shape(past_rides):
     ride = past_rides[0]
     assert set(ride) == {
         "uid", "title", "start", "end", "date_display", "time_display",
-        "location", "location_hidden", "description", "rsvp_url", "image",
-        "routes",
+        "location", "location_hidden", "location_url", "description",
+        "rsvp_url", "image", "routes",
     }
     # None, not [] — "never enriched" has to stay distinguishable from
     # "checked, and this ride has no route links" (see archive_events).

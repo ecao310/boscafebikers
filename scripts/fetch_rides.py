@@ -506,24 +506,36 @@ HIDDEN_LOCATION_RE = re.compile(
     r"^location\s+available\s+(?:once|after)\s+rsvp", re.IGNORECASE
 )
 
+# Some rides carry a *link* as their Location: the organizer pastes the meeting
+# point's Google Maps URL into Partiful's Location field instead of an address.
+# A bare URL is not a place name — rendered verbatim it's an unbreakable string
+# that overflows the ride card — so it becomes `location_url` and the site shows
+# a "Meeting point on Google Maps" link instead. The whole value has to be the
+# link ("Meet at <url>" keeps its prose and stays a location).
+BARE_URL_LOCATION_RE = re.compile(r"^https?://\S+$", re.IGNORECASE)
+
 
 def _clean_title(title: str) -> str:
     """Strip Partiful's ' | Partiful' title suffix and collapse whitespace."""
     return re.sub(r"\s+", " ", TITLE_SUFFIX_RE.sub("", title)).strip()
 
 
-def _clean_location(value: str) -> tuple[str, bool]:
-    """Return (location, hidden).
+def _clean_location(value: str) -> tuple[str, bool, str | None]:
+    """Return (location, hidden, url).
 
     ``location`` is the cleaned address ("" when Partiful's hidden-address
-    placeholder is present); ``hidden`` is True exactly in that case. Partiful
-    events have a single location field, so there is no start/end split to
-    pull out of the feed.
+    placeholder is present, and also when the field holds nothing but a link);
+    ``hidden`` is True exactly in the placeholder case; ``url`` is the meeting
+    point's link when the organizer pasted one in place of an address, else
+    None. The three are mutually exclusive readings of the *one* Location field
+    Partiful gives an event — there is no start/end split to pull out.
     """
     value = value.strip()
     if HIDDEN_LOCATION_RE.match(value):
-        return "", True
-    return value, False
+        return "", True, None
+    if BARE_URL_LOCATION_RE.match(value):
+        return "", False, value
+    return value, False, None
 
 
 def _clean_description(description: str) -> str:
@@ -582,7 +594,9 @@ def parse_events(
         uid = _text(component, "UID")
         description = _text(component, "DESCRIPTION")
         dtend = component.get("DTEND")
-        location, location_hidden = _clean_location(_text(component, "LOCATION"))
+        location, location_hidden, location_url = _clean_location(
+            _text(component, "LOCATION")
+        )
         rides.append(
             {
                 "uid": uid,
@@ -597,6 +611,10 @@ def parse_events(
                 # RSVP'd' placeholder instead of a real address.
                 "location": location or None,
                 "location_hidden": location_hidden,
+                # Set when the Location field held a link (a Google Maps pin
+                # for the meeting point) rather than an address; the card
+                # renders it as a link, never as raw text.
+                "location_url": location_url,
                 "description": _clean_description(description),
                 "rsvp_url": extract_rsvp_url(description) or derive_partiful_url(uid),
                 "image": images.get(uid),

@@ -123,6 +123,9 @@
     .ride .where {
       color: var(--muted);
       margin: .4rem 0;
+      /* A long unbroken location (an address with no spaces, a pasted link)
+         must wrap instead of pushing the card wider than the phone. */
+      overflow-wrap: anywhere;
     }
 
     /* Route line: the host's Google Maps link, distance, then where it starts. */
