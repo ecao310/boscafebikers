@@ -286,35 +286,6 @@
       padding: 1px 5px;
     }
 
-    /* --- calendar legend (Backlog 9) ---
-       The calendar now mixes upcoming and past rides, so a one-line key spells
-       out what "dashed" means before a visitor has to guess. The swatches
-       mirror the real chip styling byte-for-byte (.cal-day .ride-chip /
-       .fc-daygrid-event, and their .is-past variants below) so the legend
-       never drifts from what the calendar actually draws. Decorative only —
-       aria-hidden, since the adjacent words already carry the meaning. */
-    .cal-legend {
-      color: var(--muted);
-      font-size: .8rem;
-      margin: .5rem 0 0;
-    }
-
-    .legend-chip {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 3px;
-      background: var(--crema);
-      vertical-align: middle;
-      margin: 0 .35em 0 0;
-    }
-
-    .legend-chip.is-past {
-      background: transparent;
-      border: 1px dashed var(--crema);
-      margin-left: .9em;
-    }
-
     [hidden] {
       display: none !important;
     }

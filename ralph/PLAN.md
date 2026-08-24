@@ -4,7 +4,7 @@ Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
 ## Backlog 10
-- [ ] Clean up code for the calendar legend now that I've removed it.
+- [x] Clean up code for the calendar legend now that I've removed it.
 - [ ] Every page's hero section should be a standardized size. use the size from the main page.
 - [ ] Cafe page should have a map with pins at each location. Embed from a 3P mapping app. Verify it's zoomable, scrollable. Each pin is clickable. Decide whether clicking shows the ride that got there or a link to the destination itself.
 - [ ] On a phone the next-ride card leads with the map, so the date/title sit below the fold at 380px. Put the .when line and title above the banner in rideCard (or cap the map's height ~260px below 560px) so the key info shows first.
