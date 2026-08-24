@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cafés — Boston Café Bikers</title>
+  <meta name="description"
+    content="Every café Boston Café Bikers has ridden to — newest first, with the ride that got us there.">
+  <meta name="theme-color" content="#7a4a2b">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* --- cafés-page styles (shared base lives in styles.css) --- */
+
+    /* Global safety net, same as the rides page: nothing may override the
+       UA's [hidden] rule (the count line starts hidden). */
+    [hidden] {
+      display: none !important;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    #cafe-count {
+      margin: 0 0 .5rem;
+      font-weight: 600;
+      color: var(--roast);
+    }
+
+    /* One h2 per year, so a long list still says at a glance which season
+       you're scrolling through. */
+    .year {
+      font-size: 1.25rem;
+      color: var(--roast);
+      margin: 1.6rem 0 .6rem;
+      padding-bottom: .3rem;
+      border-bottom: 1px solid var(--oat);
+    }
+
+    .year:first-child {
+      margin-top: 1rem;
+    }
+
+    .cafe-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    /* Same card treatment as the ride cards and the .links tiles. */
+    .cafe {
+      background: var(--foam);
+      border: 1px solid var(--oat);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .cafe-name {
+      font-size: 1.1rem;
+      margin: 0 0 .2rem;
+      /* A long café name must wrap rather than push the card past a 380px
+         phone — same rule the ride card's .where keeps. */
+      overflow-wrap: anywhere;
+    }
+
+    .cafe-address {
+      color: var(--muted);
+      font-size: .95rem;
+      margin: 0 0 .4rem;
+      overflow-wrap: anywhere;
+    }
+
+    .cafe-address.is-unknown {
+      font-style: italic;
+    }
+
+    .cafe-when {
+      margin: 0;
+      font-weight: 600;
+      color: var(--roast);
+      text-transform: uppercase;
+      font-size: .78rem;
+      letter-spacing: .06em;
+    }
+
+    .cafe-ride {
+      margin: .25rem 0 0;
+    }
+
+    .cafe-go {
+      margin: .45rem 0 0;
+    }
+
+    .cafe-go a {
+      font-weight: 600;
+      /* The line is the touch target; the padding keeps it off the card edge. */
+      display: inline-block;
+      padding: 4px 0;
+    }
+
+    /* The back link matches the contact page's: the ride-card action-row
+       build, full-width on a phone and a pill from 560px up. */
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 18px;
+      font-weight: 600;
+      width: 100%;
+      margin-top: 1.5rem;
+    }
+
+    @media (min-width: 560px) {
+      .btn-back {
+        width: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="nav" aria-label="Site">
+    <div class="wrap">
+      <ul class="tabs">
+        <li><a href="index.html">Rides</a></li>
+        <li><a href="cafes.html" class="is-active" aria-current="page">Cafés</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="donate.html">Donate</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <span class="mark" aria-hidden="true">☕🚲</span>
+      <h1>Where we've been</h1>
+      <p class="tagline">Every café the group has ridden to — newest first.</p>
+    </div>
+  </header>
+
+  <main>
+
+    <section aria-label="Cafés we have ridden to">
+      <div class="wrap">
+        <p class="lede">Every ride ends somewhere warm. Here is the whole list —
+          the café, the day we rolled up, and the ride that got us there.</p>
+
+        <!-- Filled by js/cafes.js from events-past.json, the same archive the
+             calendar dims its history with. No new sync work: the café name is
+             just the leading part of the ride's location. The count line stays
+             hidden until it has real numbers to show. -->
+        <p class="note" id="cafe-count" hidden></p>
+        <div id="cafe-list">
+          <p class="note">Loading cafés…</p>
+        </div>
+
+        <a class="btn btn-back" href="index.html">← Back to the ride page</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p class="footer-brand">Boston Café Bikers — exploring the city one café at a time.</p>
+      <nav class="footer-nav" aria-label="Footer">
+        <a href="index.html">Rides</a>
+        <a href="cafes.html">Cafés</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="shopify.html">Shop</a>
+        <a href="meta-business.html">Meta Business</a>
+        <a href="contact.html">Contact</a>
+        <a href="donate.html">Donate</a>
+      </nav>
+      <p class="footer-social">
+        <a href="https://instagram.com/bostoncafebikers" rel="noopener">Instagram</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">Partiful</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/cafes.js" defer></script>
+
+</body>
+
+</html>

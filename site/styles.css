@@ -169,6 +169,17 @@ a { color: var(--roast); }
   background: var(--crema);
   color: #2b1a10;
 }
+/* Five tabs (Rides / Cafés / Gallery / Contact / Donate, since the cafés page
+   landed 2026-08-23) no longer fit one row at 380px with the default 12px pill
+   padding: the row wrapped and left "Donate" alone on a second line, which
+   reads as a mistake rather than as a tab bar. Tighten the pill padding, gap
+   and type a notch on narrow phones so the five stay on one line; every tab is
+   still comfortably wider than a fingertip, and nothing changes from 421px up.
+   The .tabs flex-wrap above stays as the safety net for a sixth tab. */
+@media (max-width: 420px) {
+  .nav .tabs { gap: 2px; }
+  .nav .tabs a { padding: 6px 9px; font-size: .82rem; }
+}
 
 /* --- sections --- */
 section { padding: 40px 0; }
