@@ -62,8 +62,10 @@ jobs:
       # promote is comparing like with like. Do it after the promote instead and
       # the committed file can never match the fetch, so every single run
       # commits a new updated_at forever. (Found by running the sync twice.)
-      # Idempotent: a ride whose SVG is already committed is skipped, so this
-      # only draws maps for rides that turned up since the last sync.
+      # Idempotent: a ride whose finished SVG is already committed is skipped,
+      # so this only draws maps for rides that turned up since the last sync
+      # (plus any map drawn while the tile server was down — those are left
+      # unmarked and get their basemap on a later run).
       - name: Draw a route map for any ride that doesn't have one
         run: |
           python scripts/render_route_maps.py \

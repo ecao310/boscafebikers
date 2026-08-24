@@ -5,14 +5,20 @@
         site/events.json site/events-past.json
 
 For each ride whose first measured route carries coordinates, this fetches the
-route geometry from BRouter, renders it with scripts/route_map.py, writes
-``<out-dir>/<uid>.svg``, and sets the ride's ``map_image`` to the site-relative
-path. The ride card prefers ``map_image`` over the Partiful poster.
+route geometry from BRouter and the basemap tiles under it from OpenStreetMap,
+renders
+them with scripts/route_map.py, writes ``<out-dir>/<uid>.svg``, and sets the
+ride's ``map_image`` to the site-relative path. The ride card prefers
+``map_image`` over the Partiful poster.
 
-Idempotent by design: a ride whose SVG already exists is skipped, so the 6-hour
-sync only ever draws maps for rides it hasn't drawn yet, and re-running costs
-nothing. Fail-soft everywhere — a ride with no route, no coordinates, or an
-unreachable router simply keeps whatever image it had.
+Idempotent by design: a ride whose finished SVG already exists is skipped, so
+the 6-hour sync only ever draws maps for rides it hasn't drawn yet, and
+re-running costs nothing. "Finished" means drawn with its basemap: a map drawn
+while the tile server was unreachable is written anyway (the route alone beats
+no map) but left unmarked, and gets redrawn on a later run. ``--redraw`` forces
+every map to be drawn again, for when the style changes. Fail-soft everywhere —
+a ride with no route, no coordinates, or an unreachable router simply keeps
+whatever image it had.
 
 Exits nonzero only if a payload file is missing or unparseable.
 """
@@ -36,6 +42,22 @@ DEFAULT_OUT_DIR = REPO_ROOT / "site" / "maps"
 DEFAULT_URL_PREFIX = "maps"
 BROUTER_URL = "https://brouter.de/brouter"
 BROUTER_PROFILE = "trekking"
+# Basemap: OpenStreetMap's own standard-style raster tiles. Chosen because
+# the tiles end up *stored* — embedded in SVGs that are committed forever —
+# and OSM's is the one keyless server whose terms allow that: the data is
+# ODbL and the standard style is public domain, so a served tile can be kept
+# and redistributed with the "© OpenStreetMap contributors" credit the map
+# draws. (CARTO's basemaps were tried first and rejected: their terms require
+# an API key and forbid storing or redistributing tile content, including as
+# static images, so embedding them would have been a breach however light the
+# use.) OSM's tile usage policy asks for a clear, unique User-Agent and no
+# bulk downloading; the sync sends its own UA and fetches 2-16 tiles per new
+# ride, once, and never from a visitor's browser. The tiles carry the OSM
+# credit already, so there is no separate provider line.
+TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+TILE_SOURCE = "osm-standard"
+TILE_CREDIT = ""
+USER_AGENT = "boscafebikers-sync/1.0"
 TIMEOUT_SECONDS = 30
 # UIDs become filenames, so keep them to something a URL and a filesystem can
 # both hold without escaping.
@@ -65,7 +87,7 @@ def fetch_geometry(points: list) -> list:
                 "format": "geojson",
             },
             timeout=TIMEOUT_SECONDS,
-            headers={"User-Agent": "boscafebikers-sync/1.0"},
+            headers={"User-Agent": USER_AGENT},
         )
         response.raise_for_status()
         coordinates = response.json()["features"][0]["geometry"]["coordinates"]
@@ -73,6 +95,37 @@ def fetch_geometry(points: list) -> list:
         return []
     # GeoJSON is [lon, lat, elevation?]; the renderer wants (lat, lon).
     return [(point[1], point[0]) for point in coordinates if len(point) >= 2]
+
+
+def fetch_tile(zoom: int, x: int, y: int) -> bytes | None:
+    """One basemap tile's bytes, as served. None on any failure."""
+    try:
+        response = requests.get(
+            TILE_URL.format(z=zoom, x=x, y=y),
+            timeout=TIMEOUT_SECONDS,
+            headers={"User-Agent": USER_AGENT},
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        return None
+    data = response.content
+    return data if route_map.tile_mime(data) else None
+
+
+def fetch_tiles(geometry: list, fetch_tile=fetch_tile) -> dict:
+    """The tiles `route_map.tile_plan(geometry)` needs, keyed (zoom, x, y).
+
+    All or nothing: the first miss empties the set, since the renderer would
+    reject a partial basemap anyway and there is no point fetching the rest.
+    """
+    zoom, plan = route_map.tile_plan(geometry)
+    tiles = {}
+    for x, y in plan:
+        data = fetch_tile(zoom, x, y)
+        if not data:
+            return {}
+        tiles[(zoom, x, y)] = data
+    return tiles
 
 
 def mappable_route(ride: dict) -> dict | None:
@@ -84,7 +137,12 @@ def mappable_route(ride: dict) -> dict | None:
 
 
 def render_for_ride(
-    ride: dict, out_dir: Path, url_prefix: str, fetch=fetch_geometry
+    ride: dict,
+    out_dir: Path,
+    url_prefix: str,
+    fetch=fetch_geometry,
+    fetch_tile=fetch_tile,
+    redraw: bool = False,
 ) -> str | None:
     """Draw this ride's map if it needs one. Returns the new path, or None."""
     route = mappable_route(ride)
@@ -92,10 +150,12 @@ def render_for_ride(
         return None
     target = out_dir / f"{safe_name(ride.get('uid'))}.svg"
     url = f"{url_prefix}/{target.name}" if url_prefix else target.name
-    if target.exists():
-        # Already drawn — just make sure the ride points at it.
+    existing = target.read_text(encoding="utf-8") if target.exists() else None
+    if existing is not None:
+        # Whatever happens below, the ride points at the map it has.
         ride["map_image"] = url
-        return None
+        if not redraw and route_map.has_basemap(existing):
+            return None  # finished — nothing to fetch
     geometry = fetch(route["points"])
     if len(geometry) < 2:
         return None
@@ -105,14 +165,26 @@ def render_for_ride(
         end=route.get("end", ""),
         distance=route.get("distance_display", ""),
         title=f"{ride.get('title', 'Ride')} — route map",
+        tiles=fetch_tiles(geometry, fetch_tile),
+        tile_source=TILE_SOURCE,
+        tile_credit=TILE_CREDIT,
     )
+    if svg == existing:
+        return None  # e.g. tiles still unavailable: the old drawing stands
     out_dir.mkdir(parents=True, exist_ok=True)
     target.write_text(svg, encoding="utf-8")
     ride["map_image"] = url
     return url
 
 
-def process(payload_path: Path, out_dir: Path, url_prefix: str, fetch=fetch_geometry) -> int:
+def process(
+    payload_path: Path,
+    out_dir: Path,
+    url_prefix: str,
+    fetch=fetch_geometry,
+    fetch_tile=fetch_tile,
+    redraw: bool = False,
+) -> int:
     """Render maps for one payload file. Returns how many were drawn."""
     try:
         payload = json.loads(payload_path.read_text(encoding="utf-8"))
@@ -127,7 +199,7 @@ def process(payload_path: Path, out_dir: Path, url_prefix: str, fetch=fetch_geom
     for ride in events:
         if not isinstance(ride, dict):
             continue
-        if render_for_ride(ride, out_dir, url_prefix, fetch):
+        if render_for_ride(ride, out_dir, url_prefix, fetch, fetch_tile, redraw):
             drawn += 1
     after = json.dumps(payload, sort_keys=True)
     if before != after:
@@ -146,13 +218,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--url-prefix", default=DEFAULT_URL_PREFIX,
                         help="path prefix written into map_image "
                              f"(default: {DEFAULT_URL_PREFIX}); must stay relative")
+    parser.add_argument("--redraw", action="store_true",
+                        help="draw every map again, even the finished ones")
     args = parser.parse_args(argv)
 
     out_dir = Path(args.out_dir)
     total = 0
     for payload in args.payloads:
-        total += process(Path(payload), out_dir, args.url_prefix.strip("/"))
-    print(f"render_route_maps: drew {total} new route map(s) into {out_dir}")
+        total += process(Path(payload), out_dir, args.url_prefix.strip("/"), redraw=args.redraw)
+    unfinished = [
+        path.name for path in sorted(out_dir.glob("*.svg"))
+        if not route_map.has_basemap(path.read_text(encoding="utf-8"))
+    ] if out_dir.is_dir() else []
+    print(f"render_route_maps: drew {total} route map(s) into {out_dir}")
+    if unfinished:
+        print(f"render_route_maps: {len(unfinished)} map(s) still without a basemap "
+              f"(will retry next run): {', '.join(unfinished)}")
     return 0
 
 
