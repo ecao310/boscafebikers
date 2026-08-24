@@ -59,16 +59,16 @@ a { color: var(--roast); }
 .hero {
   background: linear-gradient(160deg, var(--roast) 0%, var(--espresso) 100%);
   color: var(--foam);
-  padding: 56px 0 48px;
+  padding: 32px 0 24px;
   text-align: center;
 }
-.hero h1 { font-size: clamp(2rem, 9vw, 3rem); letter-spacing: -.01em; }
+.hero h1 { font-size: clamp(1.7rem, 7vw, 2.4rem); letter-spacing: -.01em; }
 .hero .tagline {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--oat);
   margin: 0;
 }
-.hero .mark { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+.hero .mark { font-size: 2rem; display: block; margin-bottom: .4rem; }
 .hero a { color: var(--foam); }
 
 /* --- photo-backed sections ([data-bg]) --- */
@@ -241,7 +241,7 @@ footer .footer-social .sep {
 }
 
 @media (min-width: 560px) {
-  .hero { padding: 80px 0 64px; }
+  .hero { padding: 48px 0 32px; }
   section { padding: 56px 0; }
 }
 
