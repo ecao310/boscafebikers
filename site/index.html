@@ -269,6 +269,23 @@
       text-decoration-color: var(--crema);
     }
 
+    /* --- subscribe row ---
+       Carries .ride-actions too, so the two links inherit the card convention
+       (full-width stacked on a phone, compact pills at ≥560px) without any new
+       button CSS. Only the spacing differs from an in-card action row. */
+    .subscribe {
+      margin-top: 1rem;
+    }
+
+    /* The pasteable feed URL — long and unbreakable, so let it wrap rather
+       than push the page wider than a 380px phone. */
+    #subscribe-note code {
+      overflow-wrap: anywhere;
+      background: var(--oat);
+      border-radius: 6px;
+      padding: 1px 5px;
+    }
+
     /* --- calendar legend (Backlog 9) ---
        The calendar now mixes upcoming and past rides, so a one-line key spells
        out what "dashed" means before a visitor has to guess. The swatches
@@ -779,6 +796,23 @@
           <a id="updated-link" href="https://github.com/ecao310/boscafebikers/actions/workflows/sync.yml" rel="noopener"
             target="_blank"></a>
         </p>
+
+        <!-- Subscribe to the whole schedule, rather than adding rides one at a
+           time from their cards. rides.ics is re-exported by the sync
+           (scripts/export_ics.py), so a subscribed calendar picks up new rides
+           on its own. The href is relative — the site is served from the
+           /boscafebikers/ subpath, so a leading slash would 404 — but the
+           absolute URL is spelled out below because pasting it is how Google
+           Calendar and Outlook subscribe. webcal:// is kept alongside it
+           because it is the only thing that makes Apple Calendar *subscribe*
+           instead of importing a frozen copy. -->
+        <div class="subscribe ride-actions">
+          <a class="btn btn-ghost" href="rides.ics">Subscribe in your calendar app</a>
+          <a class="btn btn-ghost" href="webcal://ecao310.github.io/boscafebikers/rides.ics"
+            aria-label="Subscribe in Apple Calendar">Apple Calendar</a>
+        </div>
+        <p class="note" id="subscribe-note">…or paste this link into Google Calendar or Outlook as a
+          subscription: <code>https://ecao310.github.io/boscafebikers/rides.ics</code></p>
       </div>
     </section>
 

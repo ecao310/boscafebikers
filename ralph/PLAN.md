@@ -12,7 +12,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] The calendar shows past rides now, so "Upcoming rides" / "Every upcoming ride on one calendar" is wrong. Rename the section to "Ride calendar" and add a one-line legend (dashed = past ride, tap for details).
 - [x] Say when rides happen in "Your first ride". The archive shows 28 of 34 rides were Saturday or Sunday, most at 10 or 11 am, routes 4–5 mi: lead with something like "Most rides are Saturday or Sunday mornings, 10 or 11 am, 3–5 flat-ish miles."
 - [ ] "Where we've been": a café list rendered client-side from events-past.json — each café visited, newest first, with the ride date and a link to its Partiful page. Own page (cafes.html, add to nav) or a section on index; no new sync work.
-- [ ] Subscribable calendar: have the sync re-export a public `site/rides.ics` (upcoming rides only, no secret URL, hidden locations omitted) and add a "Subscribe in your calendar app" button next to the calendar, alongside the per-ride exports.
+- [x] Subscribable calendar: have the sync re-export a public `site/rides.ics` (upcoming rides only, no secret URL, hidden locations omitted) and add a "Subscribe in your calendar app" button next to the calendar, alongside the per-ride exports.
 
 ## Backlog 8
 - [x] Bug: map graphic has no background. find a way to add the tile.

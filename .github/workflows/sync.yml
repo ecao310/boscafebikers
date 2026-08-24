@@ -75,12 +75,24 @@ jobs:
       - name: Update site/events.json only if the rides changed
         run: python scripts/promote_events.py "$RUNNER_TEMP/events.json" site/events.json
 
+      # The one step that runs AFTER the promote, and it has to. The public
+      # calendar's DTSTAMP is derived from the payload's `updated_at`, which is
+      # stamped fresh on every fetch — build rides.ics from the scratch file and
+      # it would carry a new timestamp every 6 hours, so the commit guard would
+      # fire forever (exactly the churn promote_events.py exists to stop, and
+      # the mirror image of why the maps step must run *before* the promote).
+      # site/events.json only changes when the rides do, so exporting from it
+      # makes the .ics byte-stable across no-op syncs. export_ics.py rewrites
+      # the file only when its bytes changed, as a second guard.
+      - name: Re-export the public subscribable calendar
+        run: python scripts/export_ics.py site/events.json --out site/rides.ics
+
       - name: Commit the ride data if changed
         id: commit
         run: |
           # Stage first, then diff the index: the route maps are *new* files,
           # and a plain `git diff` doesn't see untracked ones.
-          git add -A site/events.json site/events-past.json site/maps
+          git add -A site/events.json site/events-past.json site/maps site/rides.ics
           if git diff --cached --quiet; then
             echo "No ride changes; nothing to commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"

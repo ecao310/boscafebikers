@@ -64,6 +64,8 @@ card, add an entry to `scripts/ride_images.json` mapping the ride's `uid`
 (shown in `site/events.json`) to an image URL, and commit it — the next sync
 bakes the `image` into `events.json` and the ride card displays it.
 
+The sync also re-exports every upcoming ride as a public calendar feed at `site/rides.ics` — subscribe to <https://ecao310.github.io/boscafebikers/rides.ics> (or the `webcal://` form in Apple Calendar) and new rides appear on their own.
+
 ## Getting the ICS URL from Partiful
 
 1. Open Partiful and go to **Settings → Calendar Sync → Apple Calendar**.
