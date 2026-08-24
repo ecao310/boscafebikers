@@ -15,10 +15,6 @@
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 14px;
     margin-top: 1rem;
-    /* Don't stretch cards to the tallest in their row: each photo card stays
-       its natural aspect-ratio height, so mixed orientations don't leave
-       white gaps below landscape shots. */
-    align-items: start;
   }
   .gallery-item {
     background: var(--foam);
@@ -27,10 +23,19 @@
     overflow: hidden;
     margin: 0;
   }
+  /* Uniform tiles: every photo crops to the same 4:3 frame instead of
+     keeping its own orientation, so rows line up evenly even with a mix
+     of landscape and portrait shots. object-position nudges the crop on
+     the one portrait photo so it keeps the riders, not empty sky. */
   .gallery-item img {
     display: block;
     width: 100%;
-    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    object-position: center;
+  }
+  .gallery-item img.crop-riders {
+    object-position: center 30%;
   }
   .gallery-item figcaption {
     padding: 8px 12px 10px;
@@ -90,7 +95,7 @@
           <figcaption>Mid-ride on Putnam Ave</figcaption>
         </figure>
         <figure class="gallery-item">
-          <img src="images/mike-r-midride-helmet.jpeg" alt="Rider wearing a helmet mid-ride" loading="lazy">
+          <img src="images/mike-r-midride-helmet.jpeg" alt="Rider wearing a helmet mid-ride" loading="lazy" class="crop-riders">
           <figcaption>Mid-ride helmet shot</figcaption>
         </figure>
       </div>

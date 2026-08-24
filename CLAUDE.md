@@ -37,7 +37,7 @@ Tagline: "exploring the city one café at a time".
 | `site/js/cafes.js` | Standalone (no `BCB`): builds `cafes.html`'s year-grouped café list from `events-past.json`. |
 | `site/images/*.jpeg` | Six optimized photos (1600px longest side, `sips -Z 1600` quality-70); five ride photos also appear in `gallery.html`. |
 | `site/cafes.html` | "Where we've been": the café list, rendered client-side from `events-past.json`; page CSS inline. |
-| `site/gallery.html` | Ride-photo gallery: responsive grid + Instagram CTA; gallery CSS inline. |
+| `site/gallery.html` | Ride-photo gallery: uniform 4/3 `object-fit: cover` tiles (the portrait helmet shot uses a `.crop-riders` object-position override) + Instagram CTA; gallery CSS inline. |
 | `site/shopify.html` | WIP shop page (placeholder only). |
 | `site/meta-business.html` | WIP Meta Business page (placeholder only). |
 | `site/contact.html` | Contact page: mailto-composing email form + the three contact cards. |
