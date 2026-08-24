@@ -74,13 +74,29 @@ CREDIT_SIZE = 16
 # costs is the tile *pixels the canvas shows*, and that scales with
 # 1 / (tile side on the canvas)². The zoom is the deepest one whose tiles are
 # still at least MIN_TILE_SIDE canvas px across: one zoom deeper would double
-# the sharpness and quadruple the bytes. At 320 the whole canvas is at most
-# ~6 tile-areas (~150-220KB of base64 for a square map, ~50-100KB for a flat
-# one) and a tile is drawn at 1.0-2.0x — on a desktop card (~600 CSS px for
-# an 800-unit canvas, 420 for a tall one) that is close to 1:1.
+# the sharpness and quadruple the bytes.
+#
+# Raised 320 → 400 (2026-08-24, Backlog 10) after measuring all nine real
+# routes: `choose_zoom` steps are discrete (successive zooms differ by 2x
+# ground-per-tile), and eight of the nine already landed comfortably above
+# 400 (tile side 444-602px) — nudging the floor to 400 leaves their zoom
+# untouched. Only the one outlier, whose route happened to land just above
+# the old 320px floor at the *next* zoom in (342px, so it kept drawing at a
+# needlessly deep zoom), crosses 400 and drops a level: 287KB → 79KB, a ~73%
+# cut on the single biggest file. Tried 448 too, since it also catches the
+# next-closest map (side 444px): that map's zoom13 → zoom12 drop isn't just
+# softer, it's genuinely coarser data — MIT/Dana Hill neighbourhood labels
+# and side-street lines that OSM only renders from zoom13 disappear, for a
+# further ~54KB (~5% of the nine-map total). Not worth it: 400 is the
+# highest floor in the 400-450 range that gets the one clear win without
+# forcing any other map to a visibly emptier tile. No value in 400-450
+# drops "most" of the nine a zoom level — the rest don't cross another
+# boundary until ~504-602, well outside that range.
 TILE_SIZE = 256
-MIN_TILE_SIDE = 320
-# What that rule implies for the count: ceil(800 / 320) + 1 per axis.
+MIN_TILE_SIDE = 400
+# What that rule implies for the count: ceil(800 / MIN_TILE_SIDE) + 1 per
+# axis (16 is sized for the old 320 floor's 4-per-axis worst case; a lower
+# MAX_TILES isn't needed since it's just a safety ceiling, not a target).
 MAX_TILES = 16
 MAX_ZOOM = 18
 MIN_ZOOM = 1
