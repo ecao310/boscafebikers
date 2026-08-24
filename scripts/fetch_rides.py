@@ -25,7 +25,7 @@ import re
 import struct
 import sys
 from collections.abc import Callable
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, unquote_plus, urlsplit
 from zoneinfo import ZoneInfo
@@ -41,6 +41,19 @@ DEFAULT_OUTPUT = REPO_ROOT / "site" / "events.json"
 # attaches a picture to a ride without touching the site code.
 RIDE_IMAGES_PATH = REPO_ROOT / "scripts" / "ride_images.json"
 FETCH_TIMEOUT_SECONDS = 30
+# A ride does not stop being "the next ride" the instant it starts: people turn
+# up late at the dock and still catch the group, so the upcoming export keeps a
+# ride for this long after its start time and the past export doesn't take it
+# until then. `scripts/archive_events.py` carries the same constant (it is
+# stdlib-only and can't import this module); a test pins the two together.
+#
+# Measured from `start`, never from `end`. Only 6 of the 40 rides in the feed
+# carry a DTEND at all, and those run 3, 4, 6 and 10 hours — a 10-hour end time
+# would pin a finished ride to the top of the page as "the next ride" for the
+# whole day and hold it out of the archive just as long. Latecomers are a
+# start-time question, and one rule means the Python filter and the card's
+# "Rolling now" tag can't disagree about which window a ride is in.
+GRACE_PERIOD = timedelta(hours=1)
 # Enrichment: the sync backfills `image` from each ride's public Partiful
 # event page. The page is unauthenticated, so no new secret — the event IDs
 # still come from the secret feed, which is why this stays sync-time work.
@@ -596,6 +609,18 @@ def _clean_description(description: str) -> str:
     return "\n".join(lines).strip()
 
 
+def is_upcoming(start: datetime, now: datetime) -> bool:
+    """True while a ride still belongs in the *upcoming* list.
+
+    That is until GRACE_PERIOD after its start — a ride is upcoming at exactly
+    its start time (as it always was) and stays so through the last instant of
+    its grace hour; one tick later it is past. `parse_events` uses this for both
+    passes, so upcoming and past are exact complements and no ride can land in
+    both files or in neither.
+    """
+    return start + GRACE_PERIOD >= now
+
+
 def parse_events(
     data: bytes,
     now: datetime | None = None,
@@ -606,7 +631,8 @@ def parse_events(
 
     By default only rides that haven't happened yet; `past=True` returns the
     ones that already have, so the site can keep showing them on the calendar
-    (see scripts/archive_events.py). Either way the list is sorted by start.
+    (see scripts/archive_events.py). "Yet" allows GRACE_PERIOD of slack after a
+    ride's start — see `is_upcoming`. Either way the list is sorted by start.
 
     `images` is the optional UID → image-URL sidecar; each ride carries its
     photo URL as `image` (None when absent).
@@ -626,7 +652,7 @@ def parse_events(
         if dtstart is None:
             raise FeedError("an event in the feed has no DTSTART")
         start = _as_local_datetime(dtstart.dt)
-        if (start < now) != past:
+        if is_upcoming(start, now) == past:
             continue
         uid = _text(component, "UID")
         description = _text(component, "DESCRIPTION")

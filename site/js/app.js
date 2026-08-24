@@ -98,7 +98,9 @@
   BCB.openRideModal = openRideModal;
 
   // The next-ride section always shows events[0] (events.json is sorted by
-  // start, and the sync filters to future rides), or an empty-state with a
+  // start, and the sync filters to rides that haven't happened yet — plus the
+  // grace hour after a ride starts, so a latecomer still lands on it and the
+  // card wears rideCard's "Rolling now" pill), or an empty-state with a
   // Partiful fallback link when the calendar has nothing upcoming.
   function setNextRide(events) {
     nextRideCard.textContent = "";

@@ -3,7 +3,7 @@
 
 The site's calendar shows past rides as well as upcoming ones, but
 site/events.json only ever holds the upcoming list — a ride vanishes from it
-the moment it starts. So the archive has to *accumulate*: it is the union of
+an hour after it starts (see GRACE_PERIOD). So the archive has to *accumulate*: it is the union of
 everything it already held and every already-happened ride in the payload
 files handed to it. That way history survives even if Partiful stops exporting
 old events, which the feed gives no guarantee about.
@@ -27,13 +27,22 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 LOCAL_TZ = ZoneInfo("America/New_York")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_ARCHIVE = REPO_ROOT / "site" / "events-past.json"
+# The same grace hour fetch_rides.py keeps a just-started ride in the upcoming
+# export for (a latecomer can still catch the group). It has to be the same
+# number here: the sync feeds this script the *previous* site/events.json, so a
+# shorter rule would archive a ride that the fresh fetch still lists as
+# upcoming, and app.js — which just concatenates the archive with events.json —
+# would draw it on the calendar twice, once dimmed and once live. This module
+# is stdlib-only and can't import fetch_rides, so the constant is duplicated;
+# tests/test_archive_events.py pins the two to each other.
+GRACE_PERIOD = timedelta(hours=1)
 
 
 class ArchiveError(Exception):
@@ -79,10 +88,13 @@ def merge_ride(old: dict, new: dict) -> dict:
 
 
 def is_past(ride: dict, now: datetime) -> bool:
-    """True when the ride's Eastern start is in the past.
+    """True when the ride's start is far enough behind us to be history.
 
-    `start` is an ISO string that already carries its offset, so comparing the
-    parsed values is timezone-correct wherever this runs.
+    Not simply `start < now`: a ride inside its GRACE_PERIOD is still the one
+    happening right now and still sits in site/events.json, so archiving it
+    there and then would put it on the calendar twice. `start` is an ISO string
+    that already carries its offset, so comparing the parsed values is
+    timezone-correct wherever this runs.
     """
     start = ride.get("start")
     if not isinstance(start, str):
@@ -93,7 +105,7 @@ def is_past(ride: dict, now: datetime) -> bool:
         return False
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=LOCAL_TZ)
-    return moment < now
+    return moment + GRACE_PERIOD < now
 
 
 def merge_archive(

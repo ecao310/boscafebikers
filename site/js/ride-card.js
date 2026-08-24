@@ -195,6 +195,31 @@
     return MAPS_URL_RE.test(String(url || "")) ? "Meeting point on Google Maps" : "Meeting point";
   }
 
+  // --- "Rolling now" ---
+  // A ride stays in events.json for an hour after it starts (GRACE_PERIOD in
+  // scripts/fetch_rides.py — keep the two numbers in step), because latecomers
+  // can still catch the group. During that hour the card must not read as
+  // "upcoming": say the ride is happening.
+  //
+  // This is the one allowed use of the clock, and it is NOT the thing the
+  // no-Date rule bans. That rule is about *re-formatting* a ride's time — the
+  // display strings are precomputed in Eastern, and new Date(start) would
+  // re-render them in the visitor's own timezone. Here the question is "has
+  // this instant passed?", which is absolute: ev.start carries its Eastern
+  // offset, so Date.parse gives the correct UTC epoch in every timezone, and
+  // comparing epoch milliseconds with Date.now() has no wall clock in it at
+  // all. Nothing below is formatted for display.
+  const GRACE_MS = 60 * 60 * 1000;
+  function isRolling(ev, nowMs) {
+    const startMs = Date.parse((ev && ev.start) || "");
+    if (isNaN(startMs)) { return false; }
+    const now = typeof nowMs === "number" ? nowMs : Date.now();
+    // Inclusive at both ends, matching fetch_rides.is_upcoming: the ride is
+    // rolling from its start time through the last instant of the grace hour.
+    return now >= startMs && now <= startMs + GRACE_MS;
+  }
+  BCB.isRolling = isRolling;
+
   // The shared ride-card builder — used by the featured next-ride card AND the
   // ride-detail modal, so the details and add-to-calendar exports can't drift.
   BCB.rideCard = (ev, extraClass) => {
@@ -203,11 +228,19 @@
     // the fold on a phone — a map or poster image is tall enough to push
     // them out of the first viewport otherwise (Backlog 10).
     const when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
-    if (when || ev.past) {
+    // Archived rides are flagged in the data; a ride still in events.json can
+    // have started anyway (the grace hour, plus up to 6 hours of cron lag), so
+    // that one is decided against the visitor's clock at render time.
+    const rolling = !ev.past && isRolling(ev);
+    if (when || ev.past || rolling) {
       const whenLine = BCB.el("p", "when", when);
       // A ride pulled off the archive needs to say so: the date alone doesn't
       // read as "already happened" when you land on it from the calendar.
-      if (ev.past) { whenLine.appendChild(BCB.el("span", "ride-tag", "Past ride")); }
+      if (ev.past) {
+        whenLine.appendChild(BCB.el("span", "ride-tag", "Past ride"));
+      } else if (rolling) {
+        whenLine.appendChild(BCB.el("span", "ride-tag is-rolling", "Rolling now"));
+      }
       card.appendChild(whenLine);
     }
     card.appendChild(BCB.el("h3", null, ev.title || "Café ride"));

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -364,12 +364,75 @@ def test_non_ascii_survives_the_round_trip(rides):
     assert "Café" in rides[0]["location"]
 
 
+# --- the grace hour ---------------------------------------------------------
+# People turn up late and still catch the group, so a ride stays in the
+# *upcoming* export until GRACE_PERIOD after its start. The Charles ride starts
+# 2030-06-22 09:30 ET and (deliberately, for the DTEND test below) runs to 12:00.
+CHARLES = "evt-future-charles-loop@partiful.com"
+CHARLES_START = datetime(2030, 6, 22, 9, 30, tzinfo=EASTERN)
+
+
+def uids_at(feed_bytes: bytes, now: datetime, past: bool = False) -> list[str]:
+    return [r["uid"] for r in fetch_rides.parse_events(feed_bytes, now=now, past=past)]
+
+
+def test_grace_period_is_one_hour():
+    assert fetch_rides.GRACE_PERIOD == timedelta(hours=1)
+
+
 def test_now_boundary_keeps_events_starting_exactly_now(feed_bytes):
-    exact = datetime(2030, 6, 22, 9, 30, tzinfo=EASTERN)
-    kept = fetch_rides.parse_events(feed_bytes, now=exact)
-    assert len(kept) == 2
-    just_after = datetime(2030, 6, 22, 9, 31, tzinfo=EASTERN)
-    assert len(fetch_rides.parse_events(feed_bytes, now=just_after)) == 1
+    assert len(fetch_rides.parse_events(feed_bytes, now=CHARLES_START)) == 2
+
+
+def test_a_ride_half_an_hour_old_is_still_upcoming(feed_bytes):
+    """The whole point: at 10:00 the 09:30 ride is the one to go and join."""
+    now = CHARLES_START + timedelta(minutes=30)
+    assert CHARLES in uids_at(feed_bytes, now)
+    assert CHARLES not in uids_at(feed_bytes, now, past=True)
+
+
+def test_a_ride_inside_its_grace_hour_is_still_the_next_ride(feed_bytes):
+    """Sorted by start, so the graced ride stays events[0] — the featured card."""
+    rides = fetch_rides.parse_events(feed_bytes, now=CHARLES_START + timedelta(minutes=30))
+    assert rides[0]["uid"] == CHARLES
+
+
+def test_exactly_one_hour_after_the_start_is_still_upcoming(feed_bytes):
+    """The boundary lands on the upcoming side, as `start >= now` always did."""
+    now = CHARLES_START + timedelta(hours=1)
+    assert CHARLES in uids_at(feed_bytes, now)
+    assert CHARLES not in uids_at(feed_bytes, now, past=True)
+
+
+def test_one_second_past_the_grace_hour_the_ride_is_past(feed_bytes):
+    now = CHARLES_START + timedelta(hours=1, seconds=1)
+    assert CHARLES not in uids_at(feed_bytes, now)
+    assert CHARLES in uids_at(feed_bytes, now, past=True)
+
+
+def test_the_grace_hour_ignores_dtend(feed_bytes):
+    """Charles has DTEND 12:00 — 2.5h out — and the window is still one hour.
+
+    Only 6 of the 40 real rides carry a DTEND at all and they run 3-10 hours; a
+    10-hour one would hold a finished ride at the top of the page all day.
+    """
+    charles_end = datetime(2030, 6, 22, 12, 0, tzinfo=EASTERN)
+    for ride in fetch_rides.parse_events(feed_bytes, now=NOW):
+        if ride["uid"] == CHARLES:
+            assert ride["end"] == charles_end.isoformat()
+    now = CHARLES_START + timedelta(hours=1, minutes=30)  # ride still "running"
+    assert CHARLES not in uids_at(feed_bytes, now)
+    assert CHARLES in uids_at(feed_bytes, now, past=True)
+
+
+def test_upcoming_and_past_stay_exact_complements_across_the_grace_hour(feed_bytes):
+    """No ride may be in both files, or in neither, at any point in the window."""
+    for minutes in (-1, 0, 1, 30, 59, 60, 61, 120):
+        now = CHARLES_START + timedelta(minutes=minutes)
+        upcoming = set(uids_at(feed_bytes, now))
+        past = set(uids_at(feed_bytes, now, past=True))
+        assert upcoming & past == set(), minutes
+        assert len(upcoming) + len(past) == 3, minutes  # the cancelled one aside
 
 
 def test_all_events_in_the_past_yields_empty_list(feed_bytes):

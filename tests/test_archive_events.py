@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -14,6 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import archive_events  # noqa: E402
+import fetch_rides  # noqa: E402
 
 EASTERN = ZoneInfo("America/New_York")
 # Pinned "now" so "past" never depends on the clock.
@@ -136,6 +137,65 @@ def test_naive_and_offset_starts_are_both_comparable():
     """A start without an offset is read as Eastern, not crashed on."""
     merged = archive_events.merge_archive([], [[ride("a", "2026-05-02T11:00:00")]], NOW)
     assert [r["uid"] for r in merged] == ["a"]
+
+
+# --- the grace hour ---
+# fetch_rides keeps a ride in site/events.json for an hour after it starts, so
+# a latecomer can still find it. The archive has to use the *same* window: the
+# sync hands this script the previous site/events.json, and app.js just
+# concatenates the archive onto events.json, so archiving a ride that is still
+# in the upcoming list would draw it on the calendar twice — once dimmed from
+# the archive and once live.
+
+
+def test_grace_period_matches_fetch_rides():
+    """Two stdlib/deps boundaries, one number. Don't let them drift."""
+    assert archive_events.GRACE_PERIOD == fetch_rides.GRACE_PERIOD == timedelta(hours=1)
+
+
+def test_a_ride_inside_its_grace_hour_is_not_archived():
+    started = (NOW - timedelta(minutes=30)).isoformat()
+    assert archive_events.merge_archive([], [[ride("a", started)]], NOW) == []
+
+
+def test_exactly_one_hour_old_is_still_not_archived():
+    """The boundary sits on the upcoming side, the same way fetch_rides puts it."""
+    started = (NOW - timedelta(hours=1)).isoformat()
+    assert archive_events.merge_archive([], [[ride("a", started)]], NOW) == []
+
+
+def test_a_ride_past_its_grace_hour_is_archived():
+    started = (NOW - timedelta(hours=1, seconds=1)).isoformat()
+    merged = archive_events.merge_archive([], [[ride("a", started)]], NOW)
+    assert [r["uid"] for r in merged] == ["a"]
+
+
+def test_a_graced_ride_is_never_in_the_archive_and_events_json_at_once():
+    """The sync's own shape: previous events.json + the fresh past export.
+
+    Parsed from the real fixture 30 minutes after the Charles ride starts, so
+    the ride is genuinely mid-grace rather than hand-built.
+    """
+    feed = (REPO_ROOT / "tests" / "fixtures" / "sample.ics").read_bytes()
+    charles = "evt-future-charles-loop@partiful.com"
+    now = datetime(2030, 6, 22, 10, 0, tzinfo=EASTERN)  # start 09:30 + 30 min
+    upcoming = fetch_rides.parse_events(feed, now=now)
+    from_feed_past = fetch_rides.parse_events(feed, now=now, past=True)
+    # Source order mirrors sync.yml: site/events.json, then the past export.
+    merged = archive_events.merge_archive([], [upcoming, from_feed_past], now)
+    assert charles in {r["uid"] for r in upcoming}
+    assert charles not in {r["uid"] for r in merged}
+
+
+def test_the_ride_reaches_the_archive_once_its_grace_hour_is_over():
+    feed = (REPO_ROOT / "tests" / "fixtures" / "sample.ics").read_bytes()
+    charles = "evt-future-charles-loop@partiful.com"
+    now = datetime(2030, 6, 22, 11, 0, tzinfo=EASTERN)  # start + 90 min
+    upcoming = fetch_rides.parse_events(feed, now=now)
+    from_feed_past = fetch_rides.parse_events(feed, now=now, past=True)
+    merged = archive_events.merge_archive([], [upcoming, from_feed_past], now)
+    assert charles not in {r["uid"] for r in upcoming}
+    assert charles in {r["uid"] for r in merged}
 
 
 def test_unparseable_start_is_not_treated_as_past():
