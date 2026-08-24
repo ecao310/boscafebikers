@@ -148,6 +148,35 @@
     return String(address || "").split(",")[0].trim();
   }
 
+  // Where a ride starts, as a card-sized name. Rides almost always start at a
+  // Bluebikes dock, whose address is "Bluebikes, <station>, <city>, MA <zip>"
+  // — so the leading segment is the useless word "Bluebikes" and the station
+  // is what identifies the start: "Bluebikes, Cleveland Circle, Boston, MA
+  // 02135" → "Cleveland Circle". A station can span two segments ("Bunker Hill
+  // Mall, Main St at Austin St"), so keep everything between "Bluebikes" and
+  // the city when the address ends in a "<city>, <ST> [zip]" tail; otherwise
+  // the next segment; a bare "Bluebikes" falls back to the whole string. Any
+  // other start keeps its leading place name, like placeName().
+  const BLUEBIKES_RE = /^bluebikes\b[\s:\-–—]*(.*)$/i;
+  const STATE_RE = /^[A-Z]{2}(\s+\d{5}(-\d{4})?)?$/;
+  function startName(address) {
+    const raw = String(address || "").trim();
+    const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (!parts.length) { return ""; }
+    const m = BLUEBIKES_RE.exec(parts[0]);
+    if (!m) { return parts[0]; }
+    // "Bluebikes Cleveland Circle" (no comma) keeps the remainder as the station.
+    const detail = m[1] ? [m[1]].concat(parts.slice(1)) : parts.slice(1);
+    if (!detail.length) { return raw; }
+    const last = detail[detail.length - 1];
+    if (detail.length >= 3 && STATE_RE.test(last)) {
+      // Drop the "<city>, <ST> <zip>" tail; what's left is the station.
+      return detail.slice(0, -2).join(", ");
+    }
+    return detail[0];
+  }
+  BCB.startName = startName;
+
   // The shared ride-card builder — used by the featured next-ride card AND the
   // ride-detail modal, so the details and add-to-calendar exports can't drift.
   BCB.rideCard = (ev, extraClass) => {
@@ -189,9 +218,10 @@
       card.appendChild(BCB.el("p", "where", "Location shared after you RSVP"));
     }
     // Route links come from the host's Partiful custom fields ("Estimated
-    // Route", "Team A & C Route", …) and open Google Maps. The endpoints are
-    // full postal addresses, so show just the place name — the whole thing is
-    // one tap away in Maps, and in the link's title.
+    // Route", "Team A & C Route", …) and open Google Maps. The card names only
+    // where the ride starts ("from Cleveland Circle"): the café is already the
+    // .where line, and the full start → end pair (with any stops) is one tap
+    // away in Maps, and in the link's title.
     (ev.routes || []).forEach((route) => {
       const line = BCB.el("p", "route");
       const link = BCB.el("a", null, route.label || "Route");
@@ -207,11 +237,9 @@
       if (route.distance_display) {
         line.appendChild(BCB.el("span", "route-distance", route.distance_display));
       }
-      const ends = [placeName(route.start), placeName(route.end)].filter(Boolean);
-      if (ends.length === 2) {
-        const stops = (route.via || []).length;
-        line.appendChild(BCB.el("span", "route-ends",
-          ends.join(" → ") + (stops ? " · " + stops + (stops === 1 ? " stop" : " stops") + " on the way" : "")));
+      const start = startName(route.start);
+      if (start) {
+        line.appendChild(BCB.el("span", "route-start", "from " + start));
       }
       card.appendChild(line);
     });
