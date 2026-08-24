@@ -543,7 +543,11 @@
 
     .fc .fc-daygrid-event {
       border-radius: 6px;
-      padding: 4px 6px;
+      /* 4px side padding (was 6px) buys back a couple of characters before
+       the title ellipsizes on a ~45px mobile chip, now that
+       displayEventTime: false (calendar.js) has freed the chip from also
+       showing a time prefix. */
+      padding: 4px 4px;
       margin-top: 2px;
       /* Event chips are tappable (left-click opens the ride-detail modal).
        Compact on mobile so stacked rides don't stretch the calendar row

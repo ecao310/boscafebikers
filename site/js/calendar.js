@@ -134,6 +134,12 @@
       height: "auto",
       dayMaxEvents: 3,
       eventDisplay: "block",
+      // Chips are narrow (~45px on a 380px phone) and FC prefixes the title
+      // with a time by default; the time then eats the whole chip and the
+      // title never shows ("11 O'Some Sunday" ellipsizes to "1 O…"). The
+      // time is already on the ride card and in the modal the chip opens
+      // (BCB.openRideModal), so drop it here on every breakpoint.
+      displayEventTime: false,
       events: fcEvents,
       // Left-click shows the ride detail modal instead of jumping straight to
       // the RSVP page. Keep the event's url so middle-click / ctrl-click still
