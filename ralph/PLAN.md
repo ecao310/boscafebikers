@@ -4,7 +4,7 @@ Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
 ## Backlog 9
-- [ ] Verify the dev branch still publishes to a /preview page.
+- [x] Verify the dev branch still publishes to a /preview page.
 - [ ] Bug: on mobile the FullCalendar chips only show the clipped time ("1 O…") — the ride title never appears. Hide the event time on chips (displayEventTime: false or list-item dots below 560px); the time is already on the card and in the modal.
 - [ ] Bug: 11 archived rides have a Google Maps link as their `location` (organizer pasted the meeting-point link into Partiful's Location field). It renders as a raw URL overflowing the card. Detect a maps URL in `_clean_location` → `location: null` + new `location_url`; render it as a "Meeting point on Google Maps" link in rideCard; carry the field through archive_events merge; add `overflow-wrap: anywhere` to `.where`.
 - [ ] Bug: 4 routes were entered café→start (Localito, Scooper Bowl, both Ice Cream Crawl routes), so "from <café>" and the map's Start/End labels are backwards. If `end` matches the Bluebikes pattern and `start` doesn't, swap start/end (and reverse points) when parsing the route.
