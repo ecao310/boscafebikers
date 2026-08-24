@@ -10,6 +10,16 @@
   <link rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
+  <!-- Leaflet 1.9.4 (BSD-2-Clause) from jsDelivr, pinned + SRI, `defer` like the
+       rides page's FullCalendar — the site's one framework exception, and the
+       only way to get a real pan/zoom map with no build step and no API key.
+       If the CDN is unreachable the script simply never runs: cafes.js leaves
+       #cafe-map hidden and the café list below it is untouched. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+  <script id="leaflet-js" src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"
+    defer></script>
   <style>
     /* --- cafés-page styles (shared base lives in styles.css) --- */
 
@@ -28,6 +38,85 @@
       margin: 0 0 .5rem;
       font-weight: 600;
       color: var(--roast);
+    }
+
+    /* --- the café map --- */
+
+    /* Starts hidden and is revealed by cafes.js only once Leaflet has loaded
+       AND at least one café has coordinates, so a CDN outage or an empty cache
+       leaves no grey box sitting above the list. */
+    .cafe-map {
+      height: 340px;
+      margin: 0 0 .4rem;
+      border: 1px solid var(--oat);
+      border-radius: var(--radius);
+      /* The tiles are square; the radius only bites if the box clips them. */
+      overflow: hidden;
+      /* What shows through while the tiles are still arriving. */
+      background: var(--oat);
+    }
+
+    @media (min-width: 560px) {
+      .cafe-map {
+        height: 420px;
+      }
+    }
+
+    #cafe-map-hint {
+      margin: 0 0 1rem;
+    }
+
+    /* Leaflet's popup in the café palette, so it reads as one of our cards. */
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background: var(--foam);
+      color: var(--ink);
+    }
+
+    .leaflet-popup-content {
+      margin: 12px 14px;
+      /* Leaflet sizes the bubble from this; wide enough for an address line. */
+      min-width: 180px;
+    }
+
+    .pin-name {
+      font-size: 1rem;
+      margin: 0 0 .15rem;
+    }
+
+    .pin-address {
+      color: var(--muted);
+      font-size: .85rem;
+      margin: 0 0 .4rem;
+    }
+
+    .pin-rides {
+      list-style: none;
+      margin: 0 0 .4rem;
+      padding: 0;
+      font-size: .9rem;
+    }
+
+    .pin-rides li {
+      margin: 0 0 .2rem;
+    }
+
+    /* Both popup links are the touch target, so give them real height.
+       The colour has to be reclaimed: Leaflet ships `.leaflet-container a
+       { color: #0078A8 }`, which outranks styles.css's plain `a` rule and
+       would leave two bright blue links in the middle of the café palette. */
+    .pin-rides a,
+    .pin-directions a {
+      display: inline-block;
+      padding: 3px 0;
+      font-weight: 600;
+      color: var(--roast);
+    }
+
+    .pin-directions {
+      margin: 0;
+      padding-top: .3rem;
+      border-top: 1px solid var(--oat);
     }
 
     /* One h2 per year, so a long list still says at a glance which season
@@ -155,6 +244,15 @@
              just the leading part of the ride's location. The count line stays
              hidden until it has real numbers to show. -->
         <p class="note" id="cafe-count" hidden></p>
+
+        <!-- One pin per café, drawn by js/cafes.js from site/cafe-points.json
+             (the sync's geocode cache). Both stay hidden until there is a real
+             map to show. -->
+        <div id="cafe-map" class="cafe-map" role="region"
+          aria-label="Map of the cafés we have ridden to" hidden></div>
+        <p class="note" id="cafe-map-hint" hidden>Tap a pin for the ride that got
+          there. Drag to pan, and use + / − (or pinch) to zoom.</p>
+
         <div id="cafe-list">
           <p class="note">Loading cafés…</p>
         </div>

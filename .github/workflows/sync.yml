@@ -57,6 +57,19 @@ jobs:
       - name: Backfill images and routes on a few archived rides
         run: python scripts/enrich_archive.py --limit 8 site/events-past.json
 
+      # Coordinates for the café pins on cafes.html. Runs here, alongside the
+      # other backfills, because it reads the archive the step above just
+      # updated plus the fresh upcoming list — so a café is already geocoded by
+      # the time its ride moves into the past. It cannot churn: a location that
+      # is already in site/cafe-points.json (hit or recorded miss) is never
+      # queried again and the file is rewritten only when the mapping actually
+      # changed, so a normal sync makes zero Nominatim requests and no commit.
+      # No secret here either: Nominatim only ever sees a public address.
+      - name: Geocode any café we haven't placed on the map yet
+        run: |
+          python scripts/geocode_cafes.py --cache site/cafe-points.json \
+            "$RUNNER_TEMP/events.json" site/events-past.json
+
       # Runs on the *scratch* copy, BEFORE the promote below. render_route_maps
       # adds `map_image`, which a fresh fetch never has — patch it in here and
       # promote is comparing like with like. Do it after the promote instead and
@@ -92,7 +105,8 @@ jobs:
         run: |
           # Stage first, then diff the index: the route maps are *new* files,
           # and a plain `git diff` doesn't see untracked ones.
-          git add -A site/events.json site/events-past.json site/maps site/rides.ics
+          git add -A site/events.json site/events-past.json site/maps site/rides.ics \
+            site/cafe-points.json
           if git diff --cached --quiet; then
             echo "No ride changes; nothing to commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"

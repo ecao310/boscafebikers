@@ -6,7 +6,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 ## Backlog 10
 - [x] Clean up code for the calendar legend now that I've removed it.
 - [x] Every page's hero section should be a standardized size. use the size from the main page.
-- [ ] Cafe page should have a map with pins at each location. Embed from a 3P mapping app. Verify it's zoomable, scrollable. Each pin is clickable. Decide whether clicking shows the ride that got there or a link to the destination itself.
+- [x] Cafe page should have a map with pins at each location. Embed from a 3P mapping app. Verify it's zoomable, scrollable. Each pin is clickable. Decide whether clicking shows the ride that got there or a link to the destination itself.
 - [x] On a phone the next-ride card leads with the map, so the date/title sit below the fold at 380px. Put the .when line and title above the banner in rideCard (or cap the map's height ~260px below 560px) so the key info shows first.
 - [x] The distance badge (top-left) covers the basemap's own place label on some maps ("Watertown" on the O'Some map). Adjust the badge inset / PAD_TOP in route_map.py so the badge clears the tile labels, and redraw only the affected maps.
 - [x] The gallery grid leaves a hole with 5 mixed-orientation photos. Give tiles a uniform aspect-ratio (e.g. 4/3 with object-fit: cover) or a 2-column desktop layout so rows align.
