@@ -316,11 +316,48 @@ def maps_geocode_points(query: dict) -> list[tuple[float, float]]:
     return points
 
 
+# Rides always start at a Bluebikes dock (the group meets there), so a route
+# whose *end* is a dock and whose start isn't was built backwards in Google
+# Maps — café → meeting point. The organizer did exactly that on at least one
+# ride, which left the card's "from <place>" and the map's Start/End labels
+# reversed. The dock is recognised structurally, by its leading address
+# segment, the same way `route_map._start_name` reads one.
+BLUEBIKES_PLACE_RE = re.compile(r"^bluebikes\b", re.IGNORECASE)
+
+
+def _is_bluebikes(place: str) -> bool:
+    """True when an address's first comma-segment names a Bluebikes dock."""
+    first = str(place or "").split(",")[0].strip()
+    return bool(BLUEBIKES_PLACE_RE.match(first))
+
+
+def orient_route(route: dict) -> dict:
+    """Flip a route that was entered café → Bluebikes dock, in place.
+
+    Start and end swap, `via` stops reverse (the last one becomes the first)
+    and so do `points`. Distance is the same either way, so `distance_m` /
+    `distance_display` are left alone. A route that already starts at a dock —
+    or one with no dock at either end, which is a ride that met somewhere else
+    — is returned untouched.
+    """
+    start = route.get("start", "")
+    end = route.get("end", "")
+    if not _is_bluebikes(end) or _is_bluebikes(start):
+        return route
+    route["start"], route["end"] = end, start
+    if route.get("via"):
+        route["via"] = list(reversed(route["via"]))
+    if route.get("points"):
+        route["points"] = list(reversed(route["points"]))
+    return route
+
+
 def route_from_maps_url(url: str) -> dict | None:
     """Start, end, stops and coordinates out of a Google Maps directions URL.
 
     Returns None for a maps link that only points at a place — that's how a
-    "Start/Bluebikes" pin is told apart from an actual route.
+    "Start/Bluebikes" pin is told apart from an actual route. A route entered
+    backwards (café → Bluebikes dock) comes back flipped; see `orient_route`.
     """
     try:
         parts = urlsplit(url)
@@ -351,7 +388,7 @@ def route_from_maps_url(url: str) -> dict | None:
     mode = (query.get("dirflg") or [""])[0].strip()
     if mode:
         route["mode"] = mode
-    return route
+    return orient_route(route)
 
 
 # --- route distance ----------------------------------------------------------

@@ -873,6 +873,84 @@ def test_a_two_point_route_has_no_via():
     assert "via" not in route
 
 
+# --- routes entered backwards (café -> Bluebikes dock) ----------------------
+# Rides always start at a Bluebikes dock, so a route whose end is the dock was
+# built the wrong way round in Google Maps.
+
+DOCK = "Bluebikes, Bunker Hill Mall, Main St at Austin St, Boston, MA 02129"
+CAFE = "Localito, Riverside Avenue, Medford, MA"
+
+
+def test_a_backwards_route_is_flipped_including_points():
+    route = fetch_rides.route_from_maps_url(
+        "https://maps.google.com/?saddr=" + CAFE + "&daddr=" + DOCK
+        + "&geocode=" + GEOCODE_PAIR
+    )
+    assert route["start"] == DOCK
+    assert route["end"] == CAFE
+    # The coordinate list has to follow the stops it belongs to.
+    assert route["points"] == [[42.366823, -71.186803], [42.335543, -71.150614]]
+
+
+def test_a_backwards_multi_stop_route_reverses_the_via_stops():
+    route = fetch_rides.route_from_maps_url(
+        "https://maps.google.com/?saddr=O'Some Cafe&daddr=Gracie's to:Honeycomb to:"
+        + DOCK
+    )
+    assert route["start"] == DOCK
+    assert route["end"] == "O'Some Cafe"
+    assert route["via"] == ["Honeycomb", "Gracie's"]
+
+
+def test_orient_route_reverses_via_and_points_together():
+    route = fetch_rides.orient_route(
+        {
+            "start": "Cafe",
+            "end": DOCK,
+            "via": ["B", "C"],
+            "points": [[1.0, 1.0], [2.0, 2.0], [3.0, 3.0], [4.0, 4.0]],
+            "distance_m": 5000,
+            "distance_display": "~3.1 mi",
+        }
+    )
+    assert route["start"] == DOCK
+    assert route["end"] == "Cafe"
+    assert route["via"] == ["C", "B"]
+    assert route["points"] == [[4.0, 4.0], [3.0, 3.0], [2.0, 2.0], [1.0, 1.0]]
+    # The ride is the same length in either direction.
+    assert route["distance_m"] == 5000
+    assert route["distance_display"] == "~3.1 mi"
+
+
+def test_a_route_that_starts_at_the_dock_is_left_alone():
+    route = fetch_rides.route_from_maps_url(
+        "https://maps.google.com/?saddr=" + DOCK + "&daddr=" + CAFE
+        + "&geocode=" + GEOCODE_PAIR
+    )
+    assert route["start"] == DOCK
+    assert route["end"] == CAFE
+    assert route["points"] == [[42.335543, -71.150614], [42.366823, -71.186803]]
+
+
+def test_a_route_with_no_dock_at_either_end_is_left_alone():
+    """The Scooper Bowl ride met at H Mart, not a dock — nothing to flip."""
+    route = fetch_rides.route_from_maps_url(
+        "https://maps.google.com/?saddr=H Mart Brookline, Beacon Street, Brookline, MA"
+        "&daddr=Gracie's to:88 Seaport Boulevard, Boston, MA"
+    )
+    assert route["start"] == "H Mart Brookline, Beacon Street, Brookline, MA"
+    assert route["end"] == "88 Seaport Boulevard, Boston, MA"
+    assert route["via"] == ["Gracie's"]
+
+
+def test_is_bluebikes_reads_the_leading_segment_only():
+    assert fetch_rides._is_bluebikes(DOCK)
+    assert fetch_rides._is_bluebikes("bluebikes Cleveland Circle")
+    # A café that merely sits next to a dock is not a dock.
+    assert not fetch_rides._is_bluebikes("Tatte, 1 Main St, near Bluebikes")
+    assert not fetch_rides._is_bluebikes("")
+
+
 def test_measure_route_adds_distance():
     route = {"points": [[42.0, -71.0], [42.1, -71.1]]}
     fetch_rides.measure_route(route, lambda points: 6448.0)

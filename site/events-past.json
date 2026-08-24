@@ -681,16 +681,16 @@
       "image": "https://assets.getpartiful.com/posters/yes.png",
       "routes": [
         {
-          "start": "Localito, Riverside Avenue, Medford, MA",
-          "end": "Bluebikes, Bunker Hill Mall, Main St at Austin St, Boston, MA 02129",
+          "start": "Bluebikes, Bunker Hill Mall, Main St at Austin St, Boston, MA 02129",
+          "end": "Localito, Riverside Avenue, Medford, MA",
           "points": [
-            [
-              42.418175,
-              -71.108716
-            ],
             [
               42.375603,
               -71.064607
+            ],
+            [
+              42.418175,
+              -71.108716
             ]
           ],
           "mode": "b",
