@@ -2,224 +2,238 @@
 <html lang="en">
 
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Contact — Boston Café Bikers</title>
-<meta name="description" content="Get in touch with Boston Café Bikers — email, Instagram, or the WhatsApp group.">
-<meta name="theme-color" content="#7a4a2b">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="styles.css">
-<style>
-  /* --- contact-specific styles (shared base lives in styles.css) --- */
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact — Boston Café Bikers</title>
+  <meta name="description" content="Get in touch with Boston Café Bikers — email, Instagram, or the WhatsApp group.">
+  <meta name="theme-color" content="#7a4a2b">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* --- contact-specific styles (shared base lives in styles.css) --- */
 
-  /* Same card treatment as the .links rows on the rides page, so the three
+    /* Same card treatment as the .links rows on the rides page, so the three
      "other ways to reach us" tiles match the rest of the site. */
-  .links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 1rem;
-  }
-
-  .links a {
-    flex: 1 1 auto;
-    text-align: center;
-    background: var(--foam);
-    border: 1px solid var(--oat);
-    border-radius: var(--radius);
-    padding: 14px 18px;
-    text-decoration: none;
-    font-weight: 600;
-  }
-
-  .links a:hover,
-  .links a:focus {
-    border-color: var(--crema);
-  }
-
-  .links a:active {
-    filter: brightness(.95);
-  }
-
-  /* --- the email form --- */
-  /* Mobile-first: one full-width field per row, 44px+ touch targets. */
-  .contact-form {
-    margin-top: 1rem;
-  }
-
-  .field {
-    display: block;
-    margin-bottom: 14px;
-  }
-
-  .field > span {
-    display: block;
-    font-weight: 600;
-    font-size: .9rem;
-    margin-bottom: 4px;
-  }
-
-  .field input,
-  .field textarea {
-    display: block;
-    width: 100%;
-    background: var(--foam);
-    border: 1px solid var(--oat);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    /* font: inherit keeps the café sans-serif and, at 16px+, stops iOS Safari
-       zooming the page when a field takes focus. */
-    font: inherit;
-    color: var(--ink);
-    min-height: 44px;
-  }
-
-  .field textarea {
-    min-height: 140px;
-    resize: vertical;
-  }
-
-  .field input:focus,
-  .field textarea:focus {
-    outline: 2px solid var(--crema);
-    outline-offset: 1px;
-    border-color: var(--crema);
-  }
-
-  .contact-form .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 10px 18px;
-    font: inherit;
-    font-weight: 600;
-    border: 0;
-    cursor: pointer;
-    /* Full-width primary action on a phone; a normal pill from 560px up,
-       matching the ride-card action row. */
-    width: 100%;
-  }
-
-  #contact-status {
-    margin: .75rem 0 0;
-  }
-
-  #contact-direct-line {
-    margin: .75rem 0 0;
-  }
-
-  @media (min-width: 560px) {
-    .contact-form .btn {
-      width: auto;
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 1rem;
     }
-  }
-</style>
+
+    .links a {
+      flex: 1 1 auto;
+      text-align: center;
+      background: var(--foam);
+      border: 1px solid var(--oat);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .links a:hover,
+    .links a:focus {
+      border-color: var(--crema);
+    }
+
+    .links a:active {
+      filter: brightness(.95);
+    }
+
+    /* --- the email form --- */
+    /* Mobile-first: one full-width field per row, 44px+ touch targets. */
+    .contact-form {
+      margin-top: 1rem;
+    }
+
+    .field {
+      display: block;
+      margin-bottom: 14px;
+    }
+
+    .field>span {
+      display: block;
+      font-weight: 600;
+      font-size: .9rem;
+      margin-bottom: 4px;
+    }
+
+    .field input,
+    .field textarea {
+      display: block;
+      width: 100%;
+      background: var(--foam);
+      border: 1px solid var(--oat);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      /* font: inherit keeps the café sans-serif and, at 16px+, stops iOS Safari
+       zooming the page when a field takes focus. */
+      font: inherit;
+      color: var(--ink);
+      min-height: 44px;
+    }
+
+    .field textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      outline: 2px solid var(--crema);
+      outline-offset: 1px;
+      border-color: var(--crema);
+    }
+
+    /* Both buttons on this page — the form's "Send email" and the "Back to the
+       ride page" link under the contact cards — get the ride-card action-row
+       build: inline-flex + min-height 44px, so the two are the same height
+       with the label centred in the pill, instead of one inline-flex button
+       and one shared inline-block .btn ~4px taller. */
+    .contact-form .btn,
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 18px;
+      font: inherit;
+      font-weight: 600;
+      border: 0;
+      cursor: pointer;
+      /* Full-width primary action on a phone; a normal pill from 560px up,
+       matching the ride-card action row. */
+      width: 100%;
+    }
+
+    /* The back link follows the .links flex box, which has no bottom margin,
+       so without this the pill sits flush against the last card's border.
+       1rem is the same gap the card group keeps above itself. */
+    .btn-back {
+      margin-top: 1rem;
+    }
+
+    #contact-status {
+      margin: .75rem 0 0;
+    }
+
+    #contact-direct-line {
+      margin: .75rem 0 0;
+    }
+
+    @media (min-width: 560px) {
+      .contact-form .btn,
+      .btn-back {
+        width: auto;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<nav class="nav" aria-label="Site">
-  <div class="wrap">
-    <ul class="tabs">
-      <li><a href="index.html">Rides</a></li>
-      <li><a href="gallery.html">Gallery</a></li>
-      <li><a href="contact.html" class="is-active" aria-current="page">Contact</a></li>
-      <li><a href="donate.html">Donate</a></li>
-    </ul>
-  </div>
-</nav>
-
-<header class="hero">
-  <div class="wrap">
-    <span class="mark" aria-hidden="true">☕🚲</span>
-    <h1>Contact us</h1>
-    <p class="tagline">Say hi — we read everything.</p>
-  </div>
-</header>
-
-<main>
-
-  <section aria-labelledby="write-heading">
+  <nav class="nav" aria-label="Site">
     <div class="wrap">
-      <h2 id="write-heading">Send us a message</h2>
-      <p class="lede">Starting a café bike club in your own city? Want to team up
-      or partner with ours? Fill this in and hit send.</p>
+      <ul class="tabs">
+        <li><a href="index.html">Rides</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="contact.html" class="is-active" aria-current="page">Contact</a></li>
+        <li><a href="donate.html">Donate</a></li>
+      </ul>
+    </div>
+  </nav>
 
-      <!-- No server and no API key on a static Pages site, so "send" composes a
+  <header class="hero">
+    <div class="wrap">
+      <span class="mark" aria-hidden="true">☕🚲</span>
+      <h1>Contact us</h1>
+      <p class="tagline">Say hi — we read everything.</p>
+    </div>
+  </header>
+
+  <main>
+
+    <section aria-labelledby="write-heading">
+      <div class="wrap">
+        <h2 id="write-heading">Send us a message</h2>
+        <p class="lede">Starting a café bike club in your own city? Want to team up
+          or partner with ours?</p>
+
+        <!-- No server and no API key on a static Pages site, so "send" composes a
          message in the visitor's own mail app. The action is the ONE place the
          address is written: js/contact.js reads it from here for the prefilled
          mailto: and for the fallback link below, and with JS off the browser
          still submits to this same action. To change who gets the mail, change
          this address and nothing else. -->
-      <form id="contact-form" class="contact-form" action="mailto:ecao.csindie@gmail.com" method="post"
-        enctype="text/plain">
-        <label class="field">
-          <span>Your name</span>
-          <input type="text" name="name" autocomplete="name" required>
-        </label>
-        <label class="field">
-          <span>Your email</span>
-          <input type="email" name="email" autocomplete="email" required>
-        </label>
-        <label class="field">
-          <span>Subject</span>
-          <input type="text" name="subject" placeholder="Hello from the Boston Café Bikers site">
-        </label>
-        <label class="field">
-          <span>Message</span>
-          <textarea name="message" rows="6" required></textarea>
-        </label>
-        <button type="submit" class="btn">Send email</button>
-        <p class="note" id="contact-status" hidden></p>
-      </form>
+        <form id="contact-form" class="contact-form" action="mailto:ecao.csindie@gmail.com" method="post"
+          enctype="text/plain">
+          <label class="field">
+            <span>Your name</span>
+            <input type="text" name="name" autocomplete="name" required>
+          </label>
+          <label class="field">
+            <span>Your email</span>
+            <input type="email" name="email" autocomplete="email" required>
+          </label>
+          <label class="field">
+            <span>Subject</span>
+            <input type="text" name="subject" placeholder="Hello from the Boston Café Bikers site">
+          </label>
+          <label class="field">
+            <span>Message</span>
+            <textarea name="message" rows="6" required></textarea>
+          </label>
+          <button type="submit" class="btn">Send email</button>
+          <p class="note" id="contact-status" hidden></p>
+        </form>
 
-      <p class="note" id="contact-direct-line" hidden>Prefer your own mail app?
-      Write to <a id="contact-direct" href="#" rel="noopener"></a>.</p>
+        <p class="note" id="contact-direct-line" hidden>Prefer your own mail app?
+          Write to <a id="contact-direct" href="#" rel="noopener"></a>.</p>
 
-      <noscript>
-        <p class="note">Sending opens your own mail app with the message ready
-        to go.</p>
-      </noscript>
-    </div>
-  </section>
-
-  <section aria-labelledby="other-heading">
-    <div class="wrap">
-      <h2 id="other-heading">Other ways to reach us</h2>
-      <p>A DM on Instagram or a message in the WhatsApp group both work. Or roll
-      out with us on a ride and talk it over coffee at the end.</p>
-      <div class="links">
-        <a href="mailto:boscafebikers@gmail.com">Email — boscafebikers@gmail.com</a>
-        <a href="https://instagram.com/bostoncafebikers" rel="noopener">DM us on Instagram</a>
-        <a href="https://chat.whatsapp.com/JtpmhMgE8EmFRGOXrNhT1w" rel="noopener">Join the WhatsApp group</a>
+        <noscript>
+          <p class="note">Sending opens your own mail app with the message ready
+            to go.</p>
+        </noscript>
       </div>
-      <a class="btn" href="index.html">← Back to the ride page</a>
+    </section>
+
+    <section aria-labelledby="other-heading">
+      <div class="wrap">
+        <h2 id="other-heading">Other ways to reach us</h2>
+        <p>Or ride with us and talk it over coffee at the end.</p>
+        <div class="links">
+          <a href="mailto:boscafebikers@gmail.com">Email — boscafebikers@gmail.com</a>
+          <a href="https://instagram.com/bostoncafebikers" rel="noopener">DM us on Instagram</a>
+          <a href="https://chat.whatsapp.com/JtpmhMgE8EmFRGOXrNhT1w" rel="noopener">Join the WhatsApp group</a>
+        </div>
+        <a class="btn btn-back" href="index.html">← Back to the ride page</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p class="footer-brand">Boston Café Bikers — exploring the city one café at a time.</p>
+      <nav class="footer-nav" aria-label="Footer">
+        <a href="index.html">Rides</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="shopify.html">Shop</a>
+        <a href="meta-business.html">Meta Business</a>
+        <a href="contact.html">Contact</a>
+        <a href="donate.html">Donate</a>
+      </nav>
+      <p class="footer-social">
+        <a href="https://instagram.com/bostoncafebikers" rel="noopener">Instagram</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">Partiful</a>
+      </p>
     </div>
-  </section>
+  </footer>
 
-</main>
-
-<footer>
-  <div class="wrap">
-    <p class="footer-brand">Boston Café Bikers — exploring the city one café at a time.</p>
-    <nav class="footer-nav" aria-label="Footer">
-      <a href="index.html">Rides</a>
-      <a href="gallery.html">Gallery</a>
-      <a href="shopify.html">Shop</a>
-      <a href="meta-business.html">Meta Business</a>
-      <a href="contact.html">Contact</a>
-      <a href="donate.html">Donate</a>
-    </nav>
-    <p class="footer-social">
-      <a href="https://instagram.com/bostoncafebikers" rel="noopener">Instagram</a>
-      <span class="sep" aria-hidden="true">·</span>
-      <a href="https://partiful.com/u/Hs47uq5mucZyXLBJZCda" rel="noopener">Partiful</a>
-    </p>
-  </div>
-</footer>
-
-<script src="js/contact.js" defer></script>
+  <script src="js/contact.js" defer></script>
 
 </body>
 
