@@ -3,6 +3,11 @@
 Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
+## Backlog 8
+- [x] Bug: map graphic has no background. find a way to add the tile.
+- [x] update start/end locations on cards to be just start location. starts are always bluebikes, so show the detail instead e.g. cleveland circle for the o'some sunday ride.
+- [x] Contact Us's Back to the ride page button isn't vertically aligned
+
 ## Backlog 7
 - [x] find a way to deploy this dev branch without disturbing main. 
 - [x] I want past rides to stay on the calendar. Do this by moving old rides from events.json to events-past.json. Or do it some other way if there's a better way.
