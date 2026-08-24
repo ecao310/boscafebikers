@@ -199,6 +199,18 @@
   // ride-detail modal, so the details and add-to-calendar exports can't drift.
   BCB.rideCard = (ev, extraClass) => {
     const card = BCB.el("div", "ride" + (ev.past ? " is-past" : "") + (extraClass ? " " + extraClass : ""));
+    // Date/title lead the card (before the banner) so they're visible above
+    // the fold on a phone — a map or poster image is tall enough to push
+    // them out of the first viewport otherwise (Backlog 10).
+    const when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
+    if (when || ev.past) {
+      const whenLine = BCB.el("p", "when", when);
+      // A ride pulled off the archive needs to say so: the date alone doesn't
+      // read as "already happened" when you land on it from the calendar.
+      if (ev.past) { whenLine.appendChild(BCB.el("span", "ride-tag", "Past ride")); }
+      card.appendChild(whenLine);
+    }
+    card.appendChild(BCB.el("h3", null, ev.title || "Café ride"));
     // The drawn route map wins over the Partiful poster: it says something
     // about *this* ride. It also links to the route rather than to RSVP, and
     // is shown whole (object-fit: contain) instead of cropped like a photo.
@@ -219,15 +231,6 @@
       imgLink.appendChild(img);
       card.appendChild(imgLink);
     }
-    const when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
-    if (when || ev.past) {
-      const whenLine = BCB.el("p", "when", when);
-      // A ride pulled off the archive needs to say so: the date alone doesn't
-      // read as "already happened" when you land on it from the calendar.
-      if (ev.past) { whenLine.appendChild(BCB.el("span", "ride-tag", "Past ride")); }
-      card.appendChild(whenLine);
-    }
-    card.appendChild(BCB.el("h3", null, ev.title || "Café ride"));
     if (ev.location) {
       card.appendChild(BCB.el("p", "where", ev.location));
     } else if (ev.location_url) {
