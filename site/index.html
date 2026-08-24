@@ -472,6 +472,35 @@
       margin: 0;
     }
 
+    /* The full-size map on the card is drawn to fit its own route (up to
+       420px tall) — inside the ~88vh modal that alone can push the RSVP
+       button off the bottom of the dialog with no hint that it scrolls
+       (Backlog 9). The modal only needs a preview, so cap it lower;
+       mobile gets an even smaller cap since the dialog width (and so the
+       map's rendered height, which follows its own aspect ratio) is
+       already narrower. Restored to 240px at ≥560px below. */
+    .modal .ride-img.is-map {
+      max-height: 200px;
+    }
+
+    /* Pin the primary CTA row to the bottom of the scrollport so it's
+       always visible without scrolling (Backlog 9), instead of sitting
+       wherever the description happens to end. It's the last element in
+       the card's normal flow, so once the visitor scrolls to the true end
+       of the content this sticky row simply lands in its natural position
+       — nothing sits below it to be hidden. The opaque --foam background
+       (matching the dialog) covers text scrolling up underneath it while
+       mid-scroll; the top border is the only visual seam, reading as a
+       pinned edge rather than a color change. */
+    .modal .ride-actions {
+      position: sticky;
+      bottom: 0;
+      background: var(--foam);
+      border-top: 1px solid var(--oat);
+      padding: 10px 0 2px;
+      margin-top: 10px;
+    }
+
     .links {
       display: flex;
       flex-wrap: wrap;
@@ -618,6 +647,12 @@
          one row. */
       .ride-actions .btn {
         flex: 0 1 auto;
+      }
+
+      /* Wider dialog at ≥560px has room for a slightly taller map preview
+         (Backlog 9); still well under the card's 420px full-size cap. */
+      .modal .ride-img.is-map {
+        max-height: 240px;
       }
 
       .cal-day .ride-chip {
