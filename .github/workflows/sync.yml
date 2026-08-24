@@ -6,124 +6,105 @@ on:
     - cron: "0 */6 * * *"
   workflow_dispatch:
 
+# Serializes whole *runs* — the two sync jobs below are free to run in
+# parallel inside one run, because they push to different branches.
 concurrency:
   group: sync-rides
   cancel-in-progress: false
 
 jobs:
+  # Both trees Pages publishes get their data synced: master (the live site)
+  # here, dev (the /preview/ subtree) below. Same pipeline both times — it
+  # lives once, in .github/actions/sync-branch, so the two can't drift.
   sync:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     outputs:
-      changed: ${{ steps.commit.outputs.changed }}
+      changed: ${{ steps.sync.outputs.changed }}
     steps:
-      - name: Check out repository
+      # By *name*, like pages.yml: a dispatch on some other ref must still
+      # sync the branch it says it syncs.
+      - name: Check out master (the live site)
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: requirements.txt
+          ref: master
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      # Order matters: this one is second because a checkout into the
+      # workspace root wipes anything already sitting there.
+      #
+      # `uses: ./…` resolves against the workspace, so the composite has to be
+      # checked out. It comes from *this workflow's own ref* (no `ref:` here),
+      # not from the branch being synced — the branch supplies scripts/, the
+      # workflow supplies its own pipeline, and a two-branch sync added on dev
+      # works before it has been merged into master.
+      - name: Check out this workflow's copy of the sync action
+        uses: actions/checkout@v4
+        with:
+          path: .sync-action
 
-      - name: Fetch rides
-        env:
-          PARTIFUL_ICS_URL: ${{ secrets.PARTIFUL_ICS_URL }}
-        # Write to a scratch file first: build_payload() stamps a fresh
-        # updated_at every run, so site/events.json would always look changed.
+      - name: Refresh master's ride data
+        id: sync
+        uses: ./.sync-action/.github/actions/sync-branch
+        with:
+          ics-url: ${{ secrets.PARTIFUL_ICS_URL }}
+
+  # Same again for dev. Without this the preview keeps being *redeployed* on
+  # every sync (pages.yml rebuilds both trees) while its events.json, archive,
+  # maps and rides.ics sit at whatever dev last committed — i.e. stale rides on
+  # /preview/ between human pushes. A checkout of dev also runs dev's own
+  # scripts/, so a pipeline change can be tried on the preview before it ships.
+  sync-dev:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
+    steps:
+      # dev is optional (pages.yml makes the same check before publishing a
+      # preview); no dev branch must not mean a red sync every 6 hours.
+      - name: Check whether a dev branch exists
+        id: devcheck
         run: |
-          python scripts/fetch_rides.py \
-            --out "$RUNNER_TEMP/events.json" \
-            --past-out "$RUNNER_TEMP/events-past.json"
-
-      # Runs BEFORE the promote: site/events.json still holds the previous
-      # upcoming list, so any ride that has since started gets archived even if
-      # Partiful has already dropped it from the feed.
-      - name: Archive rides that have already happened
-        run: |
-          python scripts/archive_events.py --archive site/events-past.json \
-            site/events.json "$RUNNER_TEMP/events-past.json"
-
-      # Rides that land in the archive straight from the feed's past export were
-      # never enriched (only the upcoming list is). The feed carries years of
-      # them, so fill in a few per run rather than re-fetching all of them every
-      # 6 hours; once the archive is checked this step is a no-op.
-      # No secret here: enrichment only ever touches public event pages.
-      - name: Backfill images and routes on a few archived rides
-        run: python scripts/enrich_archive.py --limit 8 site/events-past.json
-
-      # Coordinates for the café pins on cafes.html. Runs here, alongside the
-      # other backfills, because it reads the archive the step above just
-      # updated plus the fresh upcoming list — so a café is already geocoded by
-      # the time its ride moves into the past. It cannot churn: a location that
-      # is already in site/cafe-points.json (hit or recorded miss) is never
-      # queried again and the file is rewritten only when the mapping actually
-      # changed, so a normal sync makes zero Nominatim requests and no commit.
-      # No secret here either: Nominatim only ever sees a public address.
-      - name: Geocode any café we haven't placed on the map yet
-        run: |
-          python scripts/geocode_cafes.py --cache site/cafe-points.json \
-            "$RUNNER_TEMP/events.json" site/events-past.json
-
-      # Runs on the *scratch* copy, BEFORE the promote below. render_route_maps
-      # adds `map_image`, which a fresh fetch never has — patch it in here and
-      # promote is comparing like with like. Do it after the promote instead and
-      # the committed file can never match the fetch, so every single run
-      # commits a new updated_at forever. (Found by running the sync twice.)
-      # Idempotent: a ride whose finished SVG is already committed is skipped,
-      # so this only draws maps for rides that turned up since the last sync
-      # (plus any map drawn while the tile server was down — those are left
-      # unmarked and get their basemap on a later run).
-      - name: Draw a route map for any ride that doesn't have one
-        run: |
-          python scripts/render_route_maps.py \
-            --out-dir site/maps --url-prefix maps \
-            "$RUNNER_TEMP/events.json" site/events-past.json
-
-      - name: Update site/events.json only if the rides changed
-        run: python scripts/promote_events.py "$RUNNER_TEMP/events.json" site/events.json
-
-      # The one step that runs AFTER the promote, and it has to. The public
-      # calendar's DTSTAMP is derived from the payload's `updated_at`, which is
-      # stamped fresh on every fetch — build rides.ics from the scratch file and
-      # it would carry a new timestamp every 6 hours, so the commit guard would
-      # fire forever (exactly the churn promote_events.py exists to stop, and
-      # the mirror image of why the maps step must run *before* the promote).
-      # site/events.json only changes when the rides do, so exporting from it
-      # makes the .ics byte-stable across no-op syncs. export_ics.py rewrites
-      # the file only when its bytes changed, as a second guard.
-      - name: Re-export the public subscribable calendar
-        run: python scripts/export_ics.py site/events.json --out site/rides.ics
-
-      - name: Commit the ride data if changed
-        id: commit
-        run: |
-          # Stage first, then diff the index: the route maps are *new* files,
-          # and a plain `git diff` doesn't see untracked ones.
-          git add -A site/events.json site/events-past.json site/maps site/rides.ics \
-            site/cafe-points.json
-          if git diff --cached --quiet; then
-            echo "No ride changes; nothing to commit."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
+          if git ls-remote --exit-code --heads \
+              "https://github.com/${{ github.repository }}.git" dev >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No dev branch; nothing to sync for the preview."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Sync rides from Partiful feed"
-          git push
-          echo "changed=true" >> "$GITHUB_OUTPUT"
 
-  # The push above uses GITHUB_TOKEN, which deliberately does not fire `push`
+      - name: Check out dev (the /preview/ subtree)
+        if: steps.devcheck.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Check out this workflow's copy of the sync action
+        if: steps.devcheck.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          path: .sync-action
+
+      - name: Refresh dev's ride data
+        id: sync
+        if: steps.devcheck.outputs.exists == 'true'
+        uses: ./.sync-action/.github/actions/sync-branch
+        with:
+          ics-url: ${{ secrets.PARTIFUL_ICS_URL }}
+
+  # The pushes above use GITHUB_TOKEN, which deliberately does not fire `push`
   # workflow triggers — so Pages would never redeploy. Call the deploy workflow
-  # ourselves instead, and only when the rides actually changed.
+  # ourselves instead, and only when the rides actually changed. One call
+  # republishes *both* trees (pages.yml checks master and dev out by name), so
+  # either branch committing is reason enough to run it.
+  #
+  # `!cancelled()` instead of the default success() gate: dev is where
+  # half-finished code lives, and a broken preview sync must never hold back a
+  # deploy of the live site. Neither branch committing → no deploy, as before.
   deploy:
-    needs: sync
-    if: needs.sync.outputs.changed == 'true'
+    needs: [sync, sync-dev]
+    if: ${{ !cancelled() && (needs.sync.outputs.changed == 'true' || needs.sync-dev.outputs.changed == 'true') }}
     permissions:
       contents: read
       pages: write

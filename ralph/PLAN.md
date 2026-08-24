@@ -5,7 +5,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 
 ## Backlog 11
 - [x] Create system for when next ride gets updated. People can be late to rides and still join, so keep it around for at least 1 hour after the ride, but the exact system is up to you.
-- [ ] Preview branch should also get its rides synced.
+- [x] Preview branch should also get its rides synced.
 - [ ] Cafes map looks messy with the red and orange highlights and hill markers. remove them. also consider removing some of the neighborhood labels.
 - [x] I like that the RSVP button call to action stays on screen now. Make it work that way for the "next ride" section too. 
 

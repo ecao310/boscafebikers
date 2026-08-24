@@ -97,6 +97,10 @@ argument, since arguments show up in workflow logs).
 To sync immediately rather than waiting for the cron: **Actions → Sync rides →
 Run workflow**.
 
+Every sync refreshes both published trees — `master` for the live site and
+`dev` for the [`/preview/` subtree](#previewing-the-dev-branch) — so the
+preview's rides, maps and calendar feed never go stale between human pushes.
+
 ## Deploying on GitHub Pages
 
 **Live: <https://ecao310.github.io/boscafebikers/>**
@@ -235,7 +239,8 @@ needs touching.
 | `tests/fixtures/sample.ics` | Offline fixture: 2 future, 1 past, 1 cancelled |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script |
 | `tests/test_archive_events.py` | pytest suite for the past-rides archive |
-| `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch; calls `pages.yml` when rides change |
+| `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch (once for `master`, once for `dev`); calls `pages.yml` when rides change |
+| `.github/actions/sync-branch/` | The sync pipeline itself, as a composite action, so both branches run the same one |
 | `.github/workflows/pages.yml` | Builds the Pages artifact (`master` at the root, `dev` under `/preview/`) and deploys it |
 | `CLAUDE.md` | Conventions, decisions, and gotchas |
 </content>
