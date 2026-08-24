@@ -43,13 +43,22 @@ WIDTH = 800
 # object-fit: contain, so whatever aspect comes out here is shown whole.
 MIN_ASPECT = 0.45  # height / width — a very wide, flat route
 MAX_ASPECT = 1.0   # a tall route stops at square
-# Room for the route to breathe: the distance badge sits in the top-left
-# corner and the endpoint labels along the bottom, so the drawing area has to
-# clear both. The badge lives up there rather than centred at the bottom
-# because a long café name in the "… · End" label would run straight over it.
+# Room for the route to breathe: the endpoint labels run along the bottom and
+# the distance badge sits in the top-left corner, so the drawing area clears
+# both. The badge lives up there rather than centred at the bottom because a
+# long café name in the "… · End" label would run straight over it.
 PAD_X = 48
 PAD_TOP = 66
 PAD_BOTTOM = 74
+# The badge is chrome, not part of the drawing, so it is pinned this far into
+# the frame's top-left corner — inside PAD_X and above PAD_TOP, where the
+# route never goes. It used to sit at (PAD_X, 24): a solid pill floating in
+# the middle of the tile art, clipping the start dot on three of nine maps and
+# swallowing whatever place label happened to be under it ("Cambridgeport").
+# Tile text lands wherever the renderer put it, so no inset dodges it — but a
+# corner is where an opaque chip costs the basemap least.
+BADGE_INSET = 16
+BADGE_HEIGHT = 34
 # Georgia bold is about this fraction of the font size per character. Only used
 # to keep the two bottom labels from colliding, so an estimate is enough.
 CHAR_WIDTH_RATIO = 0.56
@@ -592,14 +601,21 @@ def render_route_svg(
         parts.append(_dot(first_x, first_y, FOAM, ROAST))
         parts.append(_dot(last_x, last_y, ROAST, FOAM))
 
-    # Distance badge, top-left corner (PAD_TOP keeps the route clear of it).
+    # Distance badge, pinned into the top-left corner. The pill is opaque, so
+    # whatever it lands on is gone; the corner is where that costs the map the
+    # least. The foam ring is the badge's version of the labels' halo — it
+    # makes the chip read as something laid on the map rather than a hole cut
+    # in it, so a street or place name running under it still looks deliberate.
     if distance:
         pill_w = int(12 * len(distance)) + 34
         parts.append(
-            f'<rect x="{PAD_X}" y="24" width="{pill_w}" height="34" rx="17" '
-            f'fill="{ESPRESSO}"/>'
+            f'<rect x="{BADGE_INSET}" y="{BADGE_INSET}" width="{pill_w}" '
+            f'height="{BADGE_HEIGHT}" rx="{BADGE_HEIGHT // 2}" fill="{ESPRESSO}" '
+            f'stroke="{FOAM}" stroke-width="3"/>'
         )
-        parts.append(_text(PAD_X + pill_w / 2, 48, distance, 19, FOAM, "700", "middle"))
+        parts.append(
+            _text(BADGE_INSET + pill_w / 2, BADGE_INSET + 24, distance, 19, FOAM, "700", "middle")
+        )
 
     # Endpoint labels along the bottom: start from the left edge, end from the
     # right, clipped by fit_labels so they can't run into each other.

@@ -8,7 +8,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [ ] Every page's hero section should be a standardized size. use the size from the main page.
 - [ ] Cafe page should have a map with pins at each location. Embed from a 3P mapping app. Verify it's zoomable, scrollable. Each pin is clickable. Decide whether clicking shows the ride that got there or a link to the destination itself.
 - [x] On a phone the next-ride card leads with the map, so the date/title sit below the fold at 380px. Put the .when line and title above the banner in rideCard (or cap the map's height ~260px below 560px) so the key info shows first.
-- [ ] The distance badge (top-left) covers the basemap's own place label on some maps ("Watertown" on the O'Some map). Adjust the badge inset / PAD_TOP in route_map.py so the badge clears the tile labels, and redraw only the affected maps.
+- [x] The distance badge (top-left) covers the basemap's own place label on some maps ("Watertown" on the O'Some map). Adjust the badge inset / PAD_TOP in route_map.py so the badge clears the tile labels, and redraw only the affected maps.
 - [x] The gallery grid leaves a hole with 5 mixed-orientation photos. Give tiles a uniform aspect-ratio (e.g. 4/3 with object-fit: cover) or a 2-column desktop layout so rows align.
 - [ ] Replace the ☕🚲 emoji hero mark with a simple one-colour SVG mark (cup + bike wheel, in --crema) and use it as the favicon too, so the brand doesn't depend on OS emoji rendering.
 - [ ] meta theme-color is #7a4a2b, which isn't a palette value — use --roast (#4a2c1a) on all pages so mobile browser chrome matches the nav.

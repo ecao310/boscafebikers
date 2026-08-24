@@ -506,6 +506,26 @@ def test_svg_without_a_distance_has_no_badge():
     assert len(rects) == 1  # just the background
 
 
+def test_the_distance_badge_is_pinned_into_the_corner_clear_of_the_route():
+    """The chip is frame furniture, not part of the drawing.
+
+    An opaque pill hides whatever tile art is under it, so it lives in the
+    corner — inside PAD_X and above PAD_TOP, where the route never goes — and
+    wears a foam ring so map text running under it reads as covered rather
+    than eaten (the same job the endpoint labels' halo does).
+    """
+    svg = route_map.render_route_svg(GEOMETRY, "A", "B", "~4.0 mi", "Ride")
+    badges = [
+        el for el in svg_tree(svg).iter() if el.tag.endswith("rect") and el.get("rx")
+    ]
+    assert len(badges) == 1
+    badge, = badges
+    assert float(badge.get("x")) == route_map.BADGE_INSET < route_map.PAD_X
+    assert float(badge.get("y")) == route_map.BADGE_INSET
+    assert float(badge.get("y")) + float(badge.get("height")) <= route_map.PAD_TOP
+    assert badge.get("stroke") == route_map.FOAM
+
+
 def test_svg_with_no_geometry_still_renders():
     svg = route_map.render_route_svg([], "A", "B", "~1.0 mi", "Ride")
     root = svg_tree(svg)
