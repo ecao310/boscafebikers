@@ -98,6 +98,16 @@
       vertical-align: 1px;
     }
 
+    /* Same pill, but for a ride that has already started and can still be
+       joined (the grace hour — see isRolling() in js/ride-card.js). It must not
+       read like the dimmed "Past ride" tag, so it fills: roast on foam clears
+       AA comfortably at this size, where a crema fill would not. */
+    .ride .when .ride-tag.is-rolling {
+      background: var(--roast);
+      border-color: var(--roast);
+      color: var(--foam);
+    }
+
     .ride .where {
       color: var(--muted);
       margin: .4rem 0;
@@ -191,6 +201,27 @@
          the bottom of this file). */
       flex: 1 1 100%;
       white-space: nowrap;
+    }
+
+    /* Pin the next-ride card's primary CTA row to the bottom of the
+     VIEWPORT while the card is in view (Backlog 11 — the organizer liked
+     this on the modal and wants it here too). The page itself has no inner
+     scrollport, so plain `position: sticky; bottom: 0` docks the row against
+     the viewport edge as the visitor scrolls the card into and past view;
+     once the card's own bottom padding scrolls up to meet it, the row
+     settles into its normal position with nothing left below to obstruct.
+     The opaque --oat background (matching the card) covers text scrolling
+     up underneath while pinned; the --crema border reads as a seam — --oat
+     on --oat would be invisible. Inset within the card's 22px padding on
+     every side, the row never reaches the rounded corners, so the docked
+     state doesn't clip or square them off. */
+    .ride.next-ride .ride-actions {
+      position: sticky;
+      bottom: 0;
+      background: var(--oat);
+      border-top: 1px solid var(--crema);
+      padding: 10px 0 2px;
+      margin-top: 10px;
     }
 
     .ride-img-link {
