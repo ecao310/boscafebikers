@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-22T21:34:24.595790-04:00",
-  "count": 34,
+  "updated_at": "2026-08-24T11:04:34.730236-04:00",
+  "count": 35,
   "events": [
     {
       "uid": "cf9gTQtBKTWuGI9OpiD0",
@@ -403,7 +403,7 @@
       "date_display": "Sunday, July 5",
       "time_display": "10:00 am",
       "location": null,
-      "location_hidden": false,
+      "location_hidden": true,
       "location_url": null,
       "description": "Drinking coffee and riding bikes are at least 2 of the 13!\n\nJoin us for a ride from Powder House Sq to Intelligentsia in Watertown.",
       "rsvp_url": "https://partiful.com/e/BrezyQ7GtxVtvVh8fI6z",
@@ -624,7 +624,7 @@
       "location": null,
       "description": "You are cordially invited to an Indian food dinner party at mine! I will be making the mains and apps but please feel free to bring a dish or a drink!. Just showing up for the good food + vibes is totally a valid option!\n\nIf guest count exceeds 8-10 we will move to a nearby park - please keep an eye out for venue changes! 😄",
       "rsvp_url": "https://partiful.com/e/TskpmnYxmCi7eGn1mb0G",
-      "location_hidden": false,
+      "location_hidden": true,
       "location_url": null,
       "image": "https://assets.getpartiful.com/posters/Dinner%20Party%20Feast",
       "routes": [],
@@ -701,6 +701,42 @@
         }
       ],
       "map_image": "maps/a0gbEpda9D8KPbQfY275.svg"
+    },
+    {
+      "uid": "5I2Zwclcs30LUlbOjjeb",
+      "title": "O’Some Sunday",
+      "start": "2026-08-23T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, August 23",
+      "time_display": "11:00 am",
+      "location": "O'some Cafe, 100 Main St, Watertown, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Watertown? How about we call it coffee town just for today? 🤫 This jaunt will start in Brookline and end at O’Some Cafe in Watertown.\n\nH.A.G.S.",
+      "rsvp_url": "https://partiful.com/e/5I2Zwclcs30LUlbOjjeb",
+      "image": "https://assets.getpartiful.com/posters/hot-drinks-plain-2.png",
+      "routes": [
+        {
+          "start": "Bluebikes, Cleveland Circle, Boston, MA 02135",
+          "end": "O'Some Café, 100 Main St, Watertown, MA 02472",
+          "points": [
+            [
+              42.335543,
+              -71.150614
+            ],
+            [
+              42.366823,
+              -71.186803
+            ]
+          ],
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/VV3qNaJZ6M2qBmnP8?g_st=ic",
+          "distance_m": 6448,
+          "distance_display": "~4.0 mi"
+        }
+      ],
+      "map_image": "maps/5I2Zwclcs30LUlbOjjeb.svg"
     }
   ]
 }

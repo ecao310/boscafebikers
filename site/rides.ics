@@ -25,19 +25,8 @@ RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
 END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
-UID:5I2Zwclcs30LUlbOjjeb
-DTSTAMP:20260823T013852Z
-DTSTART;TZID=America/New_York:20260823T110000
-SUMMARY:O’Some Sunday
-LOCATION:O'some Cafe\, 100 Main St\, Watertown\, MA
-DESCRIPTION:Watertown? How about we call it coffee town just for today? 
- 🤫 This jaunt will start in Brookline and end at O’Some Cafe in Watert
- own.\n\nH.A.G.S.\n\nRSVP: https://partiful.com/e/5I2Zwclcs30LUlbOjjeb
-URL:https://partiful.com/e/5I2Zwclcs30LUlbOjjeb
-END:VEVENT
-BEGIN:VEVENT
 UID:0kgziJu0xvnL3SBCeuU7
-DTSTAMP:20260823T013852Z
+DTSTAMP:20260824T150430Z
 DTSTART;TZID=America/New_York:20260829T110000
 SUMMARY:Meet Cute @ Meet Point
 LOCATION:Meet Point Patisserie Brookline\, 3 Kendall St\, Brookline\, MA
