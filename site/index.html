@@ -269,6 +269,35 @@
       text-decoration-color: var(--crema);
     }
 
+    /* --- calendar legend (Backlog 9) ---
+       The calendar now mixes upcoming and past rides, so a one-line key spells
+       out what "dashed" means before a visitor has to guess. The swatches
+       mirror the real chip styling byte-for-byte (.cal-day .ride-chip /
+       .fc-daygrid-event, and their .is-past variants below) so the legend
+       never drifts from what the calendar actually draws. Decorative only —
+       aria-hidden, since the adjacent words already carry the meaning. */
+    .cal-legend {
+      color: var(--muted);
+      font-size: .8rem;
+      margin: .5rem 0 0;
+    }
+
+    .legend-chip {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      background: var(--crema);
+      vertical-align: middle;
+      margin: 0 .35em 0 0;
+    }
+
+    .legend-chip.is-past {
+      background: transparent;
+      border: 1px dashed var(--crema);
+      margin-left: .9em;
+    }
+
     [hidden] {
       display: none !important;
     }
@@ -724,11 +753,19 @@
 
     <section id="rides" aria-labelledby="rides-heading">
       <div class="wrap">
-        <h2 id="rides-heading">Upcoming rides</h2>
-        <p class="lede">Every upcoming ride on one calendar.</p>
+        <h2 id="rides-heading">Ride calendar</h2>
+        <p class="lede">Upcoming rides and the ones we've already done — tap a ride for
+          details.</p>
+        <!-- One-line key for the dashed "already happened" styling below,
+           since the calendar now mixes upcoming and past rides. The swatch
+           spans are decorative; the words carry the meaning for screen
+           readers. -->
+        <p class="cal-legend"><span class="legend-chip" aria-hidden="true"></span>Upcoming<span
+            class="legend-chip is-past" aria-hidden="true"></span>Past ride</p>
 
-        <!-- Calendar area. Populated from events.json by the script at the
-           bottom of this file; this static markup is the pre-JS state. -->
+        <!-- Calendar area. Populated from events.json and events-past.json by
+           the script at the bottom of this file; this static markup is the
+           pre-JS state. -->
         <div id="schedule">
           <p class="note">Loading rides…</p>
         </div>
