@@ -214,7 +214,7 @@ prefilled `mailto:` URL).
 `site/contact.html`:
 
 ```html
-<form id="contact-form" ... action="mailto:ecao.csindie@gmail.com" ...>
+<form id="contact-form" ... action="mailto:boscafebikers@gmail.com" ...>
 ```
 
 `contact.js` reads the address back out of that action for both the prefilled
