@@ -128,6 +128,13 @@ def fetch_tiles(geometry: list, fetch_tile=fetch_tile) -> dict:
     return tiles
 
 
+def write_svg(target: Path, svg: str) -> None:
+    """Put one finished map on disk. The seam scripts/sync.py swaps out so a
+    --dry-run can draw every map and write none of them."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(svg, encoding="utf-8")
+
+
 def mappable_route(ride: dict) -> dict | None:
     """The first route on the ride that has enough coordinates to draw."""
     for route in ride.get("routes") or []:
@@ -143,6 +150,7 @@ def render_for_ride(
     fetch=fetch_geometry,
     fetch_tile=fetch_tile,
     redraw: bool = False,
+    write=None,
 ) -> str | None:
     """Draw this ride's map if it needs one. Returns the new path, or None."""
     route = mappable_route(ride)
@@ -171,8 +179,7 @@ def render_for_ride(
     )
     if svg == existing:
         return None  # e.g. tiles still unavailable: the old drawing stands
-    out_dir.mkdir(parents=True, exist_ok=True)
-    target.write_text(svg, encoding="utf-8")
+    (write or write_svg)(target, svg)
     ride["map_image"] = url
     return url
 
@@ -184,6 +191,7 @@ def process(
     fetch=fetch_geometry,
     fetch_tile=fetch_tile,
     redraw: bool = False,
+    write=None,
 ) -> int:
     """Render maps for one payload file. Returns how many were drawn."""
     try:
@@ -199,7 +207,7 @@ def process(
     for ride in events:
         if not isinstance(ride, dict):
             continue
-        if render_for_ride(ride, out_dir, url_prefix, fetch, fetch_tile, redraw):
+        if render_for_ride(ride, out_dir, url_prefix, fetch, fetch_tile, redraw, write):
             drawn += 1
     after = json.dumps(payload, sort_keys=True)
     if before != after:

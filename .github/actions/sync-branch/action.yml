@@ -15,7 +15,7 @@ inputs:
   ics-url:
     description: >-
       The private Partiful ICS feed URL (secrets.PARTIFUL_ICS_URL). Reaches the
-      fetch step as an env var only — never as a CLI argument, since arguments
+      sync step as an env var only — never as a CLI argument, since arguments
       show up in workflow logs.
     required: true
 
@@ -48,81 +48,18 @@ runs:
       shell: bash
       run: python -m pytest tests/ -q
 
-    - name: Fetch rides
+    # The whole pipeline, in one process: fetch, archive, backfill, geocode,
+    # draw the missing maps, publish, re-export the calendar. The order used to
+    # be eight `run:` steps in this file, where nothing could test it; it lives
+    # in scripts/sync.py's STEPS now and tests/test_sync.py reorders that tuple
+    # to prove each rule still bites. The script writes a file only when its
+    # content changed, so a quiet sync leaves zero bytes for the commit step
+    # below to find. The secret reaches this step and no other.
+    - name: Sync the ride data
       shell: bash
       env:
         PARTIFUL_ICS_URL: ${{ inputs.ics-url }}
-      # Write to a scratch file first: build_payload() stamps a fresh
-      # updated_at every run, so site/events.json would always look changed.
-      run: |
-        python scripts/fetch_rides.py \
-          --out "$RUNNER_TEMP/events.json" \
-          --past-out "$RUNNER_TEMP/events-past.json"
-
-    # Runs BEFORE the promote: site/events.json still holds the previous
-    # upcoming list, so any ride that has since started gets archived even if
-    # Partiful has already dropped it from the feed.
-    - name: Archive rides that have already happened
-      shell: bash
-      run: |
-        python scripts/archive_events.py --archive site/events-past.json \
-          site/events.json "$RUNNER_TEMP/events-past.json"
-
-    # Rides that land in the archive straight from the feed's past export were
-    # never enriched (only the upcoming list is). The feed carries years of
-    # them, so fill in a few per run rather than re-fetching all of them every
-    # 6 hours; once the archive is checked this step is a no-op.
-    # No secret here: enrichment only ever touches public event pages.
-    - name: Backfill images and routes on a few archived rides
-      shell: bash
-      run: python scripts/enrich_archive.py --limit 8 site/events-past.json
-
-    # Coordinates for the café pins on cafes.html. Runs here, alongside the
-    # other backfills, because it reads the archive the step above just
-    # updated plus the fresh upcoming list — so a café is already geocoded by
-    # the time its ride moves into the past. It cannot churn: a location that
-    # is already in site/cafe-points.json (hit or recorded miss) is never
-    # queried again and the file is rewritten only when the mapping actually
-    # changed, so a normal sync makes zero Nominatim requests and no commit.
-    # No secret here either: Nominatim only ever sees a public address.
-    - name: Geocode any café we haven't placed on the map yet
-      shell: bash
-      run: |
-        python scripts/geocode_cafes.py --cache site/cafe-points.json \
-          "$RUNNER_TEMP/events.json" site/events-past.json
-
-    # Runs on the *scratch* copy, BEFORE the promote below. render_route_maps
-    # adds `map_image`, which a fresh fetch never has — patch it in here and
-    # promote is comparing like with like. Do it after the promote instead and
-    # the committed file can never match the fetch, so every single run
-    # commits a new updated_at forever. (Found by running the sync twice.)
-    # Idempotent: a ride whose finished SVG is already committed is skipped,
-    # so this only draws maps for rides that turned up since the last sync
-    # (plus any map drawn while the tile server was down — those are left
-    # unmarked and get their basemap on a later run).
-    - name: Draw a route map for any ride that doesn't have one
-      shell: bash
-      run: |
-        python scripts/render_route_maps.py \
-          --out-dir site/maps --url-prefix maps \
-          "$RUNNER_TEMP/events.json" site/events-past.json
-
-    - name: Update site/events.json only if the rides changed
-      shell: bash
-      run: python scripts/promote_events.py "$RUNNER_TEMP/events.json" site/events.json
-
-    # The one step that runs AFTER the promote, and it has to. The public
-    # calendar's DTSTAMP is derived from the payload's `updated_at`, which is
-    # stamped fresh on every fetch — build rides.ics from the scratch file and
-    # it would carry a new timestamp every 6 hours, so the commit guard would
-    # fire forever (exactly the churn promote_events.py exists to stop, and
-    # the mirror image of why the maps step must run *before* the promote).
-    # site/events.json only changes when the rides do, so exporting from it
-    # makes the .ics byte-stable across no-op syncs. export_ics.py rewrites
-    # the file only when its bytes changed, as a second guard.
-    - name: Re-export the public subscribable calendar
-      shell: bash
-      run: python scripts/export_ics.py site/events.json --out site/rides.ics
+      run: python scripts/sync.py --data-dir site
 
     - name: Commit the ride data if changed
       id: commit
