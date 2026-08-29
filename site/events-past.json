@@ -1,0 +1,733 @@
+{
+  "updated_at": "2026-08-28T22:19:16.452431-04:00",
+  "count": 33,
+  "events": [
+    {
+      "uid": "zNzLp290WKRSyUhpwGfI",
+      "title": "Lovestruck on bike",
+      "start": "2026-02-15T11:00:00-05:00",
+      "end": null,
+      "date_display": "Sunday, February 15",
+      "time_display": "11:00 am",
+      "location": "City Hall Plaza, 1 City Hall Ave, Ste 500, Boston, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Get ready to cry your heart out, stay delusional, and confess your feelings during our Valentines Day Weekend ride!!\n\nProjected to be 40 degrees out, so a beautiful day to get out and bring a loved one (partner/friend/family/pet) on a main character bike ride through Boston along the Charles, into Cambridge’s romance-themed bookstore: Lovestruck Books and Cafe!!\n\nFREE BLUEBIKE codes will be provided!! Bring a friend who doesn’t have a bike\n\nLovestruck has a George Howell cafe so well be book perusing, making friends, and enjoying their coffee & treats there :)",
+      "rsvp_url": "https://partiful.com/e/zNzLp290WKRSyUhpwGfI",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2FW05lVZlLlrelbIDhOUoYl?alt=media&token=0e34f91e-58ea-4312-a93b-5d427f236286",
+      "routes": []
+    },
+    {
+      "uid": "rflqRP1d9jU86Pha75PR",
+      "title": "Spring Manifestation City Ride",
+      "start": "2026-03-08T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, March 8",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/KafN4kidaBpozyew9?g_st=ic",
+      "description": "Fuck this snow I’m sick of this shit, we gotta start MANIFESTING SPRING otherwise it’s not coming 😤\n\nCome celebrate the start of daylight savings with a bike ride through Boston to one of my favorite cafes - Asaro Bakery and Cafe\n\nMy sister is coming too so don’t embarrass me please",
+      "rsvp_url": "https://partiful.com/e/rflqRP1d9jU86Pha75PR",
+      "image": "https://assets.getpartiful.com/posters/File.png",
+      "routes": []
+    },
+    {
+      "uid": "1GLYc8zTyo0GSCMkER5k",
+      "title": "Free Bike Wash & Ride",
+      "start": "2026-04-04T09:30:00-04:00",
+      "end": null,
+      "date_display": "Saturday, April 4",
+      "time_display": "9:30 am",
+      "location": "The BU Cycle Kitchen, 1019 Commonwealth Ave, Boston, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "SPRING IS HERE, let the healing begin\n\nGet that grimy rusty and salty bike out of your apartment, bring it to get washed, wiped down, and lubed up 🫡\n\nCome to the BU Cycle Kitchen anytime between 9:30-11:30 to have priority washing\n\nWe’ll ride that freshly cleaned bike along the Charles to First Street Market and Amba Cafe in East Cambridge!!! First ride group will head out at  10:30-ish and the second at 12!\n15% off all purchases at Amba for bikers who RSVP",
+      "rsvp_url": "https://partiful.com/e/1GLYc8zTyo0GSCMkER5k",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2FOPKNGSr72VzuOazUA3l8P?alt=media&token=5161665c-17a9-4b08-b6b3-dc809507178f",
+      "routes": []
+    },
+    {
+      "uid": "vdoypNkcu59YUYRhPnPB",
+      "title": "— Càphê Collective — New Cafe Ride",
+      "start": "2026-04-18T11:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, April 18",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/idMaxuSH2EJjcJoo8?g_st=ic",
+      "description": "NEW CAFE ALERT!!!!!\nCaphe Collective just opened in Central Square, joint with the new community space and gallery Street Theory Collective\n\nCaphe specializes in vietnamese and pan-asian fusion drinks, bring the strongest drinks to Mass Ave. Join us on a ride from East Arlington to Central Square!!",
+      "rsvp_url": "https://partiful.com/e/vdoypNkcu59YUYRhPnPB",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2FtaghxVQ5yxEZtBA0AeOHK?alt=media&token=54377f82-8cc8-4538-8132-6c5a6ad02daf",
+      "routes": [
+        {
+          "start": "Bluebikes, Thorndike Field at Minuteman Bikeway, Arlington, MA 02474",
+          "end": "Street Theory Collective, Massachusetts Avenue, Cambridge, MA",
+          "points": [
+            [
+              42.400168,
+              -71.144569
+            ],
+            [
+              42.364692,
+              -71.102189
+            ]
+          ],
+          "mode": "b",
+          "label": "Ride Route",
+          "url": "https://maps.app.goo.gl/ApZ8np3B1c33x4XG8?g_st=ic",
+          "distance_m": 6474,
+          "distance_display": "~4.0 mi"
+        }
+      ],
+      "map_image": "maps/vdoypNkcu59YUYRhPnPB.svg"
+    },
+    {
+      "uid": "LOUbCIwmaCIoFwgW9hmy",
+      "title": "Jimmy’s Café: Spring 2026",
+      "start": "2026-05-02T11:00:00-04:00",
+      "end": "2026-05-02T17:00:00-04:00",
+      "date_display": "Saturday, May 2",
+      "time_display": "11:00 am",
+      "location": "65 Concord Ave Backyard, Somerville, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Happy 1-year anniversary to Jimmy's Café🩵\n\nWe have an extra special pop-up planned for May 2nd to celebrate the growth of what started as our little backyard home cafe🥰\n\nWe are so grateful for everyone's support and appreciation of the unique flavors and vibrant cultures we highlight in our menu - a passion that Jimmy and I share with all of you!\n\nBecause of this and the incredible contributions that Japanese influence has on cafe culture, and its distinctly nostalgic flavors, we decided to theme this year's spring menu:\n\n「ジミーの春」\n\n\"Jimmy no Haru\" or \"Jimmy's Spring\" is a take on the nostalgic Japanese film Kikujirō no Natsu, accompanied by the song Summer by Joe Hisaishi\n\nIn addition, we are collaborating with some folks in the community to bring extra special pastries from Phinista Cafe👀, a signature banger of a drink created with @samatchalee, and coordinating a special ride with Boston Cafe Bikers by opening our space to be inclusive to the biking community!\n\nAs always, we can't wait to see you there🫶",
+      "rsvp_url": "https://partiful.com/e/LOUbCIwmaCIoFwgW9hmy",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FQUwYKiFw7madZKzvI6EI4dxysmv1%2FpCYk_DOuCVuZBinXEiUxm?alt=media&token=9405c7b7-8bfe-4f84-a447-1a8dfeff5998",
+      "routes": []
+    },
+    {
+      "uid": "QzhYTz9dn7KeTOWRLjyc",
+      "title": "Jimmy’s Cafe Pop-up Ride",
+      "start": "2026-05-02T11:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, May 2",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/mhFJGkkEaKz1Fxfi6?g_st=ic",
+      "description": "Jimmy’s Cafe is back at it with their exclusive seasonal cafe!!! Their Spring menu has Japanese-inspired drinks and the pastries are from Phinista Cafe, which has locations around the Boston area.\n🌸 🌸🌸 🌸 🌸🌸 🌸 🌸🌸 🌸 🌸🌸 🌸 🌸\nCome on a ride to my friend’s backyard cafe pop-up with the most beautiful drinks, enjoy the weather, and meet new folks :) we’ll have two rides, both starting at 11 AM at the Boston Common: a 30 minute and an hour long ride, your choice",
+      "rsvp_url": "https://partiful.com/e/QzhYTz9dn7KeTOWRLjyc",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2FhyLyYEKg5NytihtgIl3sd?alt=media&token=1b032b13-b6b4-410d-8ef1-89d8e275057b",
+      "routes": []
+    },
+    {
+      "uid": "PPlSB0Pofzf6aDLL1sFG",
+      "title": "Bike Month Kickoff",
+      "start": "2026-05-02T15:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, May 2",
+      "time_display": "3:00 pm",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/bSV86dPquNvgTAVKA?g_st=ic",
+      "description": "Bike Month is HERE!! Come ride with us from Inman Square in Cambridge, to MassBike’s Kickoff event at Roundhead brewing in Hyde Park! There’ll be vendors and tables, advocacy groups, lots of people to meet and food and drink! Not to mention that Aman has free stickers and ankle straps to give to people on the ride :)",
+      "rsvp_url": "https://partiful.com/e/PPlSB0Pofzf6aDLL1sFG",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2FLEPMnyw-X-cCK2OQIf7yc?alt=media&token=cca537cd-9e19-46ec-a7f6-01bc9b067caf",
+      "routes": []
+    },
+    {
+      "uid": "niFxL83hYumsS2Zuy4AE",
+      "title": "Boston Bike to Work Day",
+      "start": "2026-05-07T07:00:00-04:00",
+      "end": null,
+      "date_display": "Thursday, May 7",
+      "time_display": "7:00 am",
+      "location": "Government Center Plaza, 1 City Hall Ave, Ste 500, Boston, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Ride from Forest Hills Bluebike Station OR Inman Square to City Hall for Boston Bike to Work Day!!! They’ll have free coffee and breakfast, as well as a free t shirt if you register with the link above",
+      "rsvp_url": "https://partiful.com/e/niFxL83hYumsS2Zuy4AE",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2Fcgh6XZbJbASO3SFIoeySK?alt=media&token=ca1bde04-5378-422c-8c19-1bff6c3f7821",
+      "routes": []
+    },
+    {
+      "uid": "pDn8muQeRscUHGSvoTze",
+      "title": "Mother’s Day Family Ride",
+      "start": "2026-05-10T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, May 10",
+      "time_display": "11:00 am",
+      "location": "Lizzy’s Ice Cream, 29 Church St, Cambridge, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Bring your family on a bike ride to get ice cream at Lizzy’s and hangout in the Cambridge Common!! Meet at either the Jamaica Pond Boathouse or Arlington Center at 11 AM, whichever is closer to you, and we’ll all join forces at the ice cream shop together!!\n\n**if you received an invite via Partiful that said 12 PM, that was a mistake! Meet at 11 AM at the meeting locations above",
+      "rsvp_url": "https://partiful.com/e/pDn8muQeRscUHGSvoTze",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2FeY20JtjAw3jBZQDakg3vT?alt=media&token=0ca53a2b-dfc9-4769-94fe-c411afbf80e6",
+      "routes": []
+    },
+    {
+      "uid": "UZLDj2opk9JdRPnmlJNk",
+      "title": "Happy Hour Brewery Ride",
+      "start": "2026-05-15T17:30:00-04:00",
+      "end": null,
+      "date_display": "Friday, May 15",
+      "time_display": "5:30 pm",
+      "location": "Aeronaut Brewery, 14 Tyler St, Somerville, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "5 PM MEANS YOURE FREEEE\n\nNational Bike to Work Day is May 15, but no one said you had to go straight home after work?\n\nAfter work, hop on a bike and ride with us for drinks at Aeronaut Brewing in Somerville, make friends and enjoy the weather. We’re hosting rides at 5:30 PM from 2 LOCATIONS:  Post Office Square for the downtown folks, and Kendall Square for the biotech folks.\n\nSee you out there 🫡",
+      "rsvp_url": "https://partiful.com/e/UZLDj2opk9JdRPnmlJNk",
+      "image": "https://media2.giphy.com/media/ZcYmkPx47LLh3jIFhi/giphy.gif?cid=c00e53c66for89uoenzs3fwpl52b9po4qxmiumxr72tst1dy&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+      "routes": []
+    },
+    {
+      "uid": "pEWGKBfnPbwufmj35mq6",
+      "title": "Boston Flower Ride",
+      "start": "2026-05-16T10:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, May 16",
+      "time_display": "10:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Celebrate the spring time with a ride starting at the public gardens (Beacon and Charles St) and going to the rose garden in Fenway.",
+      "rsvp_url": "https://partiful.com/e/pEWGKBfnPbwufmj35mq6",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2FkJm9lAkH8XmfHLr1mMqa8?alt=media&token=857037e2-989e-4a16-a236-d53b1c4d94a7",
+      "routes": []
+    },
+    {
+      "uid": "U6SUvqa3uB2ZVOMbN5mj",
+      "title": "Picnic Ride",
+      "start": "2026-05-25T14:30:00-04:00",
+      "end": null,
+      "date_display": "Monday, May 25",
+      "time_display": "2:30 pm",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/YRsof8h8GFaZHQ2N7",
+      "description": "Make the most of Memorial Day and join us on a ride to Castle Island, the perfect place to spread out for a picnic! We'll start from Park and Tremont St in the Common and wind our way over on Summer St.",
+      "rsvp_url": "https://partiful.com/e/U6SUvqa3uB2ZVOMbN5mj",
+      "image": "https://assets.getpartiful.com/posters/Good%20Day%20for%20a%20Picnic",
+      "routes": []
+    },
+    {
+      "uid": "Y0Xc1LxQRjGuNmSt9PEp",
+      "title": "Mystic Crossing to Bikenny Cafe",
+      "start": "2026-05-31T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, May 31",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/cvn1Q3NifzSUScG28",
+      "description": "Join up with the Everett Transportation Advisory Committee to highlight how you too can cross the Mystic by bike! Heading to Bikenny Cafe in Malden!!",
+      "rsvp_url": "https://partiful.com/e/Y0Xc1LxQRjGuNmSt9PEp",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FAaOEb0sfj2hophzGVSRyb2mRWZz1%2FaEefuJYEhOt5--1hbxyhm?alt=media&token=ab760fd9-c01c-48c9-80da-5950da95112d",
+      "routes": []
+    },
+    {
+      "uid": "fnOIDVrUulU2l5UhZl5G",
+      "title": "Ride to SCOOPER BOWL",
+      "start": "2026-06-04T17:45:00-04:00",
+      "end": null,
+      "date_display": "Thursday, June 4",
+      "time_display": "5:45 pm",
+      "location": "88 Seaport Blvd, Boston, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Let’s ride to the Scooper Bowl. There’s no teams, only ice creams.\n\nJoin Dana-Farber Cancer Institute and the Jimmy Fund for Boston's biggest ice cream festival, now at 88 Seaport Blvd!\n\nMake sure to get a ticket ahead of time. Reach out to Jude as commented below to get a discounted group ticket!",
+      "rsvp_url": "https://partiful.com/e/fnOIDVrUulU2l5UhZl5G",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FckN0hhHS7XSyzo0F13cpjYrF8nv1%2FSwLKIoH212IYQGi1kmjCB?alt=media&token=02eb8666-b75a-4697-8064-febe805b58d3",
+      "routes": [
+        {
+          "start": "H Mart Brookline, Beacon Street, Brookline, MA",
+          "end": "88 Seaport Boulevard, Boston, MA",
+          "points": [
+            [
+              42.346054,
+              -71.108172
+            ],
+            [
+              42.35242,
+              -71.046056
+            ]
+          ],
+          "mode": "b",
+          "label": "Route",
+          "url": "https://maps.app.goo.gl/YNftfWjhixSpVfFn7?g_st=ic",
+          "distance_m": 5961,
+          "distance_display": "~3.7 mi"
+        }
+      ],
+      "map_image": "maps/fnOIDVrUulU2l5UhZl5G.svg"
+    },
+    {
+      "uid": "T38qNQGs9HtiGGtQwqoE",
+      "title": "Let’s Go Bike Today Queers",
+      "start": "2026-06-06T10:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, June 6",
+      "time_display": "10:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/XcfqUmW58ozCRevM7?g_st=ic",
+      "description": "ATTENTION QUEERS OF SOMERVILLE AND CAMBRIDGE. WE’RE RIDING TO THE PRIDE PARADE. I KNOW MOST IF YALL BIKE CUZ ITS GAY ASF so get ur ass up, bring ur ally friends, and come with us to the parade.",
+      "rsvp_url": "https://partiful.com/e/T38qNQGs9HtiGGtQwqoE",
+      "image": "https://media3.giphy.com/media/3q3UscuyLeMjjNdA4B/giphy.gif?cid=c00e53c6x00vpyo8qy2hdqztfvarlsqgngom9qg34lbk7oaa&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+      "routes": []
+    },
+    {
+      "uid": "uzyx1AykpMLNEilFIPWx",
+      "title": "Daydrink with gay people",
+      "start": "2026-06-07T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, June 7",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Seems pretty self-explanatory\n\nWe’re hosting a social with Cambridge Bike Safety at Portico Brewery during Pride Month. So if you wanna hang with some gay people over drinks, you’re gonna have to bike for it 😎",
+      "rsvp_url": "https://partiful.com/e/uzyx1AykpMLNEilFIPWx",
+      "image": "https://media1.giphy.com/media/lcWA64fJBk7hzShb70/giphy.gif?cid=c00e53c6iip59grf8myhgq50tuhf6mohbair2d89to1rr901&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+      "routes": [
+        {
+          "start": "Bluebikes, Fresh Pond Reservation, Cambridge, MA 02138",
+          "end": "Portico Brewing, South Street, Somerville, MA",
+          "points": [
+            [
+              42.3832,
+              -71.142899
+            ],
+            [
+              42.374742,
+              -71.091331
+            ]
+          ],
+          "mode": "b",
+          "label": "Route",
+          "url": "https://maps.app.goo.gl/shgBr5KFkKTNga5i7?g_st=ic",
+          "distance_m": 5413,
+          "distance_display": "~3.4 mi"
+        }
+      ],
+      "map_image": "maps/uzyx1AykpMLNEilFIPWx.svg"
+    },
+    {
+      "uid": "S5slcE16gPWml5dZZwTK",
+      "title": "Cycle to Croissants",
+      "start": "2026-06-13T11:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, June 13",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/jFGMeiPzu3N7ePBAA",
+      "description": "Starting in Fenway (Ipswich & Bolyston), let's ride up to get some sweet sweet baked goods in east Somerville.",
+      "rsvp_url": "https://partiful.com/e/S5slcE16gPWml5dZZwTK",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FsotccH_6tzKbGduZBxttU?alt=media&token=b10372ba-5cc0-49a7-8372-886d64a999c7",
+      "routes": []
+    },
+    {
+      "uid": "WX2ptgXyA7IVWtsroVa8",
+      "title": "Watertown - Cambridge Greenway",
+      "start": "2026-06-14T10:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, June 14",
+      "time_display": "10:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/GfyhAna5qkE3mKM48",
+      "description": "Join us for a ride on the Watertown-Cambridge greenway!\n\nWe'll start at 160 Arsenal St -- possibly the farther west we've ever started -- and take the trail up to Tilde for a well deserved treat.",
+      "rsvp_url": "https://partiful.com/e/WX2ptgXyA7IVWtsroVa8",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FEOmkAaTJBeN2BqWD15gPM?alt=media&token=86565bbe-1586-4d69-bff6-141c04ed0c1c",
+      "routes": []
+    },
+    {
+      "uid": "41HT3tux8LzVeVSN6tQx",
+      "title": "Linger @ Linger",
+      "start": "2026-06-20T10:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, June 20",
+      "time_display": "10:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/qiZtfLpSURyVHt289",
+      "description": "Starting south of the river at Roxbury Crossing, join us on our way up to Linger at the Speedway in Brighton.",
+      "rsvp_url": "https://partiful.com/e/41HT3tux8LzVeVSN6tQx",
+      "image": "https://assets.getpartiful.com/posters/its-nice-out",
+      "routes": []
+    },
+    {
+      "uid": "u9DPNOffyehLiS8oh2U6",
+      "title": "Get those Beans",
+      "start": "2026-06-27T11:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, June 27",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/uSqN3b8WAMFDx7dAA",
+      "description": "Did someone say exquisite Ethiopian coffee and the Somerville Community path??\n\nJoin us for a ride down from Chestnut & Poplar near the East Somerville T-stop to Farmer's Horse Coffee on Mass Ave.",
+      "rsvp_url": "https://partiful.com/e/u9DPNOffyehLiS8oh2U6",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FAwrLrX-6_84VRtwvwW2yl?alt=media&token=0dde8129-0fe6-4ad4-9692-3a8aa5daf506",
+      "routes": []
+    },
+    {
+      "uid": "BrezyQ7GtxVtvVh8fI6z",
+      "title": "Powder House to Intelligentsia",
+      "start": "2026-07-05T10:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, July 5",
+      "time_display": "10:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/U8n7JrMbifXHUyWG8",
+      "description": "Drinking coffee and riding bikes are at least 2 of the 13!\n\nJoin us for a ride from Powder House Sq to Intelligentsia in Watertown.",
+      "rsvp_url": "https://partiful.com/e/BrezyQ7GtxVtvVh8fI6z",
+      "image": "https://media2.giphy.com/media/LhyhsxtMmossXIg1zB/giphy.gif?cid=c00e53c6y7k590w7wo0403osx8gp9prm9xijyz1rhbeub8lf&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+      "routes": []
+    },
+    {
+      "uid": "TgXq84jCwOvqk8a48vRi",
+      "title": "Jimmy's Cafe Pop-Up",
+      "start": "2026-07-11T10:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, July 11",
+      "time_display": "10:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/7Fs1NbtdG8Fwni5FA",
+      "description": "Join us in celebrating Philippines Independence day with a lovely ride from Herter Park in Lower Allston to a cafe pop-up on Concord Ave in Somerville.",
+      "rsvp_url": "https://partiful.com/e/TgXq84jCwOvqk8a48vRi",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FfrG8Y95QfPvXwYMoWN_F_?alt=media&token=0d4471b2-63b6-4ab2-b031-caf75d69a841",
+      "routes": []
+    },
+    {
+      "uid": "jMgeLqj1GA8iuK0RreyM",
+      "title": "Jimmy’s Summer Café: Celebrate Philippines Independence",
+      "start": "2026-07-11T10:00:00-04:00",
+      "end": "2026-07-11T16:00:00-04:00",
+      "date_display": "Saturday, July 11",
+      "time_display": "10:00 am",
+      "location": "65 Concord Ave, Backyard, Somerville, MA 02143",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "You probably guessed it by now...\n\nKuya Jimmy travels to the PHILIPPINES🇵🇭🥥🌴\n\nWe are so excited to island hop to this beautiful country and we were so inspired by the incredible flavors and sweets that Filipinos enjoy! To celebrate, we are bringing the islands to you in a few weeks 🇵🇭🫶\n\nSpecial shout out to Sarah’s Little Kitchen for proving time and time again she is a Filipina Force to be reckoned with when it comes to baking! As always, we will feature some of her amazing treats🤭\n\nThank you so so so much Kuya Eric for all of the menu inspo, knowledge, videography, tastings, and sincerity☀️\n\nSoooo I guess we’ll see you there, suki?",
+      "rsvp_url": "https://partiful.com/e/jMgeLqj1GA8iuK0RreyM",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FQUwYKiFw7madZKzvI6EI4dxysmv1%2FVPw5MPhnFt9mjwv_vGscl?alt=media&token=07966bd8-065e-4dbb-9ebe-30d1b467d1c3",
+      "routes": []
+    },
+    {
+      "uid": "s2lJdOo6KMunhzbGZrks",
+      "title": "Ship Watchers Ride",
+      "start": "2026-07-11T12:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, July 11",
+      "time_display": "12:00 pm",
+      "location": "65 Concord Ave, Somerville, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Celebrate the Tall Ships (tm) coming to Boston with a watch party! We'll bike out to Deer Island and watch them as they travel in and head to their ports in the city.\n\nhttps://www.mwra.com/node/8641\nhttps://www.sailboston.com/events/",
+      "rsvp_url": "https://partiful.com/e/s2lJdOo6KMunhzbGZrks",
+      "image": "https://media0.giphy.com/media/3oz8xRQiRlaS1XwnPW/giphy.gif?cid=c00e53c6e3e4ewsp3zu59v4dlc2mjkdo9uhi1zgs52czbkqx&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+      "routes": []
+    },
+    {
+      "uid": "2NSzpDRgLBavKeIGxUTS",
+      "title": "Dawgs Out Ride",
+      "start": "2026-07-12T12:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, July 12",
+      "time_display": "12:00 pm",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/poxgdneiCni972tX7",
+      "description": "Park-9 Dog bar is a queer, woman owned bar in Everett that allows dogs and has a dog park!\n\nJoin us as we ride up there starting from Union Sq.",
+      "rsvp_url": "https://partiful.com/e/2NSzpDRgLBavKeIGxUTS",
+      "image": "https://assets.getpartiful.com/posters/meme-dog-spinny-hat.png",
+      "routes": []
+    },
+    {
+      "uid": "KGy03ng81XHqKVJinp3s",
+      "title": "Better Buffers & Bagels",
+      "start": "2026-07-19T10:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, July 19",
+      "time_display": "10:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/7zBmEn5ZTHEhJtSZ7",
+      "description": "Come check out the new bike lane protections on Congress St in Boston!\n\nWe'll start from Jackson Sq in JP and make our way up to downtown Boston for some bagels on Congress St.",
+      "rsvp_url": "https://partiful.com/e/KGy03ng81XHqKVJinp3s",
+      "image": "https://media1.giphy.com/media/ZBoNSRGAvnbkgVVA6X/giphy.gif?cid=c00e53c6pf3z5exvasejppixytudrqcbn3stoyjg098jnt7o&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+      "routes": []
+    },
+    {
+      "uid": "Z50H1Zr8gbbyZtSyH75e",
+      "title": "Boston Cafe Bikers Ice Cream Crawl",
+      "start": "2026-07-25T14:00:00-04:00",
+      "date_display": "Saturday, July 25",
+      "time_display": "2:00 pm",
+      "location": "JP Licks, 659 Centre St, Jamaica Plain, MA",
+      "description": "Come hungry! We'll start at the original JP Licks and make our way up to Gracie's in Union Square before stopping at Honeycomb on Mass Ave. and ending at the Speedway in Brighton from a Maple Creemee.\n\nUPDATE: Moved to Saturday July 25th",
+      "rsvp_url": "https://partiful.com/e/Z50H1Zr8gbbyZtSyH75e",
+      "location_hidden": false,
+      "location_url": null,
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FCqkYfBErmt6N5OTzDfadq?alt=media&token=42b18587-5129-4a81-b6bb-ad1fb0aa557d",
+      "routes": [
+        {
+          "start": "J.P. Licks, 659 Centre St, Boston, MA 02130",
+          "end": "The Charles River Speedway, Western Avenue, Brighton, MA",
+          "via": [
+            "Gracie's Ice Cream, 22 Union Square, Somerville, MA 02143",
+            "Honeycomb Creamery, 1702 Massachusetts Ave, Cambridge, MA 02138"
+          ],
+          "points": [
+            [
+              42.312827,
+              -71.114291
+            ],
+            [
+              42.379797,
+              -71.09665
+            ],
+            [
+              42.383189,
+              -71.119832
+            ],
+            [
+              42.361816,
+              -71.144681
+            ]
+          ],
+          "mode": "b",
+          "label": "Team A & C Route",
+          "url": "https://maps.app.goo.gl/BP5hWjmFCwQoiXPS9?g_st=ic",
+          "distance_m": 15852,
+          "distance_display": "~9.8 mi"
+        },
+        {
+          "start": "J.P. Licks, 659 Centre St, Boston, MA 02130",
+          "end": "The Charles River Speedway, Western Avenue, Brighton, MA",
+          "via": [
+            "Honeycomb Creamery, 1702 Massachusetts Ave, Cambridge, MA 02138",
+            "Gracie's Ice Cream, 22 Union Square, Somerville, MA 02143"
+          ],
+          "points": [
+            [
+              42.312827,
+              -71.114291
+            ],
+            [
+              42.383189,
+              -71.119832
+            ],
+            [
+              42.379797,
+              -71.09665
+            ],
+            [
+              42.361816,
+              -71.144681
+            ]
+          ],
+          "mode": "b",
+          "label": "Team B & D Route",
+          "url": "https://maps.app.goo.gl/FZVoPKDh4zNkXyPu8?g_st=ic",
+          "distance_m": 17258,
+          "distance_display": "~10.7 mi"
+        }
+      ],
+      "map_image": "maps/Z50H1Zr8gbbyZtSyH75e.svg",
+      "end": null
+    },
+    {
+      "uid": "exCp8fNan5xy41ZZdHLn",
+      "title": "Riverbend Picnic",
+      "start": "2026-07-26T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, July 26",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/5xoTLSVLGM2UYZXo6",
+      "description": "Spend some time in the park with us! We'll start in North Point Park and make our way over to Riverbend Park for a group picnic. Bring something to share!",
+      "rsvp_url": "https://partiful.com/e/exCp8fNan5xy41ZZdHLn",
+      "image": "https://assets.getpartiful.com/posters/park-flowers",
+      "routes": []
+    },
+    {
+      "uid": "6MBKxp6PQGamcBZsOi2r",
+      "title": "Salt Bread and Coffee pop-up",
+      "start": "2026-08-08T10:00:00-04:00",
+      "date_display": "Saturday, August 8",
+      "time_display": "10:00 am",
+      "location": "Newbery Street Coffee Roasters, 14 Harvard St, Brookline, MA",
+      "description": "Ride with us from the lovely Boston Common to Newbery St. Coffee pop up cafe in Brookline Village. Travel through Fenway and the riverway on this route.",
+      "rsvp_url": "https://partiful.com/e/6MBKxp6PQGamcBZsOi2r",
+      "location_hidden": false,
+      "location_url": null,
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FgEguXCr0K9wsGIgXm4Rbn?alt=media&token=60610c5a-8636-4b23-a648-0af570cf87f5",
+      "routes": [
+        {
+          "start": "Bluebikes, Boylston St at Arlington St, Boston, MA 02116",
+          "end": "Merai, Harvard Street, Brookline, MA",
+          "points": [
+            [
+              42.352585,
+              -71.067615
+            ],
+            [
+              42.333675,
+              -71.118981
+            ]
+          ],
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/a2m4UHaPUFRMs8B49?g_st=ic",
+          "distance_m": 5883,
+          "distance_display": "~3.7 mi"
+        }
+      ],
+      "map_image": "maps/6MBKxp6PQGamcBZsOi2r.svg",
+      "end": null
+    },
+    {
+      "uid": "n00YHY91JAawRoNKJhb9",
+      "title": "Pedal to Pepita",
+      "start": "2026-08-09T12:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, August 9",
+      "time_display": "12:00 pm",
+      "location": "Pepita Coffee, 284 Broadway, Cambridge, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Start in the South End and soar over the Charles into Cambridge, ending at Pepita Coffee on Broadway.\n\nHow else are you spending your Sunday?",
+      "rsvp_url": "https://partiful.com/e/n00YHY91JAawRoNKJhb9",
+      "image": "https://media2.giphy.com/media/3og0ISvpQVLJwOaWv6/giphy.gif?cid=c00e53c66riqu88so0twxst5bz0b5tpcc6lprqvtonuiv7x2&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+      "routes": [
+        {
+          "start": "Bluebikes, Washington St at Peters Park, Boston, MA 02118",
+          "end": "Pepita Coffee, Broadway, Cambridge, MA",
+          "points": [
+            [
+              42.342958,
+              -71.067051
+            ],
+            [
+              42.367999,
+              -71.097949
+            ]
+          ],
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/6sp943cQ14FsGA2XA?g_st=ic",
+          "distance_m": 5583,
+          "distance_display": "~3.5 mi"
+        }
+      ],
+      "map_image": "maps/n00YHY91JAawRoNKJhb9.svg"
+    },
+    {
+      "uid": "gRzH7L3EoMRl3q8pl7OS",
+      "title": "The journey is really the best part",
+      "start": "2026-08-15T10:00:00-04:00",
+      "date_display": "Saturday, August 15",
+      "time_display": "10:00 am",
+      "location": "KoKo Coffee, 226 Causeway St, Boston, MA",
+      "description": "Yippee! Another Saturday, another ride. This time from Lower Allston over to Koko coffee.",
+      "rsvp_url": "https://partiful.com/e/gRzH7L3EoMRl3q8pl7OS",
+      "end": null,
+      "location_hidden": false,
+      "location_url": null,
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FZjqrASzKptaWblqVVRqtb?alt=media&token=02154fd4-5f38-4a7a-a9fc-67c77518238f",
+      "routes": [
+        {
+          "start": "Bluebikes, 175 N Harvard St, Boston, MA 02134",
+          "end": "Koko Coffee | Causeway, Causeway Street, Boston, MA",
+          "points": [
+            [
+              42.364475,
+              -71.128407
+            ],
+            [
+              42.366443,
+              -71.05973
+            ]
+          ],
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/sDT69q7Ddc8yNTKT8?g_st=ic",
+          "distance_m": 8071,
+          "distance_display": "~5.0 mi"
+        }
+      ],
+      "map_image": "maps/gRzH7L3EoMRl3q8pl7OS.svg"
+    },
+    {
+      "uid": "a0gbEpda9D8KPbQfY275",
+      "title": "Let’s go to Localito",
+      "start": "2026-08-16T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, August 16",
+      "time_display": "11:00 am",
+      "location": "Localito Cafe, 30 Riverside Ave, Medford, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Come out and explore your city… or another city right next door!\n\nThis gorgeous little ride will take us from Charlestown up to Localito Cafe in Medford.",
+      "rsvp_url": "https://partiful.com/e/a0gbEpda9D8KPbQfY275",
+      "image": "https://assets.getpartiful.com/posters/yes.png",
+      "routes": [
+        {
+          "start": "Bluebikes, Bunker Hill Mall, Main St at Austin St, Boston, MA 02129",
+          "end": "Localito, Riverside Avenue, Medford, MA",
+          "points": [
+            [
+              42.375603,
+              -71.064607
+            ],
+            [
+              42.418175,
+              -71.108716
+            ]
+          ],
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/F8doBU6KC1DTpZEf9?g_st=ic",
+          "distance_m": 7467,
+          "distance_display": "~4.6 mi"
+        }
+      ],
+      "map_image": "maps/a0gbEpda9D8KPbQfY275.svg"
+    },
+    {
+      "uid": "5I2Zwclcs30LUlbOjjeb",
+      "title": "O’Some Sunday",
+      "start": "2026-08-23T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, August 23",
+      "time_display": "11:00 am",
+      "location": "O'some Cafe, 100 Main St, Watertown, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Watertown? How about we call it coffee town just for today? 🤫 This jaunt will start in Brookline and end at O’Some Cafe in Watertown.\n\nH.A.G.S.",
+      "rsvp_url": "https://partiful.com/e/5I2Zwclcs30LUlbOjjeb",
+      "image": "https://assets.getpartiful.com/posters/hot-drinks-plain-2.png",
+      "routes": [
+        {
+          "start": "Bluebikes, Cleveland Circle, Boston, MA 02135",
+          "end": "O'Some Café, 100 Main St, Watertown, MA 02472",
+          "points": [
+            [
+              42.335543,
+              -71.150614
+            ],
+            [
+              42.366823,
+              -71.186803
+            ]
+          ],
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/VV3qNaJZ6M2qBmnP8?g_st=ic",
+          "distance_m": 6448,
+          "distance_display": "~4.0 mi"
+        }
+      ],
+      "map_image": "maps/5I2Zwclcs30LUlbOjjeb.svg"
+    }
+  ]
+}

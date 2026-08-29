@@ -70,6 +70,18 @@
     return "boscafebikers-" + (icsDateTime(ev.start) || "undated") + "-" +
       String(ev.title || "ride").toLowerCase().replace(/[^a-z0-9]+/g, "-");
   }
+  // The body both exports share: the ride blurb, the meeting-point link when
+  // the Location field held one instead of an address (calendar apps geocode a
+  // bare URL badly, so it stays in the description and out of LOCATION), and
+  // the RSVP link.
+  function exportDetails(ev) {
+    const parts = [];
+    if (ev.description) { parts.push(ev.description); }
+    if (!ev.location && ev.location_url) { parts.push("Meeting point: " + ev.location_url); }
+    if (ev.rsvp_url) { parts.push("RSVP: " + ev.rsvp_url); }
+    return parts.join("\n\n");
+  }
+
   BCB.buildIcs = (ev) => {
     const lines = [
       "BEGIN:VCALENDAR",
@@ -87,8 +99,7 @@
     if (end) { lines.push("DTEND;TZID=America/New_York:" + end); }
     lines.push("SUMMARY:" + icsEscape(ev.title || "Café ride"));
     if (ev.location) { lines.push("LOCATION:" + icsEscape(ev.location)); }
-    let desc = ev.description || "";
-    if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
+    const desc = exportDetails(ev);
     if (desc) { lines.push("DESCRIPTION:" + icsEscape(desc)); }
     if (ev.rsvp_url) { lines.push("URL:" + ev.rsvp_url); }
     lines.push("END:VEVENT", "END:VCALENDAR");
@@ -135,45 +146,179 @@
     const end = ev.end ? icsDateTime(ev.end) : icsDateTimePlusHour(ev.start);
     add("dates", start && end ? start + "/" + end : start);
     add("location", ev.location);
-    let desc = ev.description || "";
-    if (ev.rsvp_url) { desc = desc ? desc + "\n\n" : ""; desc += "RSVP: " + ev.rsvp_url; }
-    add("details", desc);
+    add("details", exportDetails(ev));
     add("ctz", "America/New_York");
     return "https://calendar.google.com/calendar/render?" + parts.join("&");
   };
 
+  // "O'Some Café, 100 Main St, Watertown, MA 02472" → "O'Some Café". Google's
+  // saddr/daddr are full addresses; only the leading place name fits a card.
+  function placeName(address) {
+    return String(address || "").split(",")[0].trim();
+  }
+
+  // Where a ride starts, as a card-sized name. Rides almost always start at a
+  // Bluebikes dock, whose address is "Bluebikes, <station>, <city>, MA <zip>"
+  // — so the leading segment is the useless word "Bluebikes" and the station
+  // is what identifies the start: "Bluebikes, Cleveland Circle, Boston, MA
+  // 02135" → "Cleveland Circle". A station can span two segments ("Bunker Hill
+  // Mall, Main St at Austin St"), so keep everything between "Bluebikes" and
+  // the city when the address ends in a "<city>, <ST> [zip]" tail; otherwise
+  // the next segment; a bare "Bluebikes" falls back to the whole string. Any
+  // other start keeps its leading place name, like placeName().
+  const BLUEBIKES_RE = /^bluebikes\b[\s:\-–—]*(.*)$/i;
+  const STATE_RE = /^[A-Z]{2}(\s+\d{5}(-\d{4})?)?$/;
+  function startName(address) {
+    const raw = String(address || "").trim();
+    const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (!parts.length) { return ""; }
+    const m = BLUEBIKES_RE.exec(parts[0]);
+    if (!m) { return parts[0]; }
+    // "Bluebikes Cleveland Circle" (no comma) keeps the remainder as the station.
+    const detail = m[1] ? [m[1]].concat(parts.slice(1)) : parts.slice(1);
+    if (!detail.length) { return raw; }
+    const last = detail[detail.length - 1];
+    if (detail.length >= 3 && STATE_RE.test(last)) {
+      // Drop the "<city>, <ST> <zip>" tail; what's left is the station.
+      return detail.slice(0, -2).join(", ");
+    }
+    return detail[0];
+  }
+  BCB.startName = startName;
+
+  // Some rides carry a link instead of an address in Partiful's Location field
+  // (fetch_rides.py turns that into `location_url`). Name the link for what it
+  // is rather than printing the URL, which overflows the card.
+  const MAPS_URL_RE =
+    /^https?:\/\/(?:maps\.app\.goo\.gl\/|maps\.google\.[a-z.]+\/|(?:www\.)?goo\.gl\/maps|(?:www\.)?google\.[a-z.]+\/maps)/i;
+  function meetingPointText(url) {
+    return MAPS_URL_RE.test(String(url || "")) ? "Meeting point on Google Maps" : "Meeting point";
+  }
+
+  // --- "Rolling now" ---
+  // A ride stays in events.json for an hour after it starts (GRACE_PERIOD in
+  // scripts/fetch_rides.py — keep the two numbers in step), because latecomers
+  // can still catch the group. During that hour the card must not read as
+  // "upcoming": say the ride is happening.
+  //
+  // This is the one allowed use of the clock, and it is NOT the thing the
+  // no-Date rule bans. That rule is about *re-formatting* a ride's time — the
+  // display strings are precomputed in Eastern, and new Date(start) would
+  // re-render them in the visitor's own timezone. Here the question is "has
+  // this instant passed?", which is absolute: ev.start carries its Eastern
+  // offset, so Date.parse gives the correct UTC epoch in every timezone, and
+  // comparing epoch milliseconds with Date.now() has no wall clock in it at
+  // all. Nothing below is formatted for display.
+  const GRACE_MS = 60 * 60 * 1000;
+  function isRolling(ev, nowMs) {
+    const startMs = Date.parse((ev && ev.start) || "");
+    if (isNaN(startMs)) { return false; }
+    const now = typeof nowMs === "number" ? nowMs : Date.now();
+    // Inclusive at both ends, matching fetch_rides.is_upcoming: the ride is
+    // rolling from its start time through the last instant of the grace hour.
+    return now >= startMs && now <= startMs + GRACE_MS;
+  }
+  BCB.isRolling = isRolling;
+
   // The shared ride-card builder — used by the featured next-ride card AND the
   // ride-detail modal, so the details and add-to-calendar exports can't drift.
   BCB.rideCard = (ev, extraClass) => {
-    const card = BCB.el("div", "ride" + (extraClass ? " " + extraClass : ""));
-    if (ev.image) {
-      // Photo banner, linked to the same RSVP target as the button below.
+    const card = BCB.el("div", "ride" + (ev.past ? " is-past" : "") + (extraClass ? " " + extraClass : ""));
+    // Date/title lead the card (before the banner) so they're visible above
+    // the fold on a phone — a map or poster image is tall enough to push
+    // them out of the first viewport otherwise (Backlog 10).
+    const when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
+    // Archived rides are flagged in the data; a ride still in events.json can
+    // have started anyway (the grace hour, plus up to 6 hours of cron lag), so
+    // that one is decided against the visitor's clock at render time.
+    const rolling = !ev.past && isRolling(ev);
+    if (when || ev.past || rolling) {
+      const whenLine = BCB.el("p", "when", when);
+      // A ride pulled off the archive needs to say so: the date alone doesn't
+      // read as "already happened" when you land on it from the calendar.
+      if (ev.past) {
+        whenLine.appendChild(BCB.el("span", "ride-tag", "Past ride"));
+      } else if (rolling) {
+        whenLine.appendChild(BCB.el("span", "ride-tag is-rolling", "Rolling now"));
+      }
+      card.appendChild(whenLine);
+    }
+    card.appendChild(BCB.el("h3", null, ev.title || "Café ride"));
+    // The drawn route map wins over the Partiful poster: it says something
+    // about *this* ride. It also links to the route rather than to RSVP, and
+    // is shown whole (object-fit: contain) instead of cropped like a photo.
+    const firstRoute = (ev.routes || [])[0];
+    const banner = ev.map_image || ev.image;
+    if (banner) {
+      const isMap = Boolean(ev.map_image);
       const imgLink = BCB.el("a", "ride-img-link");
-      imgLink.href = ev.rsvp_url || BCB.PARTIFUL;
+      imgLink.href = (isMap && firstRoute && firstRoute.url) || ev.rsvp_url || BCB.PARTIFUL;
       imgLink.rel = "noopener";
-      const img = BCB.el("img", "ride-img");
-      img.src = ev.image;
-      img.alt = ev.title || "Café ride";
+      if (isMap) { imgLink.target = "_blank"; }
+      const img = BCB.el("img", "ride-img" + (isMap ? " is-map" : ""));
+      img.src = banner;
+      img.alt = isMap
+        ? "Route map for " + (ev.title || "this café ride")
+        : (ev.title || "Café ride");
       img.loading = "lazy";
       imgLink.appendChild(img);
       card.appendChild(imgLink);
     }
-    const when = [ev.date_display, ev.time_display].filter(Boolean).join(" · ");
-    if (when) { card.appendChild(BCB.el("p", "when", when)); }
-    card.appendChild(BCB.el("h3", null, ev.title || "Café ride"));
     if (ev.location) {
       card.appendChild(BCB.el("p", "where", ev.location));
+    } else if (ev.location_url) {
+      // The Location field held a map link, not an address — show it as a
+      // named link; the raw URL would run off the side of the card.
+      const whereLine = BCB.el("p", "where");
+      const whereLink = BCB.el("a", null, meetingPointText(ev.location_url));
+      whereLink.href = ev.location_url;
+      whereLink.target = "_blank";
+      whereLink.rel = "noopener";
+      whereLine.appendChild(whereLink);
+      card.appendChild(whereLine);
     } else if (ev.location_hidden) {
       // Partiful hides the address until RSVP; show a friendly note instead
       // of the feed's "Location available once RSVP'd" template text.
       card.appendChild(BCB.el("p", "where", "Location shared after you RSVP"));
     }
+    // Route links come from the host's Partiful custom fields ("Estimated
+    // Route", "Team A & C Route", …) and open Google Maps. The card names only
+    // where the ride starts ("from Cleveland Circle"): the café is already the
+    // .where line, and the full start → end pair (with any stops) is one tap
+    // away in Maps, and in the link's title.
+    (ev.routes || []).forEach((route) => {
+      const line = BCB.el("p", "route");
+      const link = BCB.el("a", null, route.label || "Route");
+      link.href = route.url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.title = placeName(route.start) && placeName(route.end)
+        ? route.start + " → " + route.end
+        : "Open this route in Google Maps";
+      line.appendChild(link);
+      // Distance is measured from the route's own stops (see fetch_rides.py),
+      // not quoted from Google — the "~" in the string is doing real work.
+      if (route.distance_display) {
+        line.appendChild(BCB.el("span", "route-distance", route.distance_display));
+      }
+      const start = startName(route.start);
+      if (start) {
+        line.appendChild(BCB.el("span", "route-start", "from " + start));
+      }
+      card.appendChild(line);
+    });
     if (ev.description) { card.appendChild(BCB.el("p", null, ev.description)); }
     const actions = BCB.el("div", "ride-actions");
-    const link = BCB.el("a", "btn", "RSVP on Partiful");
+    const link = BCB.el("a", "btn", ev.past ? "See it on Partiful" : "RSVP on Partiful");
     link.href = ev.rsvp_url || BCB.PARTIFUL;
     link.rel = "noopener";
     actions.appendChild(link);
+    if (ev.past) {
+      // No RSVP, and nothing to add to a calendar — the ride is over. The
+      // Partiful link still works, and that's where the photos are.
+      card.appendChild(actions);
+      return card;
+    }
     const ics = BCB.el("button", "btn btn-ghost", "Add to calendar");
     ics.type = "button";
     ics.setAttribute("aria-label", "Download .ics for " + (ev.title || "this ride"));

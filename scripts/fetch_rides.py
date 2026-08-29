@@ -7,19 +7,27 @@ at a file instead:
 
     python scripts/fetch_rides.py --ics-file tests/fixtures/sample.ics
 
+--past-out additionally writes the feed's already-happened rides, which
+scripts/archive_events.py folds into site/events-past.json so the calendar can
+keep showing them.
+
 Exits nonzero on any fetch or parse failure.
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import json
 import os
 import re
+import struct
 import sys
 from collections.abc import Callable
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import parse_qs, unquote_plus, urlsplit
 from zoneinfo import ZoneInfo
 
 import requests
@@ -32,7 +40,25 @@ DEFAULT_OUTPUT = REPO_ROOT / "site" / "events.json"
 # `image`. The ICS feed itself carries no photos, so this is how the organizer
 # attaches a picture to a ride without touching the site code.
 RIDE_IMAGES_PATH = REPO_ROOT / "scripts" / "ride_images.json"
+# UIDs of feed events that are not group rides (the organizer's calendar
+# export carries their personal events too). archive_events.py reads the
+# same file, so an excluded ride is dropped from the upcoming list, the past
+# export, and any archive that already holds it.
+EXCLUDED_EVENTS_PATH = REPO_ROOT / "scripts" / "excluded_events.json"
 FETCH_TIMEOUT_SECONDS = 30
+# A ride does not stop being "the next ride" the instant it starts: people turn
+# up late at the dock and still catch the group, so the upcoming export keeps a
+# ride for this long after its start time and the past export doesn't take it
+# until then. `scripts/archive_events.py` carries the same constant (it is
+# stdlib-only and can't import this module); a test pins the two together.
+#
+# Measured from `start`, never from `end`. Only 6 of the 40 rides in the feed
+# carry a DTEND at all, and those run 3, 4, 6 and 10 hours — a 10-hour end time
+# would pin a finished ride to the top of the page as "the next ride" for the
+# whole day and hold it out of the archive just as long. Latecomers are a
+# start-time question, and one rule means the Python filter and the card's
+# "Rolling now" tag can't disagree about which window a ride is in.
+GRACE_PERIOD = timedelta(hours=1)
 # Enrichment: the sync backfills `image` from each ride's public Partiful
 # event page. The page is unauthenticated, so no new secret — the event IDs
 # still come from the secret feed, which is why this stays sync-time work.
@@ -144,6 +170,40 @@ def load_ride_images(path: Path | None = None) -> dict:
     return data
 
 
+def load_excluded_events(path: Path | None = None) -> set[str]:
+    """Read the optional UID → note sidecar of events to leave out.
+
+    The value is a human note (what the event was and why it is excluded);
+    only the keys matter. A missing file means "exclude nothing".
+    """
+    path = Path(path) if path is not None else EXCLUDED_EVENTS_PATH
+    if not path.exists():
+        return set()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise FeedError(
+            f"could not parse excluded events ({path.name}): {scrub(exc)}"
+        ) from None
+    if not isinstance(data, dict):
+        raise FeedError(
+            f"excluded events ({path.name}) must be a JSON object of UID → note"
+        )
+    return {str(uid) for uid in data}
+
+
+def _event_from_page(html: str) -> dict | None:
+    """The `event` object out of a Partiful event page's __NEXT_DATA__."""
+    data = _extract_next_data(html)
+    if data is None:
+        return None
+    try:
+        event = data["props"]["pageProps"]["event"]
+    except (KeyError, TypeError):
+        return None
+    return event if isinstance(event, dict) else None
+
+
 def _extract_next_data(html: str) -> dict | None:
     """The parsed __NEXT_DATA__ blob from a Partiful event page, or None."""
     match = NEXT_DATA_RE.search(html)
@@ -198,6 +258,259 @@ def _extract_event_image(html: str) -> str | None:
     return _first_image_url(html)
 
 
+# --- Google Maps route links -------------------------------------------------
+# The organizer attaches the ride's route to the Partiful event as a "custom
+# field" — a labelled link ("Estimated Route", "Team A & C Route") pointing at
+# a maps.app.goo.gl short link. Those live in __NEXT_DATA__ alongside the image
+# the enrichment already reads, so grabbing them costs no new secret and no new
+# page fetch; only resolving each short link needs a request of its own.
+MAPS_LINK_HOSTS = (
+    "maps.app.goo.gl",
+    "goo.gl",
+    "maps.google.com",
+    "www.google.com",
+    "google.com",
+)
+# A resolved Google Maps *directions* URL carries both endpoints. Two shapes
+# turn up: the classic ?saddr=…&daddr=… query and the newer /maps/dir/A/B path.
+MAPS_DIR_PATH_RE = re.compile(r"/maps/dir/+([^/@?]+)/+([^/@?]+)")
+
+
+def _extract_custom_links(event: dict) -> list[dict]:
+    """The event's labelled custom-field links, in the order the host set them."""
+    links = []
+    for field in event.get("customFields") or []:
+        if not isinstance(field, dict):
+            continue
+        url = (field.get("url") or "").strip()
+        label = (field.get("value") or "").strip()
+        if url:
+            links.append({"label": label or "Route", "url": url})
+    return links
+
+
+def _is_maps_link(url: str) -> bool:
+    """True for a link worth resolving — anything Google Maps could shorten."""
+    try:
+        host = urlsplit(url).hostname or ""
+    except ValueError:
+        return False
+    host = host.lower()
+    if host not in MAPS_LINK_HOSTS:
+        return False
+    if host in ("goo.gl", "www.google.com", "google.com"):
+        # Only the maps paths on these hosts; goo.gl also shortens other things.
+        return "/maps" in urlsplit(url).path
+    return True
+
+
+def _resolve_link(url: str) -> str:
+    """Follow a short link to its final URL.
+
+    maps.app.goo.gl serves a JavaScript interstitial to browser user-agents and
+    a plain 302 to everyone else — so the sync's own User-Agent is what makes
+    this work without running a browser.
+    """
+    response = requests.get(
+        url,
+        timeout=ENRICH_TIMEOUT_SECONDS,
+        headers={"User-Agent": "boscafebikers-sync/1.0"},
+        allow_redirects=True,
+    )
+    return response.url
+
+
+def maps_geocode_points(query: dict) -> list[tuple[float, float]]:
+    """Endpoint coordinates out of a maps URL's ``geocode`` token list.
+
+    Google pairs each stop with a base64 token in ``geocode=t1;t2;…``. Each one
+    is a tiny protobuf whose first two fields are 32-bit fixed ints: field 2
+    (tag ``0x15``) is latitude and field 3 (tag ``0x1d``) longitude, both scaled
+    by 1e6. Reading them beats geocoding the address strings — Nominatim
+    resolves fewer than half of Google's free-form place names ("Bluebikes,
+    Washington St at Temple Pl" and friends come back empty) — and beats
+    scraping coordinates out of the maps page's minified JavaScript.
+
+    Returns [] unless every token parses, so a partial read never produces a
+    route that silently skips a stop.
+    """
+    raw_tokens = (query.get("geocode") or [""])[0]
+    if not raw_tokens:
+        return []
+    points = []
+    for token in raw_tokens.split(";"):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            blob = base64.urlsafe_b64decode(token + "=" * (-len(token) % 4))
+        except (ValueError, binascii.Error):
+            return []
+        if len(blob) < 10 or blob[0] != 0x15 or blob[5] != 0x1D:
+            return []
+        lat = struct.unpack("<i", blob[1:5])[0] / 1e6
+        lon = struct.unpack("<i", blob[6:10])[0] / 1e6
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            return []
+        points.append((round(lat, 6), round(lon, 6)))
+    return points
+
+
+# Rides always start at a Bluebikes dock (the group meets there), so a route
+# whose *end* is a dock and whose start isn't was built backwards in Google
+# Maps — café → meeting point. The organizer did exactly that on at least one
+# ride, which left the card's "from <place>" and the map's Start/End labels
+# reversed. The dock is recognised structurally, by its leading address
+# segment, the same way `route_map._start_name` reads one.
+BLUEBIKES_PLACE_RE = re.compile(r"^bluebikes\b", re.IGNORECASE)
+
+
+def _is_bluebikes(place: str) -> bool:
+    """True when an address's first comma-segment names a Bluebikes dock."""
+    first = str(place or "").split(",")[0].strip()
+    return bool(BLUEBIKES_PLACE_RE.match(first))
+
+
+def orient_route(route: dict) -> dict:
+    """Flip a route that was entered café → Bluebikes dock, in place.
+
+    Start and end swap, `via` stops reverse (the last one becomes the first)
+    and so do `points`. Distance is the same either way, so `distance_m` /
+    `distance_display` are left alone. A route that already starts at a dock —
+    or one with no dock at either end, which is a ride that met somewhere else
+    — is returned untouched.
+    """
+    start = route.get("start", "")
+    end = route.get("end", "")
+    if not _is_bluebikes(end) or _is_bluebikes(start):
+        return route
+    route["start"], route["end"] = end, start
+    if route.get("via"):
+        route["via"] = list(reversed(route["via"]))
+    if route.get("points"):
+        route["points"] = list(reversed(route["points"]))
+    return route
+
+
+def route_from_maps_url(url: str) -> dict | None:
+    """Start, end, stops and coordinates out of a Google Maps directions URL.
+
+    Returns None for a maps link that only points at a place — that's how a
+    "Start/Bluebikes" pin is told apart from an actual route. A route entered
+    backwards (café → Bluebikes dock) comes back flipped; see `orient_route`.
+    """
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return None
+    query = parse_qs(parts.query)
+    start = (query.get("saddr") or [""])[0].strip()
+    destination = (query.get("daddr") or [""])[0].strip()
+    if not (start and destination):
+        match = MAPS_DIR_PATH_RE.search(parts.path)
+        if not match:
+            return None
+        start = unquote_plus(match.group(1)).strip()
+        destination = unquote_plus(match.group(2)).strip()
+        if not (start and destination):
+            return None
+    # A multi-stop route packs its waypoints into daddr as "A to:B to:C": the
+    # last one is where the ride ends, the rest are stops along the way.
+    stops = [stop.strip() for stop in destination.split(" to:") if stop.strip()]
+    route = {"start": start, "end": stops[-1] if stops else destination}
+    if len(stops) > 1:
+        route["via"] = stops[:-1]
+    points = maps_geocode_points(query)
+    # One coordinate per stop, or we don't trust the pairing.
+    if len(points) == len(stops) + 1:
+        route["points"] = [list(point) for point in points]
+    # dirflg=b is Google's bicycling mode; keep whatever it says, if anything.
+    mode = (query.get("dirflg") or [""])[0].strip()
+    if mode:
+        route["mode"] = mode
+    return orient_route(route)
+
+
+# --- route distance ----------------------------------------------------------
+# Google publishes a route's distance only through its billed Directions API —
+# the maps page computes it in JavaScript and the HTML carries no number. So the
+# distance is *measured*, from the same stops Google was given, by BRouter: a
+# keyless public cycling router (the `trekking` profile). It won't match
+# Google's figure to the tenth of a mile, which is why the site says "~4.0 mi".
+BROUTER_URL = "https://brouter.de/brouter"
+BROUTER_PROFILE = "trekking"
+METRES_PER_MILE = 1609.344
+
+
+def _fetch_route_length(points: list) -> float | None:
+    """Metres for a cycling route through `points`, or None. Never raises."""
+    lonlats = "|".join(f"{point[1]},{point[0]}" for point in points)
+    try:
+        response = requests.get(
+            BROUTER_URL,
+            params={
+                "lonlats": lonlats,
+                "profile": BROUTER_PROFILE,
+                "alternativeidx": "0",
+                "format": "geojson",
+            },
+            timeout=ENRICH_TIMEOUT_SECONDS,
+            headers={"User-Agent": "boscafebikers-sync/1.0"},
+        )
+        response.raise_for_status()
+        properties = response.json()["features"][0]["properties"]
+        return float(properties["track-length"])
+    except (requests.RequestException, ValueError, KeyError, IndexError, TypeError):
+        return None  # soft: a ride without a distance just doesn't show one
+
+
+def format_distance(metres: float) -> str:
+    """Metres → the display string, e.g. '~4.0 mi'."""
+    return f"~{metres / METRES_PER_MILE:.1f} mi"
+
+
+def measure_route(route: dict, fetch_length: Callable[[list], float | None]) -> None:
+    """Add `distance_m` / `distance_display` to a route, when it can be had."""
+    points = route.get("points") or []
+    if len(points) < 2:
+        return
+    metres = fetch_length(points)
+    if metres and metres > 0:
+        route["distance_m"] = round(metres)
+        route["distance_display"] = format_distance(metres)
+
+
+def rides_routes(
+    event: dict,
+    resolve_link: Callable[[str], str],
+    fetch_length: Callable[[list], float | None] | None = None,
+) -> list[dict]:
+    """Every custom-field link on the event that is really a route.
+
+    The `url` kept is the organizer's original short link, not the resolved
+    one: it's what belongs behind a "Route" button, and it survives Google
+    rewriting its long-URL format. Routes whose stops carry coordinates are
+    also measured (see `measure_route`).
+    """
+    if fetch_length is None:
+        fetch_length = _fetch_route_length
+    routes = []
+    for link in _extract_custom_links(event):
+        if not _is_maps_link(link["url"]):
+            continue
+        try:
+            resolved = resolve_link(link["url"])
+        except (requests.RequestException, ValueError, TypeError):
+            continue  # soft: an unresolvable link is just not a route
+        route = route_from_maps_url(resolved or "")
+        if route:
+            route["label"] = link["label"]
+            route["url"] = link["url"]
+            measure_route(route, fetch_length)
+            routes.append(route)
+    return routes
+
+
 def _fetch_event_page(url: str) -> str:
     response = requests.get(
         url,
@@ -209,31 +522,46 @@ def _fetch_event_page(url: str) -> str:
 
 
 def enrich_rides(
-    rides: list[dict], fetch_page: Callable[[str], str] | None = None
+    rides: list[dict],
+    fetch_page: Callable[[str], str] | None = None,
+    resolve_link: Callable[[str], str] | None = None,
+    fetch_length: Callable[[list], float | None] | None = None,
 ) -> int:
-    """Backfill each ride's ``image`` from its public Partiful event page.
+    """Backfill each ride from its public Partiful event page.
 
+    Two things come off the page: ``image`` (the cover photo) and ``routes``
+    (the host's labelled Google Maps route links — see ``rides_routes``).
     Rides whose ``image`` is already set (the explicit ``ride_images.json``
-    sidecar wins) are left alone, as are rides with no event-page URL. A fetch
-    or parse failure is *not* a sync failure — a ride that can't be enriched
-    keeps its current ``image`` (None). Returns how many rides were backfilled.
+    sidecar wins) keep it, as do rides with no event-page URL. A fetch or parse
+    failure is *not* a sync failure — a ride that can't be enriched keeps what
+    it has. Returns how many rides had an ``image`` backfilled; ``routes`` is
+    set as a side effect (to a list, empty when the event has none, which is
+    how it's told apart from the None of a never-enriched ride).
     """
     if fetch_page is None:
         fetch_page = _fetch_event_page
+    if resolve_link is None:
+        resolve_link = _resolve_link
     backfilled = 0
     for ride in rides:
-        if ride.get("image"):
-            continue
         page_url = ride.get("rsvp_url") or derive_partiful_url(ride.get("uid", ""))
         if not page_url or not page_url.startswith(PARTIFUL_EVENT_URL):
             continue
         try:
-            image = _extract_event_image(fetch_page(page_url))
+            html = fetch_page(page_url)
         except (requests.RequestException, ValueError, TypeError):
-            image = None  # soft: enrichment must never break the sync
-        if image:
-            ride["image"] = image
-            backfilled += 1
+            continue  # soft: enrichment must never break the sync
+        if not ride.get("image"):
+            # _extract_event_image keeps its raw-URL regex fallback for pages
+            # whose __NEXT_DATA__ doesn't parse — don't reach into the event
+            # object for this.
+            image = _extract_event_image(html)
+            if image:
+                ride["image"] = image
+                backfilled += 1
+        event = _event_from_page(html)
+        if event is not None:
+            ride["routes"] = rides_routes(event, resolve_link, fetch_length)
     return backfilled
 
 
@@ -255,24 +583,36 @@ HIDDEN_LOCATION_RE = re.compile(
     r"^location\s+available\s+(?:once|after)\s+rsvp", re.IGNORECASE
 )
 
+# Some rides carry a *link* as their Location: the organizer pastes the meeting
+# point's Google Maps URL into Partiful's Location field instead of an address.
+# A bare URL is not a place name — rendered verbatim it's an unbreakable string
+# that overflows the ride card — so it becomes `location_url` and the site shows
+# a "Meeting point on Google Maps" link instead. The whole value has to be the
+# link ("Meet at <url>" keeps its prose and stays a location).
+BARE_URL_LOCATION_RE = re.compile(r"^https?://\S+$", re.IGNORECASE)
+
 
 def _clean_title(title: str) -> str:
     """Strip Partiful's ' | Partiful' title suffix and collapse whitespace."""
     return re.sub(r"\s+", " ", TITLE_SUFFIX_RE.sub("", title)).strip()
 
 
-def _clean_location(value: str) -> tuple[str, bool]:
-    """Return (location, hidden).
+def _clean_location(value: str) -> tuple[str, bool, str | None]:
+    """Return (location, hidden, url).
 
     ``location`` is the cleaned address ("" when Partiful's hidden-address
-    placeholder is present); ``hidden`` is True exactly in that case. Partiful
-    events have a single location field, so there is no start/end split to
-    pull out of the feed.
+    placeholder is present, and also when the field holds nothing but a link);
+    ``hidden`` is True exactly in the placeholder case; ``url`` is the meeting
+    point's link when the organizer pasted one in place of an address, else
+    None. The three are mutually exclusive readings of the *one* Location field
+    Partiful gives an event — there is no start/end split to pull out.
     """
     value = value.strip()
     if HIDDEN_LOCATION_RE.match(value):
-        return "", True
-    return value, False
+        return "", True, None
+    if BARE_URL_LOCATION_RE.match(value):
+        return "", False, value
+    return value, False, None
 
 
 def _clean_description(description: str) -> str:
@@ -296,15 +636,38 @@ def _clean_description(description: str) -> str:
     return "\n".join(lines).strip()
 
 
+def is_upcoming(start: datetime, now: datetime) -> bool:
+    """True while a ride still belongs in the *upcoming* list.
+
+    That is until GRACE_PERIOD after its start — a ride is upcoming at exactly
+    its start time (as it always was) and stays so through the last instant of
+    its grace hour; one tick later it is past. `parse_events` uses this for both
+    passes, so upcoming and past are exact complements and no ride can land in
+    both files or in neither.
+    """
+    return start + GRACE_PERIOD >= now
+
+
 def parse_events(
-    data: bytes, now: datetime | None = None, images: dict | None = None
+    data: bytes,
+    now: datetime | None = None,
+    images: dict | None = None,
+    past: bool = False,
+    excluded: set[str] | None = None,
 ) -> list[dict]:
-    """Parse feed bytes into a sorted list of upcoming, non-cancelled rides.
+    """Parse feed bytes into a sorted list of non-cancelled rides.
+
+    By default only rides that haven't happened yet; `past=True` returns the
+    ones that already have, so the site can keep showing them on the calendar
+    (see scripts/archive_events.py). "Yet" allows GRACE_PERIOD of slack after a
+    ride's start — see `is_upcoming`. Either way the list is sorted by start.
 
     `images` is the optional UID → image-URL sidecar; each ride carries its
-    photo URL as `image` (None when absent).
+    photo URL as `image` (None when absent). `excluded` is the set of UIDs to
+    leave out of either pass (see `load_excluded_events`).
     """
     images = images or {}
+    excluded = excluded or set()
     now = (now or datetime.now(timezone.utc)).astimezone(LOCAL_TZ)
     try:
         calendar = Calendar.from_ical(data)
@@ -319,12 +682,16 @@ def parse_events(
         if dtstart is None:
             raise FeedError("an event in the feed has no DTSTART")
         start = _as_local_datetime(dtstart.dt)
-        if start < now:
+        if is_upcoming(start, now) == past:
             continue
         uid = _text(component, "UID")
+        if uid in excluded:
+            continue
         description = _text(component, "DESCRIPTION")
         dtend = component.get("DTEND")
-        location, location_hidden = _clean_location(_text(component, "LOCATION"))
+        location, location_hidden, location_url = _clean_location(
+            _text(component, "LOCATION")
+        )
         rides.append(
             {
                 "uid": uid,
@@ -339,9 +706,17 @@ def parse_events(
                 # RSVP'd' placeholder instead of a real address.
                 "location": location or None,
                 "location_hidden": location_hidden,
+                # Set when the Location field held a link (a Google Maps pin
+                # for the meeting point) rather than an address; the card
+                # renders it as a link, never as raw text.
+                "location_url": location_url,
                 "description": _clean_description(description),
                 "rsvp_url": extract_rsvp_url(description) or derive_partiful_url(uid),
                 "image": images.get(uid),
+                # None until enrichment looks at the event page; a list (even
+                # an empty one) means "we checked". archive_events relies on
+                # that difference so a re-export can't erase known routes.
+                "routes": None,
             }
         )
 
@@ -399,11 +774,32 @@ def main(argv: list[str] | None = None) -> int:
         default=str(RIDE_IMAGES_PATH),
         help=f"UID → image-URL sidecar JSON (default: {RIDE_IMAGES_PATH})",
     )
+    parser.add_argument(
+        "--excluded-events",
+        default=str(EXCLUDED_EVENTS_PATH),
+        help="UID → note sidecar JSON of feed events that are not group rides "
+             f"(default: {EXCLUDED_EVENTS_PATH})",
+    )
+    parser.add_argument(
+        "--past-out",
+        help="also write the feed's already-happened rides here, for the "
+             "archive scripts/archive_events.py merges into events-past.json",
+    )
     args = parser.parse_args(argv)
 
+    # One `now` for both passes: computing it twice could drop (or duplicate) a
+    # ride that starts between the two calls.
+    now = datetime.now(timezone.utc).astimezone(LOCAL_TZ)
     try:
         data = load_source(args)
-        rides = parse_events(data, images=load_ride_images(args.ride_images))
+        images = load_ride_images(args.ride_images)
+        excluded = load_excluded_events(args.excluded_events)
+        rides = parse_events(data, now=now, images=images, excluded=excluded)
+        past_rides = (
+            parse_events(data, now=now, images=images, past=True, excluded=excluded)
+            if args.past_out
+            else []
+        )
     except FeedError as exc:
         print(f"fetch_rides: {exc}", file=sys.stderr)
         return 1
@@ -418,14 +814,18 @@ def main(argv: list[str] | None = None) -> int:
                 "from their Partiful event pages"
             )
 
-    payload = build_payload(rides)
     try:
-        write_events(payload, Path(args.out))
+        write_events(build_payload(rides, now=now), Path(args.out))
+        if args.past_out:
+            write_events(build_payload(past_rides, now=now), Path(args.past_out))
     except OSError as exc:
-        print(f"fetch_rides: could not write {args.out}: {exc.strerror}", file=sys.stderr)
+        target = exc.filename or args.out
+        print(f"fetch_rides: could not write {target}: {exc.strerror}", file=sys.stderr)
         return 1
 
     print(f"fetch_rides: wrote {len(rides)} upcoming ride(s) to {args.out}")
+    if args.past_out:
+        print(f"fetch_rides: wrote {len(past_rides)} past ride(s) to {args.past_out}")
     return 0
 
 

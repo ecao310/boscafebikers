@@ -3,15 +3,50 @@
 Static site for Boston Café Bikers ("exploring the city one café at a time"),
 with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed.
 
+## Backlog 11
+- [x] Create system for when next ride gets updated. People can be late to rides and still join, so keep it around for at least 1 hour after the ride, but the exact system is up to you.
+- [x] Preview branch should also get its rides synced.
+- [x] Cafes map looks messy with the red and orange highlights and hill markers. remove them. also consider removing some of the neighborhood labels.
+- [x] I like that the RSVP button call to action stays on screen now. Make it work that way for the "next ride" section too. 
+
+## Backlog 10
+- [x] Clean up code for the calendar legend now that I've removed it.
+- [x] Every page's hero section should be a standardized size. use the size from the main page.
+- [x] Cafe page should have a map with pins at each location. Embed from a 3P mapping app. Verify it's zoomable, scrollable. Each pin is clickable. Decide whether clicking shows the ride that got there or a link to the destination itself.
+- [x] On a phone the next-ride card leads with the map, so the date/title sit below the fold at 380px. Put the .when line and title above the banner in rideCard (or cap the map's height ~260px below 560px) so the key info shows first.
+- [x] The distance badge (top-left) covers the basemap's own place label on some maps ("Watertown" on the O'Some map). Adjust the badge inset / PAD_TOP in route_map.py so the badge clears the tile labels, and redraw only the affected maps.
+- [x] The gallery grid leaves a hole with 5 mixed-orientation photos. Give tiles a uniform aspect-ratio (e.g. 4/3 with object-fit: cover) or a 2-column desktop layout so rows align.
+- [x] Replace the ☕🚲 emoji hero mark with a simple one-colour SVG mark (cup + bike wheel, in --crema) and use it as the favicon too, so the brand doesn't depend on OS emoji rendering.
+- [x] meta theme-color is #7a4a2b, which isn't a palette value — use --roast (#4a2c1a) on all pages so mobile browser chrome matches the nav.
+- [x] Calendar weekday labels are ~10px on a phone (.64rem) — bump toward .7rem. Also add a visible :focus-visible ring to .btn / .ride-chip / calendar links: hover styles exist but keyboard focus is invisible.
+- [x] Social preview meta: add an absolute og:image and og:url (and canonical) to every page — a shared link currently shows no preview image. A JSON-LD Event for the next ride can be a later sync-time follow-up.
+- [x] Map bytes: site/maps is ~1 MB for nine SVGs and each new ride commits 55-290 KB forever. Raise MIN_TILE_SIDE from 320 to 400-450 in route_map.py to roughly halve the bytes (tradeoff: softer tiles on desktop) and --redraw the existing maps.
+
+## Backlog 9
+- [x] Verify the dev branch still publishes to a /preview page.
+- [x] Bug: on mobile the FullCalendar chips only show the clipped time ("1 O…") — the ride title never appears. Hide the event time on chips (displayEventTime: false or list-item dots below 560px); the time is already on the card and in the modal.
+- [x] Bug: 11 archived rides have a Google Maps link as their `location` (organizer pasted the meeting-point link into Partiful's Location field). It renders as a raw URL overflowing the card. Detect a maps URL in `_clean_location` → `location: null` + new `location_url`; render it as a "Meeting point on Google Maps" link in rideCard; carry the field through archive_events merge; add `overflow-wrap: anywhere` to `.where`.
+- [x] Bug: 4 routes were entered café→start (Localito, Scooper Bowl, both Ice Cream Crawl routes), so "from <café>" and the map's Start/End labels are backwards. If `end` matches the Bluebikes pattern and `start` doesn't, swap start/end (and reverse points) when parsing the route.
+- [x] Bug: in the ride modal on desktop the map + description fill the 88vh dialog and the RSVP / calendar buttons sit below the scroll edge with no affordance. Cap the map inside the modal (~240px) and/or pin `.ride-actions` at the bottom of the dialog so the primary CTA is always visible.
+- [x] The calendar shows past rides now, so "Upcoming rides" / "Every upcoming ride on one calendar" is wrong. Rename the section to "Ride calendar" and add a one-line legend (dashed = past ride, tap for details).
+- [x] Say when rides happen in "Your first ride". The archive shows 28 of 34 rides were Saturday or Sunday, most at 10 or 11 am, routes 4–5 mi: lead with something like "Most rides are Saturday or Sunday mornings, 10 or 11 am, 3–5 flat-ish miles."
+- [x] "Where we've been": a café list rendered client-side from events-past.json — each café visited, newest first, with the ride date and a link to its Partiful page. Own page (cafes.html, add to nav) or a section on index; no new sync work.
+- [x] Subscribable calendar: have the sync re-export a public `site/rides.ics` (upcoming rides only, no secret URL, hidden locations omitted) and add a "Subscribe in your calendar app" button next to the calendar, alongside the per-ride exports.
+
+## Backlog 8
+- [x] Bug: map graphic has no background. find a way to add the tile.
+- [x] update start/end locations on cards to be just start location. starts are always bluebikes, so show the detail instead e.g. cleveland circle for the o'some sunday ride.
+- [x] Contact Us's Back to the ride page button isn't vertically aligned
+
 ## Backlog 7
 - [x] find a way to deploy this dev branch without disturbing main. 
-- [ ] I want past rides to stay on the calendar. Do this by moving old rides from events.json to events-past.json. Or do it some other way if there's a better way.
-- [ ] remove the background images from all sections below the calendar. Reset colors to be readable like the calendar.
-- [ ] Move the Contact Us section to its own page. Keep the section too because we'll change it in the next loop. Set up a way to send an email directly from the page. Make it email me at ecao.csindie@gmail.com for now, but make the email changeable.
-- [ ] Replace the Contact Us section with "Help Cafe Bikers Behind the Scenes". Every ride has a crew with ride leaders and sweepers, people filming and editing. If that's you, we'd love to meet you. Then the 3 buttons already there.
-- [ ] From partiful, grab the link to the Google Maps route. 
-- [ ] Extract distance from map and add to ride details
-- [ ] Use map screenshot as image
+- [x] I want past rides to stay on the calendar. Do this by moving old rides from events.json to events-past.json. Or do it some other way if there's a better way.
+- [x] remove the background images from all sections below the calendar. Reset colors to be readable like the calendar.
+- [x] Move the Contact Us section to its own page. Keep the section too because we'll change it in the next loop. Set up a way to send an email directly from the page. Make it email me at ecao.csindie@gmail.com for now, but make the email changeable.
+- [x] Replace the Contact Us section with "Help Cafe Bikers Behind the Scenes". Every ride has a crew with ride leaders and sweepers, people filming and editing. If that's you, we'd love to meet you. Then the 3 buttons already there.
+- [x] From partiful, grab the link to the Google Maps route. 
+- [x] Extract distance from map and add to ride details
+- [x] Use map screenshot as image
 
 ## Backlog 6
 
@@ -168,6 +203,15 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
   fields already in the file (no live-feed access). `rsvp_url` now points at
   the actual event page and the invite line is stripped. The next scheduled
   sync reconciles with the live feed either way.
+- [x] The first live sync of the new past-rides archive revealed the Partiful
+  feed carries **34** past events (back to 2025-09-19), not the 6 recoverable
+  from git history — and they arrive **unenriched**, because only the upcoming
+  list is enriched. 28 archived rides therefore had no image, no route and no
+  map. Fixed with `scripts/enrich_archive.py`: a bounded backfill that walks
+  the archive newest-first and enriches at most 8 never-checked rides per sync,
+  so the whole archive fills in over a few runs and then costs nothing.
+  (Backfilled locally: 34/34 archived rides now have an image, 7 have routes
+  and maps — the older rides never had a route link on Partiful.)
 - [x] Post-`RALPH_DONE`, a fresh iteration found an **uncommitted copy edit** in
   `site/index.html` (removed the "We're run by volunteers, so" intro from the
   Contact-copy paragraph and reflowed the `#updated-link` anchor attributes —

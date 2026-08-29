@@ -15,7 +15,20 @@
   const nextRideCard = document.getElementById("next-ride-card");
 
   let currentData = null;
+  // Rides that already happened, from the accumulating events-past.json. They
+  // go on the calendar (dimmed) but never into the next-ride card.
+  let pastEvents = [];
   let lastFocused = null;
+
+  // Both lists are sorted by start already, and every past ride precedes every
+  // upcoming one, so this concatenation is chronological. Each archived ride is
+  // copied with `past: true` — the flag drives the dimmed calendar chip and the
+  // ride card's "See it on Partiful" variant.
+  function calendarEvents(upcoming) {
+    return pastEvents
+      .map((ev) => Object.assign({}, ev, { past: true }))
+      .concat(upcoming);
+  }
 
   function emptyState(message) {
     schedule.textContent = "";
@@ -85,7 +98,9 @@
   BCB.openRideModal = openRideModal;
 
   // The next-ride section always shows events[0] (events.json is sorted by
-  // start, and the sync filters to future rides), or an empty-state with a
+  // start, and the sync filters to rides that haven't happened yet — plus the
+  // grace hour after a ride starts, so a latecomer still lands on it and the
+  // card wears rideCard's "Rolling now" pill), or an empty-state with a
   // Partiful fallback link when the calendar has nothing upcoming.
   function setNextRide(events) {
     nextRideCard.textContent = "";
@@ -106,16 +121,22 @@
   function render() {
     destroyCalendar();
     const events = (currentData && currentData.events) || [];
+    const shown = calendarEvents(events);
+    // Open on the next ride's month; with nothing upcoming, on the most recent
+    // one — never on the oldest archived ride, which is where shown[0] sits.
+    const focus = events.length
+      ? events[0].start
+      : (pastEvents.length ? pastEvents[pastEvents.length - 1].start : null);
     schedule.textContent = "";
-    if (!events.length) {
+    if (!shown.length) {
       emptyState("No rides on the calendar right now — check Partiful for the next one.");
     } else if (typeof FullCalendar !== "undefined") {
       // renderCalendarFull mounts the box into #schedule itself before it
       // calls FullCalendar.render() — the holder must be in the document so FC
       // measures a real container width (a detached element → 0-width columns).
-      renderCalendarFull(events, schedule);
+      renderCalendarFull(shown, schedule, focus);
     } else {
-      groupByMonth(events).forEach((month) => {
+      groupByMonth(shown).forEach((month) => {
         schedule.appendChild(monthGrid(month));
       });
     }
@@ -169,12 +190,22 @@
     return res.json();
   }
 
+  // events-past.json is optional: a fresh checkout (or a fork whose sync has
+  // never archived anything) simply has no past rides, and a 404 must not take
+  // the upcoming schedule down with it.
+  const pastLoaded = loadData("events-past.json")
+    .then((data) => { pastEvents = (data && data.events) || []; })
+    .catch(() => { pastEvents = []; });
+
   loadData("events.json")
-    .then((data) => {
+    .then((data) => pastLoaded.then(() => {
       currentData = data;
       render();
-    })
+    }))
     .catch(() => {
+      // A failed schedule fetch stays an error, not a silent fall back to the
+      // archive: "here are last month's rides" would read as if they were the
+      // upcoming ones.
       setNextRide([]);
       emptyState("Couldn't load the ride schedule just now.");
     });

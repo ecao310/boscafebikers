@@ -7,46 +7,19 @@
   <title>Boston Café Bikers — exploring the city one café at a time</title>
   <meta name="description"
     content="A casual Boston cycling group that rides to cafés. No-drop, all levels, BlueBikes welcome.">
-  <meta name="theme-color" content="#7a4a2b">
+  <link rel="canonical" href="https://ecao310.github.io/boscafebikers/">
   <meta property="og:title" content="Boston Café Bikers">
   <meta property="og:description" content="Exploring the city one café at a time.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ecao310.github.io/boscafebikers/">
+  <meta property="og:image" content="https://ecao310.github.io/boscafebikers/images/aman-s-group-speedway.jpeg">
+  <meta property="og:image:alt" content="The Boston Café Bikers group gathered at an outdoor café stop.">
+  <meta name="theme-color" content="#4a2c1a">
   <link rel="icon"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E">
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 32'%3E%3Crect x='2' y='7' width='14' height='17' rx='2.5' fill='%23b07a4a'/%3E%3Cpath d='M16 11 h3.5 a4.5 4.5 0 0 1 0 9 h-3.5' fill='none' stroke='%23b07a4a' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='16' r='10' fill='none' stroke='%23b07a4a' stroke-width='3.5'/%3E%3Cline x1='32' y1='6' x2='32' y2='26' stroke='%23b07a4a' stroke-width='3'/%3E%3Cline x1='22' y1='16' x2='42' y2='16' stroke='%23b07a4a' stroke-width='3'/%3E%3Ccircle cx='32' cy='16' r='2.2' fill='%23b07a4a'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
   <style>
     /* --- index-specific styles (shared base lives in styles.css) --- */
-
-    /* --- hero (index only): reduced size --- */
-    /* The shared .hero in styles.css is tall (56px/48px padding, 2.5rem mark,
-       clamp(2rem, 9vw, 3rem) h1) — at 680px-wide it measured ~277px tall on
-       mobile and ~357px on desktop. The organizer asked to shrink the index
-       hero, so this page overrides it with tighter paddings and type; the
-       sub-pages (gallery/shop/meta/donate) keep the shared hero. The tagline's
-       shared margin: 0 stands (there is no hero CTA button anymore), so no
-       margin-bottom override is needed here. */
-    .hero {
-      padding: 32px 0 24px;
-    }
-
-    .hero .mark {
-      font-size: 2rem;
-      margin-bottom: .4rem;
-    }
-
-    .hero h1 {
-      font-size: clamp(1.7rem, 7vw, 2.4rem);
-    }
-
-    .hero .tagline {
-      font-size: 1rem;
-    }
-
-    @media (min-width: 560px) {
-      .hero {
-        padding: 48px 0 32px;
-      }
-    }
 
     .btn-ghost {
       background: transparent;
@@ -64,6 +37,11 @@
 
     .btn-ghost:active {
       filter: brightness(.92);
+    }
+
+    .btn-ghost:focus-visible {
+      outline: 2px solid var(--crema);
+      outline-offset: 2px;
     }
 
     ul.checks {
@@ -106,9 +84,75 @@
       letter-spacing: .06em;
     }
 
+    /* "Past ride" pill on the date line of an archived ride, so a card opened
+     from the calendar's history reads as history at a glance. */
+    .ride .when .ride-tag {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: 1px 8px;
+      border: 1px solid var(--crema);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: .72rem;
+      letter-spacing: .04em;
+      vertical-align: 1px;
+    }
+
+    /* Same pill, but for a ride that has already started and can still be
+       joined (the grace hour — see isRolling() in js/ride-card.js). It must not
+       read like the dimmed "Past ride" tag, so it fills: roast on foam clears
+       AA comfortably at this size, where a crema fill would not. */
+    .ride .when .ride-tag.is-rolling {
+      background: var(--roast);
+      border-color: var(--roast);
+      color: var(--foam);
+    }
+
     .ride .where {
       color: var(--muted);
       margin: .4rem 0;
+      /* A long unbroken location (an address with no spaces, a pasted link)
+         must wrap instead of pushing the card wider than the phone. */
+      overflow-wrap: anywhere;
+    }
+
+    /* Route line: the host's Google Maps link, distance, then where it starts. */
+    .ride .route {
+      margin: .4rem 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 8px;
+    }
+
+    .ride .route a {
+      font-weight: 600;
+      /* 44px is the touch target for the whole line; the link itself just
+         needs enough padding not to sit flush against the endpoints. */
+      padding: 4px 0;
+    }
+
+    /* Distance pill — measured, not Google's own number, hence the "~". */
+    .ride .route .route-distance {
+      background: var(--oat);
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--roast);
+      white-space: nowrap;
+    }
+
+    .ride.next-ride .route .route-distance {
+      background: var(--foam);
+    }
+
+    .ride .route .route-start {
+      color: var(--muted);
+      font-size: .9rem;
+      /* Long station names shouldn't push the card wide on a phone. */
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .ride p {
@@ -159,6 +203,27 @@
       white-space: nowrap;
     }
 
+    /* Pin the next-ride card's primary CTA row to the bottom of the
+     VIEWPORT while the card is in view (Backlog 11 — the organizer liked
+     this on the modal and wants it here too). The page itself has no inner
+     scrollport, so plain `position: sticky; bottom: 0` docks the row against
+     the viewport edge as the visitor scrolls the card into and past view;
+     once the card's own bottom padding scrolls up to meet it, the row
+     settles into its normal position with nothing left below to obstruct.
+     The opaque --oat background (matching the card) covers text scrolling
+     up underneath while pinned; the --crema border reads as a seam — --oat
+     on --oat would be invisible. Inset within the card's 22px padding on
+     every side, the row never reaches the rounded corners, so the docked
+     state doesn't clip or square them off. */
+    .ride.next-ride .ride-actions {
+      position: sticky;
+      bottom: 0;
+      background: var(--oat);
+      border-top: 1px solid var(--crema);
+      padding: 10px 0 2px;
+      margin-top: 10px;
+    }
+
     .ride-img-link {
       display: block;
       margin-bottom: 12px;
@@ -174,6 +239,21 @@
       object-fit: cover;
     }
 
+    /* The route map is drawn to fit its own route, so show it whole rather
+       than cropping it like a photo — a cropped map loses its endpoints. It
+       has a basemap edge to edge, so instead of letterboxing a tall map
+       inside a full-width frame (latte bars either side of the tiles) the
+       image keeps its own shape: full width when it fits, otherwise shrunk to
+       the height cap and centred on the card. */
+    .ride-img.is-map {
+      width: auto;
+      max-width: 100%;
+      max-height: 420px;
+      margin: 0 auto;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+
     .note {
       color: var(--muted);
       font-size: .9rem;
@@ -185,17 +265,43 @@
 
     /* The "Last updated …" stamp doubles as a link to the sync workflow on
        GitHub Actions (the "Sync rides now" button it used to sit next to is
-       gone). Keep the muted note look; the underline hints it's clickable. */
-    #updated .updated-link {
+       gone). Keep the muted note look; the underline hints it's clickable.
+       Selector is #updated-link (an id, not a .updated-link class — the
+       anchor only carries id="updated-link"); the old "#updated .updated-link"
+       descendant-class selector never matched anything, so this rule (and
+       hover/focus below) was dead code until this fix (2026-08-24). */
+    #updated-link {
       color: inherit;
       text-decoration: underline;
       text-decoration-color: var(--oat);
     }
 
-    #updated .updated-link:hover,
-    #updated .updated-link:focus {
+    #updated-link:hover,
+    #updated-link:focus {
       color: var(--roast);
       text-decoration-color: var(--crema);
+    }
+
+    #updated-link:focus-visible {
+      outline: 2px solid var(--crema);
+      outline-offset: 2px;
+    }
+
+    /* --- subscribe row ---
+       Carries .ride-actions too, so the two links inherit the card convention
+       (full-width stacked on a phone, compact pills at ≥560px) without any new
+       button CSS. Only the spacing differs from an in-card action row. */
+    .subscribe {
+      margin-top: 1rem;
+    }
+
+    /* The pasteable feed URL — long and unbreakable, so let it wrap rather
+       than push the page wider than a 380px phone. */
+    #subscribe-note code {
+      overflow-wrap: anywhere;
+      background: var(--oat);
+      border-radius: 6px;
+      padding: 1px 5px;
     }
 
     [hidden] {
@@ -223,7 +329,7 @@
 
     .cal-dow {
       text-align: center;
-      font-size: .68rem;
+      font-size: .7rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .04em;
@@ -290,13 +396,41 @@
       min-height: 28px;
     }
 
+    /* Rides that already happened stay on the calendar, but muted, so a month
+     of history doesn't compete with the ride you can still show up for. */
+    .cal-day .ride-chip.is-past,
+    .fc .fc-daygrid-event.is-past {
+      background: transparent;
+      border: 1px dashed var(--crema);
+      color: var(--muted);
+    }
+
+    .fc .fc-daygrid-event.is-past .fc-event-title,
+    .fc .fc-daygrid-event.is-past .fc-event-time {
+      color: var(--muted) !important;
+    }
+
     .cal-day .ride-chip:hover,
     .cal-day .ride-chip:focus {
       background: #c68f5d;
     }
 
+    .cal-day .ride-chip.is-past:hover,
+    .cal-day .ride-chip.is-past:focus {
+      background: var(--crema);
+      color: #2b1a10;
+    }
+
     .cal-day .ride-chip:active {
       filter: brightness(.92);
+    }
+
+    /* Ring color is roast, not crema — the chip's own fill is crema, so a
+       crema ring would read as a slightly bigger chip rather than a focus
+       indicator. */
+    .cal-day .ride-chip:focus-visible {
+      outline: 2px solid var(--roast);
+      outline-offset: 2px;
     }
 
     /* --- ride detail modal (calendar event click) --- */
@@ -363,6 +497,11 @@
       filter: brightness(.92);
     }
 
+    .modal-close:focus-visible {
+      outline: 2px solid var(--crema);
+      outline-offset: 2px;
+    }
+
     /* The ride content is the dialog's scrollport: the flex-column parent
        caps the dialog at 88vh, and this child is allowed to shrink
        (min-height: 0) so a long ride description scrolls instead of pushing
@@ -379,6 +518,35 @@
       background: transparent;
       padding: 0;
       margin: 0;
+    }
+
+    /* The full-size map on the card is drawn to fit its own route (up to
+       420px tall) — inside the ~88vh modal that alone can push the RSVP
+       button off the bottom of the dialog with no hint that it scrolls
+       (Backlog 9). The modal only needs a preview, so cap it lower;
+       mobile gets an even smaller cap since the dialog width (and so the
+       map's rendered height, which follows its own aspect ratio) is
+       already narrower. Restored to 240px at ≥560px below. */
+    .modal .ride-img.is-map {
+      max-height: 200px;
+    }
+
+    /* Pin the primary CTA row to the bottom of the scrollport so it's
+       always visible without scrolling (Backlog 9), instead of sitting
+       wherever the description happens to end. It's the last element in
+       the card's normal flow, so once the visitor scrolls to the true end
+       of the content this sticky row simply lands in its natural position
+       — nothing sits below it to be hidden. The opaque --foam background
+       (matching the dialog) covers text scrolling up underneath it while
+       mid-scroll; the top border is the only visual seam, reading as a
+       pinned edge rather than a color change. */
+    .modal .ride-actions {
+      position: sticky;
+      bottom: 0;
+      background: var(--foam);
+      border-top: 1px solid var(--oat);
+      padding: 10px 0 2px;
+      margin-top: 10px;
     }
 
     .links {
@@ -441,7 +609,7 @@
     .fc .fc-col-header-cell-cushion {
       padding: 4px 2px !important;
       color: var(--muted) !important;
-      font-size: .64rem !important;
+      font-size: .7rem !important;
       font-weight: 700 !important;
       text-transform: uppercase;
       letter-spacing: .04em;
@@ -455,7 +623,11 @@
 
     .fc .fc-daygrid-event {
       border-radius: 6px;
-      padding: 4px 6px;
+      /* 4px side padding (was 6px) buys back a couple of characters before
+       the title ellipsizes on a ~45px mobile chip, now that
+       displayEventTime: false (calendar.js) has freed the chip from also
+       showing a time prefix. */
+      padding: 4px 4px;
       margin-top: 2px;
       /* Event chips are tappable (left-click opens the ride-detail modal).
        Compact on mobile so stacked rides don't stretch the calendar row
@@ -467,6 +639,15 @@
 
     .fc .fc-daygrid-event:active {
       filter: brightness(.92);
+    }
+
+    /* Roast, not crema — the chip's fill is --fc-event-bg-color (crema), so a
+       crema ring wouldn't read as distinct from the fill. !important for the
+       same reason as the rest of this block: FC's own injected <style> lands
+       after this one. */
+    .fc .fc-daygrid-event:focus-visible {
+      outline: 2px solid var(--roast) !important;
+      outline-offset: 2px !important;
     }
 
     /* The event title must be free to shrink so its ellipsis can take over;
@@ -499,6 +680,11 @@
       padding: 0 4px;
     }
 
+    .fc .fc-daygrid-more-link:focus-visible {
+      outline: 2px solid var(--crema) !important;
+      outline-offset: 2px !important;
+    }
+
     .fc .fc-button {
       font-size: .78rem !important;
       padding: 4px 8px !important;
@@ -511,17 +697,31 @@
       justify-content: center;
     }
 
+    /* Roast, not crema — --fc-button-bg-color is crema, same reasoning as
+       the day-grid event ring above. */
+    .fc .fc-button:focus-visible {
+      outline: 2px solid var(--roast) !important;
+      outline-offset: 2px !important;
+    }
+
     /* --- calendar at ≥560px --- */
     /* The compact single-line chips are the mobile-first default (a wrapped
        title would stretch the ~48px mobile column into a tall cell). On wider
        screens the columns are ~90px and there's vertical room, so restore the
        full 44px touch targets and let titles wrap instead of truncating. */
     @media (min-width: 560px) {
+
       /* Ride-action buttons return to compact inline pills (their natural
          content width) now that the wrap is wide enough to hold all three on
          one row. */
       .ride-actions .btn {
         flex: 0 1 auto;
+      }
+
+      /* Wider dialog at ≥560px has room for a slightly taller map preview
+         (Backlog 9); still well under the card's 420px full-size cap. */
+      .modal .ride-img.is-map {
+        max-height: 240px;
       }
 
       .cal-day .ride-chip {
@@ -559,7 +759,9 @@
     <div class="wrap">
       <ul class="tabs">
         <li><a href="index.html" class="is-active" aria-current="page">Rides</a></li>
+        <li><a href="cafes.html">Cafés</a></li>
         <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="contact.html">Contact</a></li>
         <li><a href="donate.html">Donate</a></li>
       </ul>
     </div>
@@ -568,7 +770,7 @@
   <!-- The hero is photo-free: it keeps the espresso gradient from styles.css. -->
   <header class="hero">
     <div class="wrap">
-      <span class="mark" aria-hidden="true">☕🚲</span>
+      <span class="mark" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 32"><rect x="2" y="7" width="14" height="17" rx="2.5" fill="currentColor"/><path d="M16 11 h3.5 a4.5 4.5 0 0 1 0 9 h-3.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="3.5"/><line x1="32" y1="6" x2="32" y2="26" stroke="currentColor" stroke-width="3"/><line x1="22" y1="16" x2="42" y2="16" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="16" r="2.2" fill="currentColor"/></svg></span>
       <h1>Boston Café Bikers</h1>
       <p class="tagline">Exploring the city one café at a time.</p>
     </div>
@@ -579,8 +781,7 @@
     <!-- data-bg: the café photo URL stays an attribute until app.js copies it
        to background-image after window.load, so it never blocks first paint.
        The espresso gradient in styles.css is the no-JS / pre-load fallback. -->
-    <section id="next-ride" data-bg="images/jess-b-gracies-bikes.jpeg"
-      aria-labelledby="next-ride-heading">
+    <section id="next-ride" data-bg="images/jess-b-gracies-bikes.jpeg" aria-labelledby="next-ride-heading">
       <div class="wrap">
         <h2 id="next-ride-heading">Next ride</h2>
         <!-- Featured card for the nearest upcoming ride. Populated by the script
@@ -593,11 +794,10 @@
 
     <section id="rides" aria-labelledby="rides-heading">
       <div class="wrap">
-        <h2 id="rides-heading">Upcoming rides</h2>
-        <p class="lede">Every upcoming ride on one calendar.</p>
-
-        <!-- Calendar area. Populated from events.json by the script at the
-           bottom of this file; this static markup is the pre-JS state. -->
+        <h2 id="rides-heading">Ride calendar</h2>
+        <!-- Calendar area. Populated from events.json and events-past.json by
+           the script at the bottom of this file; this static markup is the
+           pre-JS state. -->
         <div id="schedule">
           <p class="note">Loading rides…</p>
         </div>
@@ -611,42 +811,48 @@
           <a id="updated-link" href="https://github.com/ecao310/boscafebikers/actions/workflows/sync.yml" rel="noopener"
             target="_blank"></a>
         </p>
+
+        <!-- Subscribe to the whole schedule, rather than adding rides one at a
+           time from their cards. rides.ics is re-exported by the sync
+           (scripts/export_ics.py), so a subscribed calendar picks up new rides
+           on its own. The href is relative — the site is served from the
+           /boscafebikers/ subpath, so a leading slash would 404 — but the
+           absolute URL is spelled out below because pasting it is how Google
+           Calendar and Outlook subscribe. webcal:// is kept alongside it
+           because it is the only thing that makes Apple Calendar *subscribe*
+           instead of importing a frozen copy. -->
+        <div class="subscribe ride-actions">
+          <a class="btn btn-ghost" href="rides.ics">Subscribe in your calendar app</a>
+          <a class="btn btn-ghost" href="webcal://ecao310.github.io/boscafebikers/rides.ics"
+            aria-label="Subscribe in Apple Calendar">Apple Calendar</a>
+        </div>
+        <p class="note" id="subscribe-note">…or paste this link into Google Calendar or Outlook as a
+          subscription: <code>https://ecao310.github.io/boscafebikers/rides.ics</code></p>
       </div>
     </section>
 
-    <!-- Photo-backed like #next-ride: the group-ride photo stays a data-bg
-       attribute until app.js copies it to background-image after window.load.
-       The espresso gradient in styles.css is the no-JS / pre-load fallback. -->
-    <section id="first-ride" data-bg="images/aman-s-group-speedway.jpeg"
-      aria-labelledby="first-ride-heading">
+    <!-- No data-bg: everything below the calendar reads on the plain latte
+       page background, the same as #rides. #next-ride is the one photo-backed
+       section left (2026-08-22). -->
+    <!-- "Your first ride" and "About us" were combined into one section
+       (2026-08-25): heading, the two about paragraphs, the practical bullets,
+       then the Instagram/Partiful links. There is no #about section anymore. -->
+    <section id="first-ride" aria-labelledby="first-ride-heading">
       <div class="wrap">
         <h2 id="first-ride-heading">Your first ride</h2>
-        <p class="lede">Never ridden with a group before? This is the one to start with.</p>
+        <p>Boston Café Bikers is a casual cycling group built around getting more
+          people comfortable cycling around the city. We meet up somewhere
+          reachable by T or bike, roll out together, and finish at a café.</p>
+        <p>There's no membership, no dues, and no drop. Just show up, say hi, and
+          order something from a local café at the end.</p>
         <ul class="checks">
+          <li><strong>Most rides are Saturday or Sunday mornings</strong>, 10 or 11 am, 3-5 flat-ish miles.</li>
           <li><strong>No-drop, always.</strong> Nobody gets left behind.</li>
-          <li><strong>All levels welcome.</strong> Most rides are 3-5 flat-ish miles at a conversational pace.</li>
-          <li><strong>BlueBikes are perfect.</strong> Any bike that rolls is the right bike. Some Bluebikes coupons
-            available.</li>
+          <li><strong>All levels welcome.</strong> We keep a conversational pace.</li>
+          <li><strong>BlueBikes-friendly.</strong> Rides start at Bluebikes stations.</li>
           <li><strong>Bring a lock</strong>, a water bottle, and enough cash or card for a coffee.</li>
           <li><strong>Helmets encouraged</strong>, lights required if we're out near sunset.</li>
         </ul>
-      </div>
-    </section>
-
-    <!-- "About us" and the old "Find us" section were combined into one (2026-08-13):
-       the two descriptions + the Instagram/Partiful links live under the same
-       #about section so the page reads as one continuous intro block.
-       Photo-backed via data-bg (deferred by app.js after window.load); the
-       gradient in styles.css is the no-JS / pre-load fallback. -->
-    <section id="about" data-bg="images/aman-s-group-preride-fenway.jpeg"
-      aria-labelledby="about-heading">
-      <div class="wrap">
-        <h2 id="about-heading">About us</h2>
-        <p>Boston Café Bikers is a casual cycling group built around the two best
-          things about this city: the riding and the coffee. We meet up somewhere
-          reachable by T or bike, roll out together, and finish at a café.</p>
-        <p>There's no membership, no dues, and no drop. Just show up, say hi, and
-          order something warm at the end.</p>
         <p class="lede">Ride announcements go out on Partiful. Photos and route
           teasers go on Instagram.</p>
         <div class="links">
@@ -656,18 +862,15 @@
       </div>
     </section>
 
-    <!-- Photo-backed via data-bg like the other sections: the mid-ride photo
-       loads as a background only after window.load (app.js), so the espresso
-       gradient in styles.css renders first. -->
-    <section id="contact" data-bg="images/jack-t-freshpond-midride.jpeg"
-      aria-labelledby="contact-heading">
+    <!-- Was the "Contact us" section until 2026-08-22; that copy now has its
+       own page (contact.html) and this slot became the crew callout. The three
+       .links cards are unchanged — they're the same three ways to reach us. -->
+    <section id="crew" aria-labelledby="crew-heading">
       <div class="wrap">
-        <h2 id="contact-heading">Contact us</h2>
-        <p class="lede">Starting a café bike club in your own city? Want to team
-          up or partner with ours? Say hi.</p>
-        <p>The fastest ways to reach us are email,
-          a DM on Instagram, or a message in the WhatsApp group. Or roll out
-          with us on a ride and talk over coffee at the end.</p>
+        <h2 id="crew-heading">Help Café Bikers behind the scenes</h2>
+        <p class="lede">Every ride has a crew.</p>
+        <p>We need ride leaders, people filming, editing, running social media, and more. If that's you, we'd love to
+          meet you.</p>
         <div class="links">
           <a href="mailto:boscafebikers@gmail.com">Email — boscafebikers@gmail.com</a>
           <a href="https://instagram.com/bostoncafebikers" rel="noopener">DM us on Instagram</a>
@@ -683,9 +886,11 @@
       <p class="footer-brand">Boston Café Bikers — exploring the city one café at a time.</p>
       <nav class="footer-nav" aria-label="Footer">
         <a href="index.html">Rides</a>
+        <a href="cafes.html">Cafés</a>
         <a href="gallery.html">Gallery</a>
         <a href="shopify.html">Shop</a>
         <a href="meta-business.html">Meta Business</a>
+        <a href="contact.html">Contact</a>
         <a href="donate.html">Donate</a>
       </nav>
       <p class="footer-social">
