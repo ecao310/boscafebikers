@@ -6,7 +6,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 ## Backlog 12 — architecture proposals (2026-08-29, from the Architecture Proposals artifact; done in this order)
 - [x] CI: `ci.yml` runs pytest + a committed node DOM shim (`tests/js/`) on every push/PR; the sync runs pytest before it fetches.
 - [x] `scripts/sync.py`: one orchestrator for the pipeline with a run-twice idempotency test; the composite action calls it.
-- [ ] Generated data on its own `data` branch: one sync job, `pages.yml` composes master+data and dev+data.
+- [x] Generated data on its own `data` branch: one sync job, `pages.yml` composes master+data and dev+data.
 - [ ] Observability: per-run report (`$GITHUB_STEP_SUMMARY` + `sync-report.json`) and `::warning::` annotations — never a failed job.
 - [ ] Precompute the JS twins in Python (`grace_until`, route `start_name`/`end_name`, `place_name`/`address`/`year`) and delete the JS re-derivations.
 - [ ] Browser third-party surface: SRI on FullCalendar; self-hosted ≤800px poster thumbnails made on the runner.

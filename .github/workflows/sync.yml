@@ -5,106 +5,124 @@ on:
     # Every 6 hours, on the hour (UTC).
     - cron: "0 */6 * * *"
   workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Run the pipeline but write nothing (the summary shows what it would have done)"
+        type: boolean
+        default: false
 
-# Serializes whole *runs* — the two sync jobs below are free to run in
-# parallel inside one run, because they push to different branches.
+# One sync at a time: two runs must never race a push to the data branch.
 concurrency:
   group: sync-rides
   cancel-in-progress: false
 
 jobs:
-  # Both trees Pages publishes get their data synced: master (the live site)
-  # here, dev (the /preview/ subtree) below. Same pipeline both times — it
-  # lives once, in .github/actions/sync-branch, so the two can't drift.
+  # There is one copy of the ride data and it lives on the orphan `data`
+  # branch, laid out exactly like site/. So there is one sync job: it runs the
+  # code from whichever ref triggered it and writes the data next door.
   sync:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     outputs:
-      changed: ${{ steps.sync.outputs.changed }}
+      changed: ${{ steps.commit.outputs.changed }}
     steps:
-      # By *name*, like pages.yml: a dispatch on some other ref must still
-      # sync the branch it says it syncs.
-      - name: Check out master (the live site)
+      # Bare checkout — this workflow's own ref. The cron runs master's
+      # scripts/; `gh workflow run sync.yml --ref dev` runs dev's, which is how
+      # a pipeline change is tried on real data before it is merged.
+      - name: Check out the code
         uses: actions/checkout@v4
-        with:
-          ref: master
 
-      # Order matters: this one is second because a checkout into the
+      # The data, beside the code. Second, because a checkout into the
       # workspace root wipes anything already sitting there.
-      #
-      # `uses: ./…` resolves against the workspace, so the composite has to be
-      # checked out. It comes from *this workflow's own ref* (no `ref:` here),
-      # not from the branch being synced — the branch supplies scripts/, the
-      # workflow supplies its own pipeline, and a two-branch sync added on dev
-      # works before it has been merged into master.
-      - name: Check out this workflow's copy of the sync action
+      - name: Check out the ride data
         uses: actions/checkout@v4
         with:
-          path: .sync-action
+          ref: data
+          path: _data
 
-      - name: Refresh master's ride data
-        id: sync
-        uses: ./.sync-action/.github/actions/sync-branch
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          ics-url: ${{ secrets.PARTIFUL_ICS_URL }}
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
 
-  # Same again for dev. Without this the preview keeps being *redeployed* on
-  # every sync (pages.yml rebuilds both trees) while its events.json, archive,
-  # maps and rides.ics sit at whatever dev last committed — i.e. stale rides on
-  # /preview/ between human pushes. A checkout of dev also runs dev's own
-  # scripts/, so a pipeline change can be tried on the preview before it ships.
-  sync-dev:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      changed: ${{ steps.sync.outputs.changed }}
-    steps:
-      # dev is optional (pages.yml makes the same check before publishing a
-      # preview); no dev branch must not mean a red sync every 6 hours.
-      - name: Check whether a dev branch exists
-        id: devcheck
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Thirty seconds of insurance before anything touches ride data: this
+      # runs the triggering ref's scripts/, and dev is where half-finished code
+      # lives. The suite is offline (it parses tests/fixtures/sample.ics with a
+      # pinned clock), so it needs no secret and cannot flake on the network.
+      # ci.yml runs the same command on every push; this is the gate for the
+      # cron, which pushes without one.
+      - name: Check the scripts before touching ride data
+        run: python -m pytest tests/ -q
+
+      # The whole pipeline in one process: fetch, archive, backfill, geocode,
+      # draw the missing maps, publish, re-export the calendar. The order lives
+      # in scripts/sync.py's STEPS and tests/test_sync.py reorders that tuple to
+      # prove each rule still bites. The script writes a file only when its
+      # content changed, so a quiet sync leaves zero bytes for the commit step
+      # to find. The secret reaches this step and no other, and never as a CLI
+      # argument (arguments show up in logs).
+      - name: Sync the ride data
+        id: sync
+        env:
+          PARTIFUL_ICS_URL: ${{ secrets.PARTIFUL_ICS_URL }}
+          DRY_RUN: ${{ github.event.inputs.dry-run }}
         run: |
-          if git ls-remote --exit-code --heads \
-              "https://github.com/${{ github.repository }}.git" dev >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No dev branch; nothing to sync for the preview."
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+          set -uo pipefail
+          args=(--data-dir _data)
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            args+=(--dry-run)
           fi
+          log="$RUNNER_TEMP/sync.log"
+          status=0
+          python scripts/sync.py "${args[@]}" >"$log" 2>&1 || status=$?
+          cat "$log"
+          # The run page should say what the pipeline did without anyone opening
+          # the step log — this is the whole point of a dry run.
+          {
+            echo "### \`scripts/sync.py ${args[*]}\`"
+            echo ''
+            echo '```'
+            cat "$log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
-      - name: Check out dev (the /preview/ subtree)
-        if: steps.devcheck.outputs.exists == 'true'
-        uses: actions/checkout@v4
-        with:
-          ref: dev
+      # Committed inside _data, so the only thing this workflow ever writes is
+      # the data branch — no bot commit interleaves with the code history.
+      - name: Commit the ride data if changed
+        id: commit
+        if: ${{ github.event.inputs.dry-run != 'true' }}
+        working-directory: _data
+        run: |
+          # Stage first, then diff the index: the route maps are *new* files,
+          # and a plain `git diff` doesn't see untracked ones.
+          git add -A .
+          if git diff --cached --quiet; then
+            echo "No ride changes; nothing to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync rides from Partiful feed"
+          # Plain `git push`: actions/checkout left _data tracking `data`.
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Check out this workflow's copy of the sync action
-        if: steps.devcheck.outputs.exists == 'true'
-        uses: actions/checkout@v4
-        with:
-          path: .sync-action
-
-      - name: Refresh dev's ride data
-        id: sync
-        if: steps.devcheck.outputs.exists == 'true'
-        uses: ./.sync-action/.github/actions/sync-branch
-        with:
-          ics-url: ${{ secrets.PARTIFUL_ICS_URL }}
-
-  # The pushes above use GITHUB_TOKEN, which deliberately does not fire `push`
+  # The push above uses GITHUB_TOKEN, which deliberately does not fire `push`
   # workflow triggers — so Pages would never redeploy. Call the deploy workflow
   # ourselves instead, and only when the rides actually changed. One call
-  # republishes *both* trees (pages.yml checks master and dev out by name), so
-  # either branch committing is reason enough to run it.
-  #
-  # `!cancelled()` instead of the default success() gate: dev is where
-  # half-finished code lives, and a broken preview sync must never hold back a
-  # deploy of the live site. Neither branch committing → no deploy, as before.
+  # republishes both trees: pages.yml checks master, dev and data out by name
+  # and overlays the data onto each.
   deploy:
-    needs: [sync, sync-dev]
-    if: ${{ !cancelled() && (needs.sync.outputs.changed == 'true' || needs.sync-dev.outputs.changed == 'true') }}
+    needs: sync
+    if: ${{ !cancelled() && needs.sync.outputs.changed == 'true' }}
     permissions:
       contents: read
       pages: write

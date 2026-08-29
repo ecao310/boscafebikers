@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Run the whole ride-data sync in one process, in the one order that works.
 
-    python scripts/sync.py --data-dir site
+    python scripts/sync.py --data-dir _data      # on the sync runner
+    python scripts/sync.py --data-dir site       # locally, after scripts/pull_data.sh
 
 Fetch the feed, absorb the rides that have already happened, backfill a few
 archived ones, geocode any new café, draw the maps that are missing, publish
@@ -9,9 +10,9 @@ the upcoming list, re-export the public calendar — then write only the files
 whose content actually changed. A quiet sync writes zero bytes, which is the
 property the workflow's "commit if changed" guard depends on.
 
-The order used to live in the YAML of .github/actions/sync-branch/action.yml,
-where nothing could test it. It lives in ``STEPS`` now, and
-tests/test_sync.py reorders that tuple to prove each rule still bites:
+The order used to live in the YAML of the sync workflow, where nothing could
+test it. It lives in ``STEPS`` now, and tests/test_sync.py reorders that tuple
+to prove each rule still bites:
 
 * **archive before promote** — the archive is merged from the *previously*
   committed events.json, so a ride that has since started is kept even if

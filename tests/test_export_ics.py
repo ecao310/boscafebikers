@@ -281,8 +281,13 @@ def test_icalendar_reads_it_back_with_the_right_rides(calendar, rides):
     assert events[0]["DTSTART"].dt.isoformat() == rides[0]["start"]
 
 
-def test_the_committed_site_file_is_a_valid_calendar():
-    parsed = Calendar.from_ical((REPO_ROOT / "site" / "rides.ics").read_bytes())
+def test_the_published_file_is_a_valid_calendar():
+    """site/rides.ics is generated onto the `data` branch, not committed here,
+    so a plain code checkout has none of it until scripts/pull_data.sh runs."""
+    path = REPO_ROOT / "site" / "rides.ics"
+    if not path.exists():
+        pytest.skip("site/rides.ics lives on the data branch (scripts/pull_data.sh)")
+    parsed = Calendar.from_ical(path.read_bytes())
     assert str(parsed["PRODID"]) == export_ics.PRODID
     for event in parsed.walk("VEVENT"):
         assert event["UID"] and event["DTSTART"]

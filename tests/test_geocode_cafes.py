@@ -423,13 +423,25 @@ def test_cli_reports_a_malformed_cache(tmp_path, capsys):
 
 
 # --------------------------------------------------------------------------
-# The committed cache itself
+# The published cache itself
+#
+# It is generated onto the `data` branch, not committed beside this code, so
+# both checks below skip on a plain code checkout and run once the data has
+# been pulled into site/ (scripts/pull_data.sh).
 
 
 REPO = Path(__file__).resolve().parents[1]
+DATA = REPO / "site"
+
+
+def require_data(*names):
+    for name in names:
+        if not (DATA / name).exists():
+            pytest.skip(f"site/{name} lives on the data branch (scripts/pull_data.sh)")
 
 
 def test_committed_cache_is_well_formed():
+    require_data("cafe-points.json")
     cache = geocode_cafes.load_cache(REPO / "site" / "cafe-points.json")
     assert cache["points"], "the committed cache should hold the seeded cafés"
     for name, (lat, lon) in cache["points"].items():
@@ -441,6 +453,7 @@ def test_committed_cache_is_well_formed():
 
 def test_committed_cache_covers_the_archive():
     """Every archived café address should already have a pin — no sync needed."""
+    require_data("cafe-points.json", "events-past.json", "events.json")
     archive = json.loads((REPO / "site" / "events-past.json").read_text(encoding="utf-8"))
     upcoming = json.loads((REPO / "site" / "events.json").read_text(encoding="utf-8"))
     cache = geocode_cafes.load_cache(REPO / "site" / "cafe-points.json")

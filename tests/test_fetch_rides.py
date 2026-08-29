@@ -1139,18 +1139,29 @@ def test_main_exits_nonzero_on_a_malformed_exclusion_list(tmp_path, capsys):
     assert "excluded events" in capsys.readouterr().err
 
 
-def test_committed_exclusion_list_is_well_formed_and_applied():
-    """The real sidecar: bare Partiful ids with a note each, and none of them
-    left in the committed ride data (the sync would otherwise re-archive
-    whatever was deleted by hand)."""
+def test_committed_exclusion_list_is_well_formed():
+    """The real sidecar: bare Partiful ids with a note each."""
     data = json.loads(EXCLUDED_FIXTURE.read_text(encoding="utf-8"))
     assert isinstance(data, dict) and data
     for uid, note in data.items():
         assert uid.isalnum(), uid  # a bare Partiful event id, not a name@partiful.com UID
         assert isinstance(note, str) and note.strip(), uid
+    assert fetch_rides.load_excluded_events(EXCLUDED_FIXTURE) == set(data)
+
+
+@pytest.mark.parametrize("name", ["events.json", "events-past.json"])
+def test_excluded_rides_are_absent_from_the_ride_data(name):
+    """No excluded UID is left in the published data — the sync would otherwise
+    re-archive whatever was deleted by hand.
+
+    The ride data lives on the `data` branch, not here: a plain code checkout
+    has none of it until `scripts/pull_data.sh` pulls it into site/, so this
+    check runs where the file exists and skips where it doesn't.
+    """
+    path = REPO_ROOT / "site" / name
+    if not path.exists():
+        pytest.skip(f"site/{name} lives on the data branch (scripts/pull_data.sh)")
     excluded = fetch_rides.load_excluded_events(EXCLUDED_FIXTURE)
-    assert excluded == set(data)
-    for name in ("events.json", "events-past.json"):
-        payload = json.loads((REPO_ROOT / "site" / name).read_text(encoding="utf-8"))
-        present = {r["uid"] for r in payload["events"]} & excluded
-        assert not present, f"site/{name} still holds excluded rides: {sorted(present)}"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    present = {r["uid"] for r in payload["events"]} & excluded
+    assert not present, f"site/{name} still holds excluded rides: {sorted(present)}"
