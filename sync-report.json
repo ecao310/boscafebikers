@@ -1,0 +1,25 @@
+{
+  "feed": {
+    "upcoming": 1,
+    "past": 23,
+    "excluded": 0
+  },
+  "upcoming": {
+    "with_image": 1,
+    "with_route": 1,
+    "routes": 1,
+    "routes_measured": 1
+  },
+  "archive": {
+    "rides": 33,
+    "never_checked": 0
+  },
+  "cafes": {
+    "placed": 16,
+    "unplaced": 0
+  },
+  "maps": {
+    "rides_with_a_route_and_no_map": 0,
+    "without_a_basemap": 0
+  }
+}

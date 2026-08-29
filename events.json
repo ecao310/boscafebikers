@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-24T11:04:30.325515-04:00",
+  "updated_at": "2026-08-29T01:48:21.903825-04:00",
   "count": 1,
   "events": [
     {
@@ -33,9 +33,15 @@
           "label": "Estimated Route",
           "url": "https://maps.app.goo.gl/cYsc93yx96y2BybN8?g_st=ic",
           "distance_m": 7884,
-          "distance_display": "~4.9 mi"
+          "distance_display": "~4.9 mi",
+          "start_name": "Washington St at Temple Pl",
+          "end_name": "Meet Point Patisserie"
         }
       ],
+      "grace_until": "2026-08-29T12:00:00-04:00",
+      "place_name": "Meet Point Patisserie Brookline",
+      "address": "3 Kendall St, Brookline, MA",
+      "year": "2026",
       "map_image": "maps/0kgziJu0xvnL3SBCeuU7.svg"
     }
   ]
