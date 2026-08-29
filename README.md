@@ -205,12 +205,19 @@ real origin.)
 Run the tests:
 
 ```bash
-.venv/bin/python -m pytest tests/ -q
+.venv/bin/python -m pytest tests/ -q       # Python: the sync scripts + the pages
+node --test tests/js/*.test.mjs            # JavaScript: site/js/*.js
 ```
 
-The test suite is fully offline: it parses `tests/fixtures/sample.ics` with a
-pinned clock, so it never touches the network and never depends on the system
-timezone.
+Both suites are fully offline. The Python one parses `tests/fixtures/sample.ics`
+with a pinned clock; the JavaScript one evaluates `site/js/*.js` against a
+hand-rolled DOM built from node's own `node:test` and `node:vm` — there is no
+`package.json` and nothing to install, matching the site's no-build-step rule.
+Neither touches the network or depends on the system timezone.
+
+`.github/workflows/ci.yml` runs both suites on every push and every pull
+request, and the 6-hourly sync runs the Python one as a gate before it touches
+any ride data.
 
 ## Contacting the group
 
@@ -248,8 +255,11 @@ needs touching.
 | `tests/fixtures/sample.ics` | Offline fixture: 2 future, 1 past, 1 cancelled |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script |
 | `tests/test_archive_events.py` | pytest suite for the past-rides archive |
+| `tests/test_site_html.py` | pytest suite for the pages — well-formed, shared nav/footer, no root-relative URLs |
+| `tests/js/site.test.mjs` | `node --test` suite for `site/js/*.js`, against the DOM shim in `tests/js/dom-shim.mjs` |
 | `.github/workflows/sync.yml` | Cron sync every 6h + manual dispatch (once for `master`, once for `dev`); calls `pages.yml` when rides change |
 | `.github/actions/sync-branch/` | The sync pipeline itself, as a composite action, so both branches run the same one |
 | `.github/workflows/pages.yml` | Builds the Pages artifact (`master` at the root, `dev` under `/preview/`) and deploys it |
+| `.github/workflows/ci.yml` | Runs both test suites on every push and pull request |
 | `CLAUDE.md` | Conventions, decisions, and gotchas |
 </content>

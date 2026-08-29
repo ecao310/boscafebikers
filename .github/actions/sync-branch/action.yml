@@ -38,6 +38,16 @@ runs:
       shell: bash
       run: pip install -r requirements.txt
 
+    # Thirty seconds of insurance before anything touches ride data: the
+    # pipeline below runs *this branch's* scripts/, and dev in particular can
+    # be carrying half-finished code. The suite is offline (it parses
+    # tests/fixtures/sample.ics with a pinned clock), so it needs no secret
+    # and cannot be flaky on the network. ci.yml runs the same command on
+    # every push; this is the gate for the cron, which pushes without one.
+    - name: Check the branch's scripts before touching ride data
+      shell: bash
+      run: python -m pytest tests/ -q
+
     - name: Fetch rides
       shell: bash
       env:
