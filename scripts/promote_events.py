@@ -28,12 +28,23 @@ def load_events(path: Path) -> object:
         return None
 
 
+def rides_changed(new_events: object, current_events: object) -> bool:
+    """The single definition of "did the rides change".
+
+    Compare the `events` lists and nothing else: `updated_at` is stamped fresh
+    on every fetch, so any rule that looked at the whole payload would make the
+    sync commit a new timestamp every 6 hours. scripts/sync.py asks this the
+    same question in memory, so the pipeline and this CLI can't drift.
+    """
+    return new_events != current_events
+
+
 def promote(new_path: Path, target_path: Path) -> bool:
     """Replace target with new when the rides differ. Returns True if copied."""
     new_events = load_events(new_path)
     if new_events is None:
         raise SystemExit(f"promote_events: {new_path} is missing or not valid JSON")
-    if new_events == load_events(target_path):
+    if not rides_changed(new_events, load_events(target_path)):
         return False
     target_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(new_path, target_path)

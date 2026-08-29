@@ -151,41 +151,6 @@
     return "https://calendar.google.com/calendar/render?" + parts.join("&");
   };
 
-  // "O'Some Café, 100 Main St, Watertown, MA 02472" → "O'Some Café". Google's
-  // saddr/daddr are full addresses; only the leading place name fits a card.
-  function placeName(address) {
-    return String(address || "").split(",")[0].trim();
-  }
-
-  // Where a ride starts, as a card-sized name. Rides almost always start at a
-  // Bluebikes dock, whose address is "Bluebikes, <station>, <city>, MA <zip>"
-  // — so the leading segment is the useless word "Bluebikes" and the station
-  // is what identifies the start: "Bluebikes, Cleveland Circle, Boston, MA
-  // 02135" → "Cleveland Circle". A station can span two segments ("Bunker Hill
-  // Mall, Main St at Austin St"), so keep everything between "Bluebikes" and
-  // the city when the address ends in a "<city>, <ST> [zip]" tail; otherwise
-  // the next segment; a bare "Bluebikes" falls back to the whole string. Any
-  // other start keeps its leading place name, like placeName().
-  const BLUEBIKES_RE = /^bluebikes\b[\s:\-–—]*(.*)$/i;
-  const STATE_RE = /^[A-Z]{2}(\s+\d{5}(-\d{4})?)?$/;
-  function startName(address) {
-    const raw = String(address || "").trim();
-    const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
-    if (!parts.length) { return ""; }
-    const m = BLUEBIKES_RE.exec(parts[0]);
-    if (!m) { return parts[0]; }
-    // "Bluebikes Cleveland Circle" (no comma) keeps the remainder as the station.
-    const detail = m[1] ? [m[1]].concat(parts.slice(1)) : parts.slice(1);
-    if (!detail.length) { return raw; }
-    const last = detail[detail.length - 1];
-    if (detail.length >= 3 && STATE_RE.test(last)) {
-      // Drop the "<city>, <ST> <zip>" tail; what's left is the station.
-      return detail.slice(0, -2).join(", ");
-    }
-    return detail[0];
-  }
-  BCB.startName = startName;
-
   // Some rides carry a link instead of an address in Partiful's Location field
   // (fetch_rides.py turns that into `location_url`). Name the link for what it
   // is rather than printing the URL, which overflows the card.
@@ -196,27 +161,31 @@
   }
 
   // --- "Rolling now" ---
-  // A ride stays in events.json for an hour after it starts (GRACE_PERIOD in
-  // scripts/fetch_rides.py — keep the two numbers in step), because latecomers
-  // can still catch the group. During that hour the card must not read as
-  // "upcoming": say the ride is happening.
+  // A ride stays in events.json for an hour after it starts (the grace hour),
+  // because latecomers can still catch the group. During that hour the card
+  // must not read as "upcoming": say the ride is happening.
   //
-  // This is the one allowed use of the clock, and it is NOT the thing the
-  // no-Date rule bans. That rule is about *re-formatting* a ride's time — the
-  // display strings are precomputed in Eastern, and new Date(start) would
-  // re-render them in the visitor's own timezone. Here the question is "has
-  // this instant passed?", which is absolute: ev.start carries its Eastern
-  // offset, so Date.parse gives the correct UTC epoch in every timezone, and
-  // comparing epoch milliseconds with Date.now() has no wall clock in it at
-  // all. Nothing below is formatted for display.
-  const GRACE_MS = 60 * 60 * 1000;
+  // The hour itself is not a number here: ride_fields.py writes the end of the
+  // window into the data as `grace_until`, so there is one definition of it
+  // (scripts/ride_fields.GRACE_PERIOD) instead of a Python constant and a
+  // JavaScript twin drifting apart. No grace_until — an event from before the
+  // field existed — means no window, so the ride is simply not rolling.
+  //
+  // Reading the clock here is the one allowed use of it, and it is NOT the
+  // thing the no-Date rule bans. That rule is about *re-formatting* a ride's
+  // time — the display strings are precomputed in Eastern, and new Date(start)
+  // would re-render them in the visitor's own timezone. Here the question is
+  // "has this instant passed?", which is absolute: both strings carry their
+  // Eastern offset, so Date.parse gives the correct UTC epoch in every
+  // timezone. Nothing below is formatted for display.
   function isRolling(ev, nowMs) {
     const startMs = Date.parse((ev && ev.start) || "");
-    if (isNaN(startMs)) { return false; }
+    const endMs = Date.parse((ev && ev.grace_until) || "");
+    if (isNaN(startMs) || isNaN(endMs)) { return false; }
     const now = typeof nowMs === "number" ? nowMs : Date.now();
     // Inclusive at both ends, matching fetch_rides.is_upcoming: the ride is
     // rolling from its start time through the last instant of the grace hour.
-    return now >= startMs && now <= startMs + GRACE_MS;
+    return now >= startMs && now <= endMs;
   }
   BCB.isRolling = isRolling;
 
@@ -247,8 +216,12 @@
     // The drawn route map wins over the Partiful poster: it says something
     // about *this* ride. It also links to the route rather than to RSVP, and
     // is shown whole (object-fit: contain) instead of cropped like a photo.
+    // Failing a map, `poster` is our own resized copy of the ride photo,
+    // served from this site (a relative path the sync writes) — `image`, the
+    // multi-megabyte original on Firebase, is the last resort. The two behave
+    // identically here; only the bytes the visitor fetches differ.
     const firstRoute = (ev.routes || [])[0];
-    const banner = ev.map_image || ev.image;
+    const banner = ev.map_image || ev.poster || ev.image;
     if (banner) {
       const isMap = Boolean(ev.map_image);
       const imgLink = BCB.el("a", "ride-img-link");
@@ -283,16 +256,16 @@
     }
     // Route links come from the host's Partiful custom fields ("Estimated
     // Route", "Team A & C Route", …) and open Google Maps. The card names only
-    // where the ride starts ("from Cleveland Circle"): the café is already the
-    // .where line, and the full start → end pair (with any stops) is one tap
-    // away in Maps, and in the link's title.
+    // where the ride starts ("from Cleveland Circle" — route.start_name, out of
+    // the data): the café is already the .where line, and the full start → end
+    // pair (with any stops) is one tap away in Maps, and in the link's title.
     (ev.routes || []).forEach((route) => {
       const line = BCB.el("p", "route");
       const link = BCB.el("a", null, route.label || "Route");
       link.href = route.url;
       link.target = "_blank";
       link.rel = "noopener";
-      link.title = placeName(route.start) && placeName(route.end)
+      link.title = route.start && route.end
         ? route.start + " → " + route.end
         : "Open this route in Google Maps";
       line.appendChild(link);
@@ -301,7 +274,10 @@
       if (route.distance_display) {
         line.appendChild(BCB.el("span", "route-distance", route.distance_display));
       }
-      const start = startName(route.start);
+      // Precomputed by ride_fields.derive (the Bluebikes-dock rule lives in
+      // Python now); route.start is the fallback for a deploy that lands ahead
+      // of the data it reads.
+      const start = route.start_name || route.start;
       if (start) {
         line.appendChild(BCB.el("span", "route-start", "from " + start));
       }

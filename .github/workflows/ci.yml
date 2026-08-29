@@ -1,0 +1,52 @@
+name: CI
+
+# Every push on every branch, and every pull request. The sync workflow runs
+# the same pytest suite as a gate before it touches ride data, but that only
+# fires on a cron; this is what catches a broken commit while it is still the
+# newest thing anybody has looked at.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# One run per ref: a rapid series of pushes only needs the newest to be green.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Fully offline: the suite parses tests/fixtures/sample.ics with a pinned
+      # clock, so it never reaches the network and never needs the ICS secret.
+      - name: Run the Python suite
+        run: python -m pytest tests/ -q
+
+      # site/ has no package.json and no npm dependency, so node is here only
+      # for its built-in test runner (node:test + the hand-rolled DOM shim in
+      # tests/js/dom-shim.mjs).
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Shell-globbed rather than `node --test tests/js/`: Node 26 stopped
+      # accepting a bare directory there, and this form works on every version.
+      - name: Run the JS suite
+        run: node --test tests/js/*.test.mjs

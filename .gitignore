@@ -14,3 +14,16 @@ ralph.log
 
 # OS
 .DS_Store
+
+# Generated ride data — the only copy lives on the `data` branch; the sync bot
+# writes it there and pages.yml copies it into the published trees. Pull it
+# into a local checkout with scripts/pull_data.sh (the files below are what it
+# extracts).
+site/events.json
+site/events-past.json
+site/cafe-points.json
+site/rides.ics
+site/maps/
+site/posters/
+# …plus the run report sync.py writes beside them (data branch only).
+site/sync-report.json
