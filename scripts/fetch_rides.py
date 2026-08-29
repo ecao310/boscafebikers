@@ -25,13 +25,17 @@ import re
 import struct
 import sys
 from collections.abc import Callable
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, unquote_plus, urlsplit
 from zoneinfo import ZoneInfo
 
 import requests
 from icalendar import Calendar
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import ride_fields  # noqa: E402
 
 LOCAL_TZ = ZoneInfo("America/New_York")
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -49,8 +53,9 @@ FETCH_TIMEOUT_SECONDS = 30
 # A ride does not stop being "the next ride" the instant it starts: people turn
 # up late at the dock and still catch the group, so the upcoming export keeps a
 # ride for this long after its start time and the past export doesn't take it
-# until then. `scripts/archive_events.py` carries the same constant (it is
-# stdlib-only and can't import this module); a test pins the two together.
+# until then. The number itself lives in scripts/ride_fields.py — one
+# definition, imported here and by the stdlib-only archive_events.py, and
+# written into each ride as `grace_until` for the card's "Rolling now" pill.
 #
 # Measured from `start`, never from `end`. Only 6 of the 40 rides in the feed
 # carry a DTEND at all, and those run 3, 4, 6 and 10 hours — a 10-hour end time
@@ -58,7 +63,7 @@ FETCH_TIMEOUT_SECONDS = 30
 # whole day and hold it out of the archive just as long. Latecomers are a
 # start-time question, and one rule means the Python filter and the card's
 # "Rolling now" tag can't disagree about which window a ride is in.
-GRACE_PERIOD = timedelta(hours=1)
+GRACE_PERIOD = ride_fields.GRACE_PERIOD
 # Enrichment: the sync backfills `image` from each ride's public Partiful
 # event page. The page is unauthenticated, so no new secret — the event IDs
 # still come from the secret feed, which is why this stays sync-time work.
@@ -818,6 +823,13 @@ def main(argv: list[str] | None = None) -> int:
                 f"fetch_rides: pulled images for {backfilled} ride(s) "
                 "from their Partiful event pages"
             )
+
+    # The display fields the page reads instead of deriving (grace_until,
+    # place_name, address, year, each route's start_name/end_name). Last, so
+    # enrichment's routes are named too; scripts/sync.py does the same thing at
+    # the same point, which is what keeps a hand run and a sync run identical.
+    rides = ride_fields.derive_all(rides)
+    past_rides = ride_fields.derive_all(past_rides)
 
     try:
         write_events(build_payload(rides, now=now), Path(args.out))

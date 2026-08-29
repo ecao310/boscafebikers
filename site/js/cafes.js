@@ -1,6 +1,7 @@
 // "Where we've been" — the café list on cafes.html, rendered from the same
-// events-past.json the calendar dims its history with. No new sync work: every
-// field here (café address, date_display, rsvp_url) is already in the archive.
+// events-past.json the calendar dims its history with. Nothing is derived on
+// this page: the café name, its address, the ride's year, the date and the
+// RSVP link are all fields the sync already wrote (see scripts/ride_fields.py).
 //
 // It also draws the map above that list: one pin per café, from the sync's
 // geocode cache (cafe-points.json), on MapLibre GL JS + OpenFreeMap's vector
@@ -88,11 +89,13 @@
     return node;
   }
 
-  // "Localito Cafe, 30 Riverside Ave, Medford, MA" → the café is the leading
-  // comma-segment (placeName() on the rides page), the rest is its address.
-  function splitLocation(location) {
-    const parts = String(location || "").split(",").map((s) => s.trim()).filter(Boolean);
-    return { name: parts[0] || "", address: parts.slice(1).join(", ") };
+  // The café name and its address are split in the sync, not here:
+  // ride_fields.derive writes `place_name` ("Localito Cafe") and `address`
+  // ("30 Riverside Ave, Medford, MA") onto every archived ride. The fallbacks
+  // are for a deploy that lands ahead of the data — an event from before the
+  // fields existed still shows something.
+  function cafeName(ev) {
+    return ev.place_name || ev.location || "";
   }
 
   function meetingPointText(url) {
@@ -100,9 +103,13 @@
   }
 
   // date_display has no year and the archive already spans two of them, so the
-  // year comes off the ISO prefix: "Sunday, August 16" + "2026".
+  // ride carries `year` alongside it: "Sunday, August 16" + "2026".
+  function rideYear(ev) {
+    return ev.year || String(ev.start || "").slice(0, 4);
+  }
+
   function rideDate(ev) {
-    const year = String(ev.start || "").slice(0, 4);
+    const year = rideYear(ev);
     const day = ev.date_display || "";
     if (day && year) { return day + ", " + year; }
     return day || year;
@@ -110,15 +117,15 @@
 
   function cafeItem(ev) {
     const item = el("li", "cafe");
-    const place = splitLocation(ev.location);
+    const name = cafeName(ev);
     const title = ev.title || "Café ride";
     // With no address at all there is no café name to head the card with, so
     // the ride's own name does the job.
-    const heading = place.name || title;
+    const heading = name || title;
     item.appendChild(el("h3", "cafe-name", heading));
 
-    if (place.address) {
-      item.appendChild(el("p", "cafe-address", place.address));
+    if (ev.address) {
+      item.appendChild(el("p", "cafe-address", ev.address));
     } else if (ev.location_url) {
       // The organizer pasted the meeting point's map link in place of an
       // address: show it as a named link, not a raw URL.
@@ -129,7 +136,7 @@
       link.rel = "noopener";
       line.appendChild(link);
       item.appendChild(line);
-    } else if (!place.name) {
+    } else if (!name) {
       item.appendChild(el("p", "cafe-address is-unknown", "Location wasn't published"));
     }
 
@@ -151,7 +158,7 @@
   function summary(events) {
     const names = new Set();
     events.forEach((ev) => {
-      const name = splitLocation(ev.location).name;
+      const name = cafeName(ev);
       if (name) { names.add(name.toLowerCase()); }
     });
     const rides = events.length + (events.length === 1 ? " ride" : " rides");
@@ -159,9 +166,10 @@
       ? "1 named café or stop"
       : names.size + " named cafés and stops";
     // events is newest-first, so the oldest ride is last.
-    const iso = String((events[events.length - 1] || {}).start || "");
+    const oldest = events[events.length - 1] || {};
+    const iso = String(oldest.start || "");
     const month = MONTHS[Number(iso.slice(5, 7)) - 1];
-    const since = month ? ", since " + month + " " + iso.slice(0, 4) : "";
+    const since = month ? ", since " + month + " " + rideYear(oldest) : "";
     return rides + " to " + cafes + since + ".";
   }
 
@@ -179,7 +187,7 @@
     let year = null;
     let group = null;
     events.forEach((ev) => {
-      const evYear = String(ev.start || "").slice(0, 4) || "Earlier";
+      const evYear = rideYear(ev) || "Earlier";
       if (evYear !== year) {
         year = evYear;
         list.appendChild(el("h2", "year", year));
@@ -218,11 +226,10 @@
       const key = point[0] + "," + point[1];
       let group = byKey.get(key);
       if (!group) {
-        const place = splitLocation(location);
         // events arrive newest-first, so the first ride to claim a pin is the
         // most recent one — its spelling of the name is the one to show.
-        group = { point: point, name: place.name || ev.title || "Café stop",
-          address: place.address, rides: [] };
+        group = { point: point, name: cafeName(ev) || ev.title || "Café stop",
+          address: ev.address, rides: [] };
         byKey.set(key, group);
         groups.push(group);
       }

@@ -21,14 +21,21 @@ import { createHarness, createContactHarness, makeFullCalendarStub } from "./dom
 
 const PARTIFUL = "https://partiful.com/u/Hs47uq5mucZyXLBJZCda";
 
+// Every fixture carries the fields scripts/ride_fields.py derives — grace_until,
+// place_name, address, year, and each route's start_name/end_name — because
+// that is what the sync writes and all the JS does now is read them.
 const RIDE_A = {
   uid: "abc123",
   title: "O'Some Sunday ☕",
   start: "2030-09-07T10:00:00-04:00",
   end: "2030-09-07T12:00:00-04:00",
+  grace_until: "2030-09-07T11:00:00-04:00",
   date_display: "Saturday, September 7",
   time_display: "10:00 am",
+  year: "2030",
   location: "O'Some Café, 100 Main St, Watertown, MA 02472",
+  place_name: "O'Some Café",
+  address: "100 Main St, Watertown, MA 02472",
   location_hidden: false,
   location_url: null,
   description: "Easy four flat miles, then coffee.",
@@ -39,7 +46,9 @@ const RIDE_A = {
     label: "Estimated Route",
     url: "https://maps.app.goo.gl/short1",
     start: "Bluebikes, Cleveland Circle, Boston, MA 02135",
+    start_name: "Cleveland Circle",
     end: "O'Some Café, 100 Main St, Watertown, MA 02472",
+    end_name: "O'Some Café",
     distance_display: "~4.0 mi"
   }]
 };
@@ -49,9 +58,13 @@ const RIDE_B = {
   title: "Minuteman morning",
   start: "2030-09-21T11:00:00-04:00",
   end: null,
+  grace_until: "2030-09-21T12:00:00-04:00",
   date_display: "Saturday, September 21",
   time_display: "11:00 am",
+  year: "2030",
   location: null,
+  place_name: null,
+  address: null,
   location_hidden: true,
   location_url: null,
   description: "Bring a lock.",
@@ -66,9 +79,13 @@ const PAST_RIDE = {
   title: "Charles River loop",
   start: "2025-11-16T10:00:00-05:00",
   end: null,
+  grace_until: "2025-11-16T11:00:00-05:00",
   date_display: "Sunday, November 16",
   time_display: "10:00 am",
+  year: "2025",
   location: "Tatte Bakery, 1003 Beacon St, Brookline, MA 02446",
+  place_name: "Tatte Bakery",
+  address: "1003 Beacon St, Brookline, MA 02446",
   location_hidden: false,
   location_url: null,
   description: "A cold one.",
@@ -122,7 +139,7 @@ test("happy path renders the next-ride card, the stamp and the calendar", async 
   assert.equal(imgLink.href, RIDE_A.routes[0].url);
   assert.equal(imgLink.target, "_blank");
 
-  // Route line: label, measured distance pill, "from <startName>".
+  // Route line: label, measured distance pill, "from <route.start_name>".
   const route = card.querySelector(".route");
   assert.equal(route.querySelector("a").textContent, "Estimated Route");
   assert.equal(route.querySelector(".route-distance").textContent, "~4.0 mi");
@@ -421,7 +438,7 @@ test("[data-bg] photos are applied only after window load", async () => {
  * BCB.isRolling — the one sanctioned use of the clock
  * ================================================================== */
 
-test("isRolling is inclusive at both ends of the grace hour", async () => {
+test("isRolling reads grace_until, inclusive at both ends", async () => {
   const h = await booted();
   const startMs = Date.parse(RIDE_A.start);
   const minute = 60 * 1000;
@@ -429,10 +446,33 @@ test("isRolling is inclusive at both ends of the grace hour", async () => {
   assert.equal(h.BCB.isRolling(RIDE_A, startMs - minute), false, "a minute before start");
   assert.equal(h.BCB.isRolling(RIDE_A, startMs), true, "at start");
   assert.equal(h.BCB.isRolling(RIDE_A, startMs + 30 * minute), true, "mid-ride");
-  assert.equal(h.BCB.isRolling(RIDE_A, startMs + 60 * minute), true, "exactly +1h, still rolling");
-  assert.equal(h.BCB.isRolling(RIDE_A, startMs + 61 * minute), false, "past the grace hour");
-  assert.equal(h.BCB.isRolling({ start: "not a date" }, startMs), false);
+  assert.equal(h.BCB.isRolling(RIDE_A, startMs + 60 * minute), true,
+    "exactly at grace_until, still rolling");
+  assert.equal(h.BCB.isRolling(RIDE_A, startMs + 61 * minute), false, "past grace_until");
+  assert.equal(h.BCB.isRolling({ start: "not a date", grace_until: RIDE_A.grace_until }, startMs),
+    false);
   assert.equal(h.BCB.isRolling({}, startMs), false);
+});
+
+test("the window is whatever grace_until says, not an hour hardcoded here", async () => {
+  // The length of the grace hour lives in scripts/ride_fields.py; if it ever
+  // moves, the data moves with it and this file has nothing to keep in step.
+  const h = await booted();
+  const startMs = Date.parse(RIDE_A.start);
+  const wide = Object.assign({}, RIDE_A, { grace_until: "2030-09-07T13:00:00-04:00" });
+  assert.equal(h.BCB.isRolling(wide, startMs + 150 * 60 * 1000), true, "two and a half hours in");
+  assert.equal(h.BCB.isRolling(wide, startMs + 181 * 60 * 1000), false, "past the wider window");
+});
+
+test("a ride with no grace_until is never rolling", async () => {
+  // A deploy can land minutes before the data that feeds it; a missing window
+  // must read as "not rolling", never as an hour guessed in the browser.
+  const h = await booted();
+  const startMs = Date.parse(RIDE_A.start);
+  const old = Object.assign({}, RIDE_A);
+  delete old.grace_until;
+  assert.equal(h.BCB.isRolling(old, startMs + 10 * 60 * 1000), false);
+  assert.equal(h.BCB.isRolling(Object.assign({}, RIDE_A, { grace_until: null }), startMs), false);
 });
 
 test("a rolling ride wears the pill and keeps RSVP and both exports", async () => {
@@ -447,7 +487,11 @@ test("a rolling ride wears the pill and keeps RSVP and both exports", async () =
     return d.getUTCFullYear() + "-" + p(d.getUTCMonth() + 1) + "-" + p(d.getUTCDate()) +
       "T" + p(d.getUTCHours()) + ":" + p(d.getUTCMinutes()) + ":" + p(d.getUTCSeconds()) + "+00:00";
   };
-  const ride = Object.assign({}, RIDE_A, { start: iso(now - 10 * 60 * 1000), end: null });
+  const ride = Object.assign({}, RIDE_A, {
+    start: iso(now - 10 * 60 * 1000),
+    grace_until: iso(now + 50 * 60 * 1000),
+    end: null
+  });
   const h = createHarness({ routes: { "events.json": { body: payload([ride]) } } });
   await h.flush();
 
@@ -459,25 +503,50 @@ test("a rolling ride wears the pill and keeps RSVP and both exports", async () =
 });
 
 /* ================================================================== *
- * BCB.startName — kept in step with route_map._start_name
+ * The route line reads its names, it doesn't derive them
  * ================================================================== */
+// The Bluebikes-dock rule lives in scripts/ride_fields.py (and is tested in
+// tests/test_ride_fields.py); the card's job is to print what the sync wrote.
 
-test("startName drops the Bluebikes segment and the city tail", async () => {
-  const h = await booted();
-  const startName = h.BCB.startName;
+test("the route line prints route.start_name verbatim", async () => {
+  // A name no rule in this file could have produced from route.start: if the
+  // card still shows it, it is reading the field rather than re-deriving one.
+  const ride = Object.assign({}, RIDE_A, {
+    routes: [Object.assign({}, RIDE_A.routes[0], { start_name: "The usual corner" })]
+  });
+  const h = createHarness({ routes: { "events.json": { body: payload([ride]) } } });
+  await h.flush();
 
-  assert.equal(startName("Bluebikes, Cleveland Circle, Boston, MA 02135"), "Cleveland Circle");
-  assert.equal(
-    startName("Bluebikes, Bunker Hill Mall, Main St at Austin St, Charlestown, MA 02129"),
-    "Bunker Hill Mall, Main St at Austin St");
-  assert.equal(startName("Bluebikes"), "Bluebikes", "a bare dock falls back to the whole string");
-  assert.equal(startName("Bluebikes Cleveland Circle"), "Cleveland Circle",
-    "no comma: the remainder of the first segment is the station");
-  assert.equal(startName("O'Some Café, 100 Main St, Watertown, MA 02472"), "O'Some Café");
-  assert.equal(startName("Tatte near Bluebikes, Brookline, MA"), "Tatte near Bluebikes",
-    "'near Bluebikes' is not a dock");
-  assert.equal(startName(""), "");
-  assert.equal(startName(null), "");
+  const route = h.nextRideCard.querySelector(".route");
+  assert.equal(route.querySelector(".route-start").textContent, "from The usual corner");
+  // The untrimmed pair is still the link's title.
+  assert.equal(route.querySelector("a").title,
+    RIDE_A.routes[0].start + " → " + RIDE_A.routes[0].end);
+});
+
+test("a route with no start_name falls back to its raw start", async () => {
+  // A deploy that lands ahead of the data still names the meeting point.
+  const route = Object.assign({}, RIDE_A.routes[0]);
+  delete route.start_name;
+  const h = createHarness({
+    routes: { "events.json": { body: payload([Object.assign({}, RIDE_A, { routes: [route] })]) } }
+  });
+  await h.flush();
+
+  assert.equal(h.nextRideCard.querySelector(".route-start").textContent,
+    "from " + route.start);
+});
+
+test("a route with neither start nor start_name shows no from-line", async () => {
+  const route = { label: "Estimated Route", url: "https://maps.app.goo.gl/short1" };
+  const h = createHarness({
+    routes: { "events.json": { body: payload([Object.assign({}, RIDE_A, { routes: [route] })]) } }
+  });
+  await h.flush();
+
+  const line = h.nextRideCard.querySelector(".route");
+  assert.equal(line.querySelector(".route-start"), null);
+  assert.equal(line.querySelector("a").title, "Open this route in Google Maps");
 });
 
 /* ================================================================== *

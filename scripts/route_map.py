@@ -27,8 +27,14 @@ import base64
 import math
 import re
 import struct
+import sys
 import zlib
+from pathlib import Path
 from xml.sax.saxutils import escape
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import ride_fields  # noqa: E402
 
 
 def _attr(value: str) -> str:
@@ -509,38 +515,12 @@ def _clip(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
-def _place_name(address: str) -> str:
-    """"Tatte Bakery, 100 Main St, …" → "Tatte Bakery"."""
-    return " ".join(str(address or "").split(",")[0].split())
-
-
-# Mirror of ride-card.js startName(): rides start at Bluebikes docks, whose
-# address is "Bluebikes, <station>, <city>, MA <zip>", so the leading word says
-# nothing and the station detail is what the label should carry.
-BLUEBIKES_RE = re.compile(r"^bluebikes\b[\s:\-–—]*(.*)$", re.IGNORECASE)
-STATE_RE = re.compile(r"^[A-Z]{2}(\s+\d{5}(-\d{4})?)?$")
-
-
-def _start_name(address: str) -> str:
-    """"Bluebikes, Cleveland Circle, Boston, MA 02135" → "Cleveland Circle".
-
-    A two-segment station ("Bunker Hill Mall, Main St at Austin St") survives
-    whole when the address ends in a "<city>, <ST> [zip]" pair; anything that
-    isn't a Bluebikes dock keeps its leading segment, like ``_place_name``.
-    """
-    raw = " ".join(str(address or "").split())
-    parts = [p.strip() for p in raw.split(",") if p.strip()]
-    if not parts:
-        return ""
-    match = BLUEBIKES_RE.match(parts[0])
-    if not match:
-        return parts[0]
-    detail = ([match.group(1)] if match.group(1) else []) + parts[1:]
-    if not detail:
-        return raw
-    if len(detail) >= 3 and STATE_RE.match(detail[-1]):
-        return ", ".join(detail[:-2])
-    return detail[0]
+# The two label rules live in scripts/ride_fields.py, which also writes them
+# into the data as `place_name` and each route's `start_name` — one definition
+# for the map label, the card and the café list. Kept under these names because
+# the map's labels are where they are read.
+_place_name = ride_fields.place_name
+_start_name = ride_fields.start_name
 
 
 def fit_labels(start: str, end: str, width: int, limit: int = 24) -> tuple[str, str]:

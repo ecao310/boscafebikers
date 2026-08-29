@@ -27,9 +27,13 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import ride_fields  # noqa: E402
 
 LOCAL_TZ = ZoneInfo("America/New_York")
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -45,10 +49,10 @@ DEFAULT_EXCLUDED = REPO_ROOT / "scripts" / "excluded_events.json"
 # number here: the sync feeds this script the *previous* site/events.json, so a
 # shorter rule would archive a ride that the fresh fetch still lists as
 # upcoming, and app.js — which just concatenates the archive with events.json —
-# would draw it on the calendar twice, once dimmed and once live. This module
-# is stdlib-only and can't import fetch_rides, so the constant is duplicated;
-# tests/test_archive_events.py pins the two to each other.
-GRACE_PERIOD = timedelta(hours=1)
+# would draw it on the calendar twice, once dimmed and once live. One
+# definition, in the stdlib-only scripts/ride_fields.py so this module can
+# import it too; tests/test_archive_events.py pins that neither side re-declares.
+GRACE_PERIOD = ride_fields.GRACE_PERIOD
 
 
 class ArchiveError(Exception):
@@ -193,7 +197,12 @@ def run(
     existing = load_payload(archive_path, required=False)
     sources = [load_payload(path)["events"] for path in source_paths]
     excluded = load_excluded(excluded_path or DEFAULT_EXCLUDED)
-    rides = merge_archive(existing["events"], sources, now, excluded=excluded)
+    # Derived last, on the merged result, so `merge_ride`'s "None never
+    # overwrites" rule can't leave a stale place_name behind: whatever the
+    # merge settled on is what the display fields are computed from.
+    rides = ride_fields.derive_all(
+        merge_archive(existing["events"], sources, now, excluded=excluded)
+    )
     if rides == existing["events"]:
         return False
     write_archive(build_payload(rides, now), archive_path)

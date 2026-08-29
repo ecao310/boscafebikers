@@ -15,6 +15,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import archive_events  # noqa: E402
 import fetch_rides  # noqa: E402
+import ride_fields  # noqa: E402
 
 EASTERN = ZoneInfo("America/New_York")
 # Pinned "now" so "past" never depends on the clock.
@@ -149,8 +150,16 @@ def test_naive_and_offset_starts_are_both_comparable():
 
 
 def test_grace_period_matches_fetch_rides():
-    """Two stdlib/deps boundaries, one number. Don't let them drift."""
-    assert archive_events.GRACE_PERIOD == fetch_rides.GRACE_PERIOD == timedelta(hours=1)
+    """Two stdlib/deps boundaries, one number — and neither re-declares it.
+
+    `is` and not `==`: the number lives in scripts/ride_fields.py (stdlib-only,
+    so this module can import it), and a module that quietly went back to its
+    own `timedelta(hours=1)` would still compare equal today and drift the day
+    the hour changes.
+    """
+    assert archive_events.GRACE_PERIOD is ride_fields.GRACE_PERIOD
+    assert fetch_rides.GRACE_PERIOD is ride_fields.GRACE_PERIOD
+    assert ride_fields.GRACE_PERIOD == timedelta(hours=1)
 
 
 def test_a_ride_inside_its_grace_hour_is_not_archived():
@@ -223,6 +232,37 @@ def test_run_is_idempotent(tmp_path):
     before = archive.read_text(encoding="utf-8")
     assert archive_events.run(archive, [src], now=NOW) is False
     assert archive.read_text(encoding="utf-8") == before
+
+
+def test_run_writes_the_precomputed_display_fields(tmp_path):
+    """A hand run matches a sync run: both derive before writing."""
+    src = write_payload(tmp_path / "events.json", [ride(
+        "a", "2026-05-02T11:00:00-04:00",
+        location="Localito Cafe, 30 Riverside Ave, Medford, MA",
+        routes=[{"label": "Estimated Route",
+                 "start": "Bluebikes, Cleveland Circle, Boston, MA 02135",
+                 "end": "Localito Cafe, 30 Riverside Ave, Medford, MA"}],
+    )])
+    archive = tmp_path / "events-past.json"
+    archive_events.run(archive, [src], now=NOW)
+    archived = json.loads(archive.read_text(encoding="utf-8"))["events"][0]
+    assert archived["grace_until"] == "2026-05-02T12:00:00-04:00"
+    assert archived["place_name"] == "Localito Cafe"
+    assert archived["address"] == "30 Riverside Ave, Medford, MA"
+    assert archived["year"] == "2026"
+    assert archived["routes"][0]["start_name"] == "Cleveland Circle"
+    assert archived["routes"][0]["end_name"] == "Localito Cafe"
+    # …and re-running changes nothing, so the fields can't churn a commit.
+    assert archive_events.run(archive, [src], now=NOW) is False
+
+
+def test_a_derived_field_follows_the_merged_location_not_an_older_one(tmp_path):
+    """merge_ride settles the location; the display fields follow *that*."""
+    archived = [ride("a", "2026-05-02T11:00:00-04:00", location="Old Cafe, 1 Old St, Boston, MA")]
+    fresh = [[ride("a", "2026-05-02T11:00:00-04:00", location="New Cafe, 2 New St, Boston, MA")]]
+    merged = ride_fields.derive_all(archive_events.merge_archive(archived, fresh, NOW))
+    assert merged[0]["place_name"] == "New Cafe"
+    assert merged[0]["address"] == "2 New St, Boston, MA"
 
 
 def test_run_reports_a_missing_source(tmp_path):

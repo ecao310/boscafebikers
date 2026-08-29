@@ -256,6 +256,29 @@ def test_the_first_run_produces_the_whole_site_payload(data_dir):
         assert data_dir in path.parents
 
 
+def test_both_payloads_carry_the_precomputed_display_fields(data_dir):
+    """ride_fields.derive runs on every stored ride, every run.
+
+    They are a pure function of what is already in the file, so the archive
+    picks them up on the next sync with no network and no backfill script.
+    """
+    do_run(data_dir)
+    fields = ("grace_until", "place_name", "address", "year")
+    for name in ("events.json", "events-past.json"):
+        events = payload_of(data_dir / name)["events"]
+        assert events, f"{name} has rides to check"
+        for ride in events:
+            assert all(field in ride for field in fields), name
+    upcoming = payload_of(data_dir / "events.json")["events"][0]
+    assert upcoming["grace_until"] == "2030-06-22T10:30:00-04:00"
+    assert upcoming["place_name"] == "Tatte Bakery & Café"
+    assert upcoming["year"] == "2030"
+    # The enriched routes are named too — the map label and the card read these.
+    route = upcoming["routes"][0]
+    assert route["start_name"] == "Cleveland Circle"
+    assert route["end_name"] == "Tatte Bakery"
+
+
 def test_the_maps_are_drawn_with_their_basemap(data_dir):
     do_run(data_dir)
     svgs = sorted((data_dir / "maps").glob("*.svg"))

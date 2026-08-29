@@ -64,6 +64,7 @@ import fetch_rides  # noqa: E402
 import geocode_cafes  # noqa: E402
 import promote_events  # noqa: E402
 import render_route_maps  # noqa: E402
+import ride_fields  # noqa: E402
 import route_map  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -394,6 +395,12 @@ def step_fetch(run: Run) -> None:
         backfilled = fetch_rides.enrich_rides(rides, **run.seams.enrich_kwargs())
         if backfilled:
             run.note(f"pulled images for {backfilled} upcoming ride(s)")
+    # The precomputed display fields (grace_until, place_name, address, year,
+    # each route's start_name/end_name) — after enrichment, so the routes it
+    # just found are named too. Pure functions of what is already stored, so
+    # this needs no network and every stored ride can be re-derived for free.
+    rides = ride_fields.derive_all(rides)
+    run.feed_past = ride_fields.derive_all(run.feed_past)
     run.payload = fetch_rides.build_payload(rides, now=config.now)
     run.note(
         f"{len(rides)} upcoming ride(s), {len(run.feed_past)} already-happened "
@@ -413,8 +420,15 @@ def step_archive(run: Run) -> None:
     existing = run.files.read_json(config.archive_path, default={}) or {}
     run.archive_before = existing.get("events") or []
     sources = [committed.get("events") or [], run.feed_past]
-    run.archive = archive_events.merge_archive(
-        run.archive_before, sources, config.now, excluded=run.excluded
+    # Derived on the *merged* result: merge_ride's "None never overwrites" rule
+    # decides which location survives, and the display fields have to follow it
+    # rather than an older entry's. Running over the whole archive every sync is
+    # also what backfills these fields — and propagates a rule change — without
+    # a script and without touching the network.
+    run.archive = ride_fields.derive_all(
+        archive_events.merge_archive(
+            run.archive_before, sources, config.now, excluded=run.excluded
+        )
     )
     run.save_archive()
     # Before the backfill step runs, so the report can say whether this run
@@ -433,6 +447,9 @@ def step_enrich_archive(run: Run) -> None:
         return
     fetch_rides.enrich_rides(batch, **run.seams.enrich_kwargs())
     run.archive_enriched = len(batch)
+    # The backfill just gave these rides routes; name them now rather than
+    # leaving the labels a sync behind.
+    run.archive = ride_fields.derive_all(run.archive)
     run.save_archive()
     remaining = len(enrich_archive.pending(run.archive))
     run.note(f"looked at {len(batch)} archived ride(s); {remaining} still unchecked")

@@ -42,7 +42,11 @@ it did get, and only an unreachable or unparseable feed fails the job.
 `fetch_rides.py` keeps only events starting at or after "now" in
 `America/New_York`, drops `STATUS:CANCELLED` ones, pulls the `RSVP: <url>` line
 out of each description, sorts by start time, and precomputes the display
-strings so the page never re-formats dates in the visitor's timezone.
+strings so the page never re-formats dates in the visitor's timezone. Every
+other string the page shows is precomputed too, by `ride_fields.py`: the café
+name and address, the ride's year, where each route starts, and when a ride
+stops counting as "rolling now". The browser reads those fields; it never
+re-derives them.
 
 If `events.json` is missing, empty, or unreadable, the page falls back to a
 link to the Partiful profile instead of showing an empty list.
@@ -327,6 +331,7 @@ needs touching.
 | `scripts/promote_events.py` | Copy fetched JSON into place only if the rides changed |
 | `scripts/archive_events.py` | Fold already-happened rides into `events-past.json` |
 | `scripts/enrich_archive.py` | Backfill images/routes onto archived rides, a few per run |
+| `scripts/ride_fields.py` | The display fields every stored ride carries — café name, address, year, route start/end names, the grace-hour cutoff |
 | `scripts/route_map.py` | Draw a route as an SVG (stdlib only) |
 | `scripts/render_route_maps.py` | Fetch route geometry and write `maps/<uid>.svg` |
 | `site/index.html` | The rides page (calendar, next ride, about, contact) |
