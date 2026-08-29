@@ -654,6 +654,7 @@ def parse_events(
     images: dict | None = None,
     past: bool = False,
     excluded: set[str] | None = None,
+    skipped: set[str] | None = None,
 ) -> list[dict]:
     """Parse feed bytes into a sorted list of non-cancelled rides.
 
@@ -664,7 +665,9 @@ def parse_events(
 
     `images` is the optional UID → image-URL sidecar; each ride carries its
     photo URL as `image` (None when absent). `excluded` is the set of UIDs to
-    leave out of either pass (see `load_excluded_events`).
+    leave out of either pass (see `load_excluded_events`); pass a set as
+    `skipped` and the ones this pass actually left out are added to it, which
+    is all the sync's run report needs to say how many the sidecar caught.
     """
     images = images or {}
     excluded = excluded or set()
@@ -686,6 +689,8 @@ def parse_events(
             continue
         uid = _text(component, "UID")
         if uid in excluded:
+            if skipped is not None:
+                skipped.add(uid)
             continue
         description = _text(component, "DESCRIPTION")
         dtend = component.get("DTEND")

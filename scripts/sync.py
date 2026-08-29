@@ -30,6 +30,13 @@ enrichment, no geocoding, no router, no tiles), exactly like
 ``fetch_rides.py --ics-file``. Tests get the same offline run *with* the
 enrichment steps by injecting stubs through ``run()``'s keyword seams.
 
+Every external step is fail-soft, which is right and also silent: a Partiful
+markup change would leave every new ride with no photo, no route and no map and
+nothing would say so. So the run counts what it got — see ``Report`` — prints
+the counts, writes them beside the data as ``sync-report.json``, and raises
+GitHub annotations when a count says something is degraded. **Warnings are
+annotations, never failures**: the exit status is exactly what it always was.
+
 The feed URL comes from PARTIFUL_ICS_URL and is never printed — not in logs,
 not in error messages. Exits nonzero only when the feed can't be fetched or
 parsed (or a local data file is malformed); an enrichment miss is soft, as
@@ -40,6 +47,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from argparse import Namespace
 from dataclasses import dataclass, field
@@ -123,6 +131,11 @@ class Config:
     @property
     def maps_dir(self) -> Path:
         return self.data_dir / "maps"
+
+    @property
+    def report_path(self) -> Path:
+        """The run report, beside the data it describes (see ``Report``)."""
+        return self.data_dir / "sync-report.json"
 
     @property
     def offline(self) -> bool:
@@ -263,6 +276,25 @@ class FileSet:
             key=str,
         )
 
+    def known(self) -> list:
+        """Every path this run has read or written — the overlay's keys."""
+        return sorted(self._current, key=str)
+
+    def original_json(self, path):
+        """A file's JSON *as the run found it*, ignoring anything written since.
+
+        This is how the report answers "which UIDs are new?" without a step
+        having to remember: the FileSet already keeps the pre-run bytes.
+        Tolerant — a report must never be the thing that fails a sync.
+        """
+        data = self._original[self._seen(path)]
+        if data is None:
+            return None
+        try:
+            return json.loads(data.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            return None
+
 
 def _dump(payload: dict) -> str:
     """The JSON spelling every payload file in site/ is written with."""
@@ -291,6 +323,13 @@ class Run:
     promoted: bool = False
     drawn: int = 0
     notes: list = field(default_factory=list)
+    # Counters the report reads. Each is "what this run did", which is why they
+    # are collected here and not recomputed afterwards from the files.
+    skipped_uids: set = field(default_factory=set)
+    archive_enriched: int = 0
+    archive_unchecked_before: int = 0
+    geocode_stats: dict = field(default_factory=dict)
+    report: Optional["Report"] = None
 
     def note(self, message: str) -> None:
         self.notes.append(message)
@@ -334,11 +373,22 @@ def step_fetch(run: Run) -> None:
     data = _load_feed(config)
     images = fetch_rides.load_ride_images(config.ride_images)
     run.excluded = fetch_rides.load_excluded_events(config.excluded_events)
+    # `skipped` is filled by both passes: it is the sidecar's UIDs that were
+    # really in the feed, which is the only excluded number worth reporting.
     rides = fetch_rides.parse_events(
-        data, now=config.now, images=images, excluded=run.excluded
+        data,
+        now=config.now,
+        images=images,
+        excluded=run.excluded,
+        skipped=run.skipped_uids,
     )
     run.feed_past = fetch_rides.parse_events(
-        data, now=config.now, images=images, past=True, excluded=run.excluded
+        data,
+        now=config.now,
+        images=images,
+        past=True,
+        excluded=run.excluded,
+        skipped=run.skipped_uids,
     )
     if run.seams.enrich_enabled:
         backfilled = fetch_rides.enrich_rides(rides, **run.seams.enrich_kwargs())
@@ -367,6 +417,9 @@ def step_archive(run: Run) -> None:
         run.archive_before, sources, config.now, excluded=run.excluded
     )
     run.save_archive()
+    # Before the backfill step runs, so the report can say whether this run
+    # actually drained any of the queue or the backfill is stuck.
+    run.archive_unchecked_before = len(enrich_archive.pending(run.archive))
     run.note(f"archive holds {len(run.archive)} past ride(s)")
 
 
@@ -379,6 +432,7 @@ def step_enrich_archive(run: Run) -> None:
     if not batch:
         return
     fetch_rides.enrich_rides(batch, **run.seams.enrich_kwargs())
+    run.archive_enriched = len(batch)
     run.save_archive()
     remaining = len(enrich_archive.pending(run.archive))
     run.note(f"looked at {len(batch)} archived ride(s); {remaining} still unchecked")
@@ -402,6 +456,7 @@ def step_geocode(run: Run) -> None:
     except geocode_cafes.GeocodeError as exc:
         raise SyncError(str(exc)) from None
     stats = geocode_cafes.update_cache(locations, cache, **run.seams.geocode_kwargs())
+    run.geocode_stats = stats
     run.files.write_text(config.cafe_points_path, geocode_cafes.serialize(cache))
     if stats["queried"]:
         run.note(
@@ -486,6 +541,370 @@ STEPS = (
 )
 
 
+# --------------------------------------------------------------------------
+# The report
+
+
+@dataclass
+class Report:
+    """What this run found — the counts that make a silent degradation visible.
+
+    Every external step here is fail-soft by design: an event page that stops
+    carrying a photo leaves ``image: null``, an unreachable router leaves no
+    distance, a tile outage leaves a map without its basemap, a café Nominatim
+    can't place is recorded as a miss. That is the right behaviour and it is
+    also completely silent — a Partiful markup change would strip every new
+    ride of its poster, route and map and nobody would find out. So the run
+    counts what it got.
+
+    **A count is never a failure.** ``warnings()`` returns GitHub annotations;
+    the exit status of ``main()`` is unchanged by any of them (nonzero only on
+    a FeedError or a malformed local file), and it must stay that way.
+    """
+
+    # the feed
+    upcoming: int = 0
+    feed_past: int = 0
+    excluded_skipped: int = 0
+    # enrichment of the upcoming list
+    enrichment_ran: bool = False
+    with_image: int = 0
+    with_route: int = 0
+    routes_total: int = 0
+    routes_measured: int = 0
+    # the archive and its bounded backfill
+    archive_size: int = 0
+    archive_enriched: int = 0
+    enrich_limit: int = 0
+    archive_unchecked: int = 0
+    archive_unchecked_before: int = 0
+    # geocoding
+    geocode_queried: int = 0
+    geocode_found: int = 0
+    geocode_missed: int = 0
+    cafes_placed: int = 0
+    cafes_unplaced: int = 0
+    # maps
+    maps_drawn: int = 0
+    routes_without_map: int = 0
+    maps_without_basemap: list = field(default_factory=list)
+    # stdout / summary only — deliberately not in state(), see below
+    dry_run: bool = False
+    written: list = field(default_factory=list)
+    first_seen: list = field(default_factory=list)
+
+    def state(self) -> dict:
+        """The subset written to ``sync-report.json`` — and it cannot churn.
+
+        The report lives on the data branch beside the data it describes, so it
+        goes through the same "write only when the bytes changed" rule as
+        everything else, and it has to be **byte-identical across two quiet
+        runs** or the sync commits (and therefore deploys) every 6 hours
+        forever. So this carries only facts that are the same on both runs:
+        sizes *after* the run, and this run's hit rates on the freshly fetched
+        feed (recomputed from scratch each time, so they don't depend on what
+        the last run cached).
+
+        Deliberately absent: any timestamp or ``now``; "drew N maps this run",
+        "backfilled N archived rides", "looked up N cafés" (all of them are the
+        work this run did *because* the last one hadn't, so they read N then 0);
+        the written-files list; and the first-seen UIDs. Those go to stdout and
+        the step summary, where a per-run number belongs.
+        """
+        return {
+            "feed": {
+                "upcoming": self.upcoming,
+                "past": self.feed_past,
+                "excluded": self.excluded_skipped,
+            },
+            "upcoming": {
+                "with_image": self.with_image,
+                "with_route": self.with_route,
+                "routes": self.routes_total,
+                "routes_measured": self.routes_measured,
+            },
+            "archive": {
+                "rides": self.archive_size,
+                "never_checked": self.archive_unchecked,
+            },
+            "cafes": {"placed": self.cafes_placed, "unplaced": self.cafes_unplaced},
+            "maps": {
+                "rides_with_a_route_and_no_map": self.routes_without_map,
+                "without_a_basemap": len(self.maps_without_basemap),
+            },
+        }
+
+    def lines(self) -> list:
+        """The compact stdout block, one line per stage of the pipeline."""
+        return [
+            f"feed: {self.upcoming} upcoming, {self.feed_past} already happened, "
+            f"{self.excluded_skipped} excluded",
+            f"upcoming: {self.with_image}/{self.upcoming} with a photo, "
+            f"{self.with_route}/{self.upcoming} with a route, "
+            f"{self.routes_measured}/{self.routes_total} route(s) measured",
+            f"archive: {self.archive_size} ride(s), {self.archive_enriched} backfilled "
+            f"this run (limit {self.enrich_limit}), "
+            f"{self.archive_unchecked} never checked",
+            f"cafes: {self.geocode_queried} looked up this run "
+            f"({self.geocode_found} found, {self.geocode_missed} missed), "
+            f"{self.cafes_placed} placed, {self.cafes_unplaced} unplaced",
+            f"maps: {self.maps_drawn} drawn this run, {self.routes_without_map} "
+            f"ride(s) with a route and no map, "
+            f"{len(self.maps_without_basemap)} without a basemap",
+        ]
+
+    def warnings(self) -> list:
+        """``(level, message)`` for every count that says something degraded.
+
+        Annotations only — nothing here changes an exit status. The two
+        ``warning``s are the "someone else's site changed under us" signals;
+        the ``notice``s are the softer "this is retrying, keep an eye on it".
+        """
+        notes = []
+        if self.enrichment_ran and self.upcoming and not self.with_image:
+            notes.append((
+                "warning",
+                f"enrichment came back empty: {self.upcoming} upcoming ride(s) "
+                "and not one photo — Partiful's event pages may have changed",
+            ))
+        if not self.upcoming and not self.feed_past and self.archive_size:
+            notes.append((
+                "warning",
+                "the feed carried no events at all while the archive holds "
+                f"{self.archive_size} ride(s) — check the PARTIFUL_ICS_URL secret",
+            ))
+        if self.maps_without_basemap:
+            notes.append((
+                "notice",
+                f"{len(self.maps_without_basemap)} route map(s) still without a "
+                "basemap, redrawn next run: "
+                f"{', '.join(self.maps_without_basemap)}",
+            ))
+        # A draining backfill is normal — say something only when it stopped
+        # draining, which is what an unreachable Partiful looks like from here.
+        if (
+            self.enrichment_ran
+            and self.enrich_limit > 0
+            and self.archive_unchecked
+            and self.archive_unchecked >= self.archive_unchecked_before
+        ):
+            notes.append((
+                "notice",
+                f"{self.archive_unchecked} archived ride(s) have never been "
+                "checked and this run cleared none of them",
+            ))
+        return notes
+
+
+def under_actions(env=None) -> bool:
+    """Whether to spell the notes as GitHub workflow commands."""
+    env = os.environ if env is None else env
+    return str(env.get("GITHUB_ACTIONS", "")).lower() == "true"
+
+
+def format_note(level: str, message: str, actions: bool) -> str:
+    """A run annotation on the runner; a plain prefixed line in a terminal.
+
+    ``::warning::…`` is a magic string only Actions understands, so locally it
+    would just look like line noise — same text, ordinary prefix.
+    """
+    return f"::{level}::{message}" if actions else f"{level}: {message}"
+
+
+def unfinished_maps(state: Run) -> list:
+    """Maps drawn while the tile server was unreachable — retried next run.
+
+    Read through the FileSet, so this sees the maps the run just drew (and,
+    under --dry-run, the ones it would have drawn) rather than stale bytes.
+    """
+    maps_dir = state.config.maps_dir
+    paths = set(maps_dir.glob("*.svg")) if maps_dir.is_dir() else set()
+    paths |= {
+        path
+        for path in state.files.known()
+        if path.suffix == ".svg" and path.parent == maps_dir
+    }
+    names = []
+    for path in sorted(paths, key=lambda item: item.name):
+        svg = state.files.read_text(path)
+        if svg is not None and not route_map.has_basemap(svg):
+            names.append(path.name)
+    return names
+
+
+def _cafe_cache(state: Run) -> dict:
+    """The café cache as it stands after the run — tolerantly.
+
+    Read here rather than taken from the geocode step, so an --ics-file run
+    (which skips that step entirely) still reports how many cafés are placed.
+    """
+    empty = {"points": {}, "missing": []}
+    try:
+        data = state.files.read_json(state.config.cafe_points_path, default=None)
+    except SyncError:
+        return empty
+    if not isinstance(data, dict):
+        return empty
+    points = data.get("points")
+    missing = data.get("missing")
+    return {
+        "points": points if isinstance(points, dict) else {},
+        "missing": missing if isinstance(missing, list) else [],
+    }
+
+
+def _first_seen(state: Run) -> list:
+    """UIDs in neither the published list nor the archive when the run started.
+
+    The FileSet already keeps every file's pre-run bytes, so this needs no
+    bookkeeping from the steps.
+    """
+    known = set()
+    for path in (state.config.events_path, state.config.archive_path):
+        payload = state.files.original_json(path)
+        for ride in (payload or {}).get("events") or []:
+            if isinstance(ride, dict) and ride.get("uid"):
+                known.add(ride["uid"])
+    seen = []
+    for ride in list((state.payload or {}).get("events") or []) + list(
+        state.archive or []
+    ):
+        uid = ride.get("uid") if isinstance(ride, dict) else None
+        if uid and uid not in known and uid not in seen:
+            seen.append(uid)
+    return seen
+
+
+def build_report(state: Run) -> Report:
+    """Count what this run found. Never raises — it is only a report."""
+    rides = [
+        ride for ride in (state.payload or {}).get("events") or []
+        if isinstance(ride, dict)
+    ]
+    archive = [ride for ride in state.archive or [] if isinstance(ride, dict)]
+    routes = [
+        route
+        for ride in rides
+        for route in ride.get("routes") or []
+        if isinstance(route, dict)
+    ]
+    cache = _cafe_cache(state)
+    stats = state.geocode_stats or {}
+    return Report(
+        upcoming=len(rides),
+        feed_past=len(state.feed_past),
+        excluded_skipped=len(state.skipped_uids),
+        enrichment_ran=state.seams.enrich_enabled,
+        with_image=sum(1 for ride in rides if ride.get("image")),
+        with_route=sum(1 for ride in rides if ride.get("routes")),
+        routes_total=len(routes),
+        routes_measured=sum(1 for route in routes if route.get("distance_m")),
+        archive_size=len(archive),
+        archive_enriched=state.archive_enriched,
+        enrich_limit=state.config.enrich_limit,
+        archive_unchecked=len(enrich_archive.pending(archive)),
+        archive_unchecked_before=state.archive_unchecked_before,
+        geocode_queried=stats.get("queried", 0),
+        geocode_found=stats.get("found", 0),
+        geocode_missed=stats.get("missed", 0),
+        cafes_placed=len(cache["points"]),
+        cafes_unplaced=len(cache["missing"]),
+        maps_drawn=state.drawn,
+        # A route link the maps step could not turn into a drawing: no
+        # coordinates in the URL, or the router never answered.
+        routes_without_map=sum(
+            1
+            for ride in rides + archive
+            if ride.get("routes") and not ride.get("map_image")
+        ),
+        maps_without_basemap=unfinished_maps(state),
+        dry_run=state.config.dry_run,
+    )
+
+
+def summary_markdown(report: Report) -> str:
+    """The report as a markdown block for $GITHUB_STEP_SUMMARY."""
+    rows = [
+        ("Upcoming rides in the feed", str(report.upcoming)),
+        ("Already-happened rides in the feed", str(report.feed_past)),
+        ("Feed events skipped by the exclusion list", str(report.excluded_skipped)),
+        ("Upcoming rides with a photo", f"{report.with_image} / {report.upcoming}"),
+        ("Upcoming rides with a route", f"{report.with_route} / {report.upcoming}"),
+        (
+            "Routes with a measured distance",
+            f"{report.routes_measured} / {report.routes_total}",
+        ),
+        ("Rides in the archive", str(report.archive_size)),
+        (
+            "Archived rides backfilled this run",
+            f"{report.archive_enriched} / {report.enrich_limit}",
+        ),
+        ("Archived rides never checked", str(report.archive_unchecked)),
+        (
+            "Café locations looked up this run",
+            f"{report.geocode_queried} "
+            f"({report.geocode_found} found, {report.geocode_missed} missed)",
+        ),
+        ("Café locations placed", str(report.cafes_placed)),
+        ("Café locations still unplaced", str(report.cafes_unplaced)),
+        ("Route maps drawn this run", str(report.maps_drawn)),
+        ("Rides with a route and no map", str(report.routes_without_map)),
+        ("Maps still without a basemap", str(len(report.maps_without_basemap))),
+    ]
+    out = ["### Sync report", "", "| What | Count |", "| --- | --- |"]
+    out += [f"| {label} | {value} |" for label, value in rows]
+    out.append("")
+    verb = "Files that would change" if report.dry_run else "Files written"
+    if report.written:
+        out.append(f"**{verb}:** " + ", ".join(f"`{path}`" for path in report.written))
+    else:
+        out.append("**Nothing changed** — the rides are exactly as they were.")
+    out.append("")
+    if report.first_seen:
+        out.append(
+            "**First seen this run:** "
+            + ", ".join(f"`{uid}`" for uid in report.first_seen)
+        )
+        out.append("")
+    return "\n".join(out) + "\n"
+
+
+def print_report(report: Report, env=None) -> None:
+    """The compact counts block, then the annotations, on stdout.
+
+    Annotations, not failures: nothing printed here changes an exit status.
+    That is the owner's rule — a degraded sync still publishes what it could
+    get, and a red run every time Partiful hiccups teaches everyone to ignore
+    the red.
+    """
+    for line in report.lines():
+        print(f"sync: {line}")
+    if report.first_seen:
+        print(f"sync: first seen this run: {', '.join(report.first_seen)}")
+    actions = under_actions(env)
+    for level, message in report.warnings():
+        print(format_note(level, message, actions))
+
+
+def write_step_summary(report: Report, env=None) -> bool:
+    """Append the report to $GITHUB_STEP_SUMMARY, when the runner set one.
+
+    The workflow appends the fenced stdout log after this step, so the table
+    lands above it. Fail-soft, like everything else here: a summary that can't
+    be written is not a reason to fail a sync.
+    """
+    env = os.environ if env is None else env
+    target = env.get("GITHUB_STEP_SUMMARY")
+    if not target:
+        return False
+    try:
+        with open(target, "a", encoding="utf-8") as handle:
+            handle.write(summary_markdown(report))
+    except OSError:
+        return False
+    return True
+
+
 def run(
     config: Config,
     *,
@@ -517,6 +936,15 @@ def run(
     state = Run(config=config, seams=seams, files=FileSet(dry_run=config.dry_run))
     for _name, step in (steps or STEPS):
         step(state)
+    state.report = build_report(state)
+    # The report rides along with the data it describes, through the same
+    # writer — so it obeys the same "only when the bytes changed" rule and a
+    # --dry-run computes it without touching the disk. See Report.state() for
+    # why it holds no per-run numbers.
+    state.files.write_text(config.report_path, _dump(state.report.state()))
+    # Filled after that write, so the list can include the report itself.
+    state.report.written = [str(path) for path in state.files.changed()]
+    state.report.first_seen = _first_seen(state)
     return state
 
 
@@ -620,24 +1048,10 @@ def main(argv: list = None) -> int:
     for path in changed:
         print(f"sync: {verb} {path}")
     print(f"sync: {len(changed)} file(s) changed" if changed else "sync: no changes")
-    unfinished = unfinished_maps(config.maps_dir)
-    if unfinished:
-        print(
-            f"sync: {len(unfinished)} map(s) still without a basemap "
-            f"(will retry next run): {', '.join(unfinished)}"
-        )
+
+    write_step_summary(state.report)
+    print_report(state.report)
     return 0
-
-
-def unfinished_maps(maps_dir: Path) -> list:
-    """Maps drawn while the tile server was unreachable — retried next run."""
-    if not maps_dir.is_dir():
-        return []
-    return [
-        path.name
-        for path in sorted(maps_dir.glob("*.svg"))
-        if not route_map.has_basemap(path.read_text(encoding="utf-8"))
-    ]
 
 
 if __name__ == "__main__":

@@ -541,3 +541,249 @@ def test_the_step_list_is_the_documented_pipeline():
         "promote",
         "export_ics",
     ]
+
+
+# --- the run report --------------------------------------------------------
+#
+# Every miss in this pipeline is fail-soft, which is right and also silent: a
+# Partiful markup change would strip every new ride of its photo, route and map
+# and nobody would find out. The report gives that degradation a number. What
+# it must never do is fail the job — the counts are annotations, and the exit
+# status stays "nonzero only on a FeedError".
+
+
+def test_the_report_counts_the_fixture_run(data_dir):
+    """Exact numbers for tests/fixtures/sample.ics through the stubbed seams."""
+    report = do_run(data_dir).report
+
+    # The feed: two future rides, one past, one cancelled (never counted).
+    assert (report.upcoming, report.feed_past, report.excluded_skipped) == (2, 1, 0)
+    # Enrichment of the upcoming list: the fixture event page carries a cover
+    # image and two custom-field links, one of which is really directions.
+    assert report.enrichment_ran
+    assert (report.with_image, report.with_route) == (2, 2)
+    assert (report.routes_total, report.routes_measured) == (2, 2)
+    # The archive: the one past ride, backfilled this run, nothing left over.
+    assert (report.archive_size, report.archive_enriched) == (1, 1)
+    assert (report.archive_unchecked_before, report.archive_unchecked) == (1, 0)
+    assert report.enrich_limit == sync.DEFAULT_ENRICH_LIMIT
+    # Geocoding: the two rides with a public address (Minuteman's is hidden).
+    assert (report.geocode_queried, report.geocode_found, report.geocode_missed) == (
+        2, 2, 0,
+    )
+    assert (report.cafes_placed, report.cafes_unplaced) == (2, 0)
+    # Maps: both upcoming rides plus the archived one, all with a basemap.
+    assert report.maps_drawn == 3
+    assert report.routes_without_map == 0
+    assert report.maps_without_basemap == []
+    # And the two stdout-only lists.
+    assert sorted(report.first_seen) == [
+        "evt-future-charles-loop@partiful.com",
+        "evt-future-minuteman@partiful.com",
+        "evt-past-jamaica-pond@partiful.com",
+    ]
+    assert str(config(data_dir).report_path) in report.written
+
+
+def test_the_report_lands_beside_the_data(data_dir):
+    state = do_run(data_dir)
+    written = json.loads(
+        (data_dir / "sync-report.json").read_text(encoding="utf-8")
+    )
+    assert written == state.report.state()
+    assert written["feed"] == {"upcoming": 2, "past": 1, "excluded": 0}
+    assert written["archive"] == {"rides": 1, "never_checked": 0}
+
+
+def test_the_report_json_carries_nothing_that_moves_between_runs(data_dir):
+    """The no-churn rule, spelled out: no timestamp, no per-run work counts.
+
+    The file lives on the data branch, so anything that reads N on the run that
+    does the work and 0 on the next one would commit — and deploy — every 6
+    hours forever.
+    """
+    state = do_run(data_dir).report.state()
+    assert set(state) == {"feed", "upcoming", "archive", "cafes", "maps"}
+    keys = {key for section in state.values() for key in section}
+    for moving in ("updated_at", "now", "drawn", "written", "first_seen",
+                   "queried", "backfilled", "enriched"):
+        assert moving not in keys
+
+
+def test_a_second_run_leaves_the_report_byte_identical(data_dir):
+    """The run-twice invariant, extended to the report itself."""
+    do_run(data_dir)
+    report_path = data_dir / "sync-report.json"
+    before = report_path.read_bytes()
+    # Run one drew 3 maps, backfilled 1 archived ride and geocoded 2 cafés;
+    # run two does none of that — and the file still may not move.
+    second = do_run(data_dir, now=LATER)
+    assert (second.report.maps_drawn, second.report.archive_enriched) == (0, 0)
+    assert second.report.geocode_queried == 0
+    assert second.files.changed() == []
+    assert report_path.read_bytes() == before
+
+
+def test_the_dry_run_writes_no_report_either(data_dir):
+    state = sync.run(config(data_dir, dry_run=True), **SEAMS)
+    assert config(data_dir).report_path in state.files.changed()
+    assert not (data_dir / "sync-report.json").exists()
+    assert snapshot(data_dir) == {}
+
+
+# --- warnings: annotations, never failures ---------------------------------
+
+
+def blank_page(url: str) -> str:
+    """A Partiful page the extractor gets nothing out of — the markup changed."""
+    return "<html><body>nothing we recognise</body></html>"
+
+
+def test_an_enrichment_that_finds_no_photo_warns(data_dir, capsys):
+    state = sync.run(config(data_dir), **{**SEAMS, "fetch_page": blank_page})
+    assert state.report.upcoming == 2 and state.report.with_image == 0
+
+    sync.print_report(state.report, env={})
+    out = capsys.readouterr().out
+    assert "warning: enrichment came back empty" in out
+    # …and the run itself is untouched: the rides still published.
+    assert (data_dir / "events.json").exists()
+
+
+def test_a_healthy_run_warns_about_nothing(data_dir, capsys):
+    state = do_run(data_dir)
+    assert state.report.warnings() == []
+    sync.print_report(state.report, env={})
+    out = capsys.readouterr().out
+    assert "warning:" not in out and "notice:" not in out
+    assert "sync: feed: 2 upcoming" in out
+
+
+def test_an_empty_feed_over_a_stocked_archive_warns(data_dir, tmp_path, capsys):
+    """The "secret rotated / feed went dark" signal — and still exit 0."""
+    empty_feed = tmp_path / "empty.ics"
+    empty_feed.write_text(
+        "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Partiful//EN\r\nEND:VCALENDAR\r\n",
+        encoding="utf-8",
+    )
+    write_payload(data_dir / "events-past.json", feed_rides(past=True))
+
+    code = sync.main(
+        [
+            "--data-dir", str(data_dir),
+            "--ics-file", str(empty_feed),
+            "--now", NOW.isoformat(),
+        ]
+    )
+    out = capsys.readouterr().out
+    assert code == 0, "a warning must never change the exit status"
+    assert "warning: the feed carried no events at all" in out
+    assert "archive holds 1 ride(s)" in out
+
+
+def test_under_actions_the_warning_is_a_workflow_command(data_dir, capsys):
+    state = sync.run(config(data_dir), **{**SEAMS, "fetch_page": blank_page})
+    sync.print_report(state.report, env={"GITHUB_ACTIONS": "true"})
+    out = capsys.readouterr().out
+    assert "::warning::enrichment came back empty" in out
+    assert "warning: enrichment" not in out
+
+
+def test_an_unfinished_map_is_a_notice_not_a_warning(data_dir):
+    """A tile outage is soft twice over: a plain map, and only a `notice`."""
+
+    def no_tiles(zoom, x, y):
+        return None
+
+    state = sync.run(config(data_dir), **{**SEAMS, "fetch_tile": no_tiles})
+    assert state.report.maps_without_basemap, "the maps were drawn without tiles"
+    levels = {level for level, _ in state.report.warnings()}
+    assert levels == {"notice"}
+    assert sync.format_note("notice", "x", actions=True) == "::notice::x"
+    assert sync.format_note("notice", "x", actions=False) == "notice: x"
+
+
+def test_a_stalled_archive_backfill_is_noticed_once_it_stops_draining(data_dir):
+    """A draining queue is normal; a queue that stopped draining is not."""
+    stalled = sync.Report(
+        enrichment_ran=True, enrich_limit=8,
+        archive_unchecked=5, archive_unchecked_before=5,
+    )
+    assert [level for level, _ in stalled.warnings()] == ["notice"]
+    draining = sync.Report(
+        enrichment_ran=True, enrich_limit=8,
+        archive_unchecked=5, archive_unchecked_before=13,
+    )
+    assert draining.warnings() == []
+
+
+def test_under_actions_is_read_off_the_environment():
+    assert sync.under_actions({"GITHUB_ACTIONS": "true"})
+    assert sync.under_actions({"GITHUB_ACTIONS": "True"})
+    assert not sync.under_actions({"GITHUB_ACTIONS": "false"})
+    assert not sync.under_actions({})
+
+
+# --- $GITHUB_STEP_SUMMARY --------------------------------------------------
+
+
+def test_the_summary_table_lands_in_the_step_summary(data_dir, tmp_path, monkeypatch):
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    monkeypatch.delenv("PARTIFUL_ICS_URL", raising=False)
+
+    code = sync.main(
+        [
+            "--data-dir", str(data_dir),
+            "--ics-file", str(FIXTURE),
+            "--now", NOW.isoformat(),
+        ]
+    )
+    assert code == 0
+    text = summary.read_text(encoding="utf-8")
+    assert "### Sync report" in text
+    assert "| What | Count |" in text
+    assert "| Upcoming rides in the feed | 2 |" in text
+    assert "**Files written:**" in text
+    assert "**First seen this run:**" in text
+    # The table is appended, so the workflow's fenced stdout log still follows.
+    assert text.endswith("\n")
+
+
+def test_no_step_summary_variable_writes_no_summary(data_dir, tmp_path):
+    state = do_run(data_dir)
+    summary = tmp_path / "summary.md"
+    assert sync.write_step_summary(state.report, env={}) is False
+    assert not summary.exists()
+    # …and with the variable set, it writes.
+    assert sync.write_step_summary(
+        state.report, env={"GITHUB_STEP_SUMMARY": str(summary)}
+    ) is True
+    assert "### Sync report" in summary.read_text(encoding="utf-8")
+
+
+def test_a_dry_run_summary_says_would_change(data_dir):
+    state = sync.run(config(data_dir, dry_run=True), **SEAMS)
+    assert "**Files that would change:**" in sync.summary_markdown(state.report)
+
+
+# --- the exclusion list is counted ----------------------------------------
+
+
+def test_the_report_counts_the_uids_the_sidecar_caught(data_dir, tmp_path):
+    excluded = tmp_path / "excluded.json"
+    excluded.write_text(
+        json.dumps(
+            {
+                "evt-future-minuteman@partiful.com": "not a ride",
+                "evt-past-jamaica-pond@partiful.com": "a birthday",
+                "evt-never-in-this-feed@partiful.com": "already gone",
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = do_run(data_dir, excluded_events=excluded).report
+    # Two of the three are really in the feed; a UID the feed no longer carries
+    # is not a skip, so the number stays honest as the sidecar grows.
+    assert report.excluded_skipped == 2
+    assert (report.upcoming, report.feed_past) == (1, 0)

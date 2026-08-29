@@ -32,6 +32,13 @@ standalone script (`fetch_rides.py`, `archive_events.py`, `enrich_archive.py`,
 `geocode_cafes.py`, `render_route_maps.py`, `promote_events.py`,
 `export_ics.py`) for one-off runs; `sync.py` imports them.
 
+Every run also reports what it found — how many rides came back with a photo, a
+route, a measured distance, a map — on the run's summary page and in
+`sync-report.json` beside the data, and it raises a warning annotation when
+something silently comes back empty (say, no upcoming ride has a photo any
+more). A warning is only ever an annotation: the sync still publishes whatever
+it did get, and only an unreachable or unparseable feed fails the job.
+
 `fetch_rides.py` keeps only events starting at or after "now" in
 `America/New_York`, drops `STATUS:CANCELLED` ones, pulls the `RSVP: <url>` line
 out of each description, sorts by start time, and precomputes the display
@@ -93,6 +100,7 @@ orphan branch called `data`, laid out exactly as they appear inside `site/`:
 
 ```
 events.json  events-past.json  cafe-points.json  rides.ics  maps/<uid>.svg
+sync-report.json   (the last run's counts; not published with the site)
 ```
 
 One sync job runs every 6 hours: it checks the code out from whichever ref
@@ -323,7 +331,7 @@ needs touching.
 | `scripts/render_route_maps.py` | Fetch route geometry and write `maps/<uid>.svg` |
 | `site/index.html` | The rides page (calendar, next ride, about, contact) |
 | `site/contact.html` | Contact page — email form that composes a `mailto:` |
-| `data` branch | The only copy of the generated data: `events.json`, `events-past.json`, `cafe-points.json`, `rides.ics`, `maps/*.svg` — laid out like `site/`, written by the sync bot |
+| `data` branch | The only copy of the generated data: `events.json`, `events-past.json`, `cafe-points.json`, `rides.ics`, `maps/*.svg` — laid out like `site/`, written by the sync bot, plus `sync-report.json` (the last run's counts, not published) |
 | `site/events*.json`, `site/rides.ics`, `site/maps/` | Where `pull_data.sh` and `pages.yml` put that data; gitignored on the code branches |
 | `tests/fixtures/sample.ics` | Offline fixture: 2 future, 1 past, 1 cancelled |
 | `tests/test_sync.py` | pytest suite for the pipeline — a second run writes zero bytes, and each ordering rule is proved by breaking it |
