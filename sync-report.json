@@ -18,6 +18,10 @@
     "placed": 16,
     "unplaced": 0
   },
+  "posters": {
+    "mirrored": 0,
+    "mirrorable": 20
+  },
   "maps": {
     "rides_with_a_route_and_no_map": 0,
     "without_a_basemap": 0
