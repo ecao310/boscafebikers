@@ -93,7 +93,7 @@ stores those in Firebase Storage) is downloaded, resized to 800px and saved as
 copy, so the page serves its own bytes instead of sending every visitor to
 Google for a 3 MB original. Artwork the organizer only *picked* — Partiful's
 stock posters, a Giphy GIF — is left hotlinked, and `image` stays on every ride
-as the fallback. Resizing needs ImageMagick, which the runner has; without it
+as the fallback. Resizing needs ImageMagick, which the sync workflow installs (ubuntu-latest does not ship it); without it
 the step is skipped and nothing else changes.
 
 **Events that aren't rides.** The calendar export is the organizer's whole

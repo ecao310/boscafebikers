@@ -60,6 +60,17 @@ jobs:
       - name: Check the scripts before touching ride data
         run: python -m pytest tests/ -q
 
+      # ubuntu-latest does not ship ImageMagick (the first real run after the
+      # poster step landed printed the "no ImageMagick" notice and mirrored
+      # nothing). The step is fail-soft either way; this just makes it work.
+      - name: Install ImageMagick for the poster thumbnails
+        run: |
+          if ! command -v magick >/dev/null && ! command -v convert >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq --no-install-recommends imagemagick >/dev/null
+          fi
+          (magick -version || convert -version) | head -1
+
       # The whole pipeline in one process: fetch, archive, backfill, geocode,
       # draw the missing maps, publish, re-export the calendar. The order lives
       # in scripts/sync.py's STEPS and tests/test_sync.py reorders that tuple to
