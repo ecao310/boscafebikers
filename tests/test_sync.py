@@ -314,13 +314,20 @@ def test_the_calendar_is_byte_stable_though_updated_at_moves(data_dir):
 
 
 MAPS_AFTER_PROMOTE = ordered(
-    "fetch", "archive", "enrich_archive", "geocode", "promote", "maps", "export_ics"
+    "fetch", "archive", "enrich_archive", "posters", "geocode", "promote", "maps",
+    "export_ics",
 )
 ICS_BEFORE_PROMOTE = ordered(
-    "fetch", "archive", "enrich_archive", "geocode", "maps", "export_ics", "promote"
+    "fetch", "archive", "enrich_archive", "posters", "geocode", "maps", "export_ics",
+    "promote",
 )
 ARCHIVE_AFTER_PROMOTE = ordered(
-    "fetch", "promote", "archive", "enrich_archive", "geocode", "maps", "export_ics"
+    "fetch", "promote", "archive", "enrich_archive", "posters", "geocode", "maps",
+    "export_ics",
+)
+POSTERS_AFTER_PROMOTE = ordered(
+    "fetch", "archive", "enrich_archive", "geocode", "maps", "promote", "posters",
+    "export_ics",
 )
 
 
@@ -573,11 +580,378 @@ def test_the_step_list_is_the_documented_pipeline():
         "fetch",
         "archive",
         "enrich_archive",
+        "posters",
         "geocode",
         "maps",
         "promote",
         "export_ics",
     ]
+
+
+# --- the ride-photo mirror -------------------------------------------------
+#
+# Without a fetch_image seam an --ics-file run never touches the step, which is
+# why every test above still sees no posters/ directory. These hand one in.
+
+# What the stubbed ImageMagick "writes": short, and it starts with the JPEG
+# magic so a reader can tell at a glance what the bytes are pretending to be.
+STUB_JPEG = b"\xff\xd8\xff\xe0stub-jpeg\xff\xd9"
+
+
+def fake_image(url: str) -> bytes:
+    """Every mirrorable photo downloads. The URL is echoed so a test can see it."""
+    return b"original:" + url.encode("utf-8")
+
+
+def fake_resize(data: bytes) -> bytes:
+    """Stands in for the ImageMagick subprocess — no binary, no temp files."""
+    assert data.startswith(b"original:")
+    return STUB_JPEG
+
+
+POSTER_SEAMS = {**SEAMS, "fetch_image": fake_image, "resize_image": fake_resize}
+
+
+def mirror_run(data_dir: Path, now: datetime = NOW, steps=None, **extra) -> sync.Run:
+    return sync.run(config(data_dir, now, **extra), steps=steps, **POSTER_SEAMS)
+
+
+def posters_in(data_dir: Path) -> dict:
+    """The mirrored files, by name → bytes."""
+    directory = data_dir / "posters"
+    if not directory.is_dir():
+        return {}
+    return {path.name: path.read_bytes() for path in sorted(directory.iterdir())}
+
+
+def stored_rides(data_dir: Path) -> dict:
+    """Every ride the run published, upcoming and archived, keyed by UID."""
+    out = {}
+    for name in ("events.json", "events-past.json"):
+        path = data_dir / name
+        if path.exists():
+            for ride in payload_of(path)["events"]:
+                out[ride["uid"]] = ride
+    return out
+
+
+# The three hosts that really appear in site/events*.json today: the
+# organizer's own Firebase uploads (20 of 34 rides), Partiful's stock posters
+# (7) and the Giphy GIFs they picked from the gallery (7).
+FIREBASE_IMAGE = (
+    "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/"
+    "o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2Fa_n4RCOs?alt=media&token=431384ca"
+)
+STOCK_IMAGE = "https://assets.getpartiful.com/posters/File.png"
+GIPHY_IMAGE = "https://media2.giphy.com/media/ZcYmkPx47LLh3jIFhi/giphy.gif?cid=c00e53c6"
+
+
+@pytest.mark.parametrize(
+    "url, expected",
+    [
+        (FIREBASE_IMAGE, True),
+        ("https://getpartiful.appspot.com/o/x.jpg", True),
+        ("https://storage.googleapis.com/getpartiful.appspot.com/x.jpg", True),
+        (STOCK_IMAGE, False),
+        (GIPHY_IMAGE, False),
+        # Not ours to copy, and not a fetchable image either.
+        ("https://firebasestorage.googleapis.com.evil.invalid/x.jpg", False),
+        ("http://FIREBASESTORAGE.GOOGLEAPIS.COM/x.jpg", True),
+        ("ftp://firebasestorage.googleapis.com/x.jpg", False),
+        ("data:image/png;base64,AAAA", False),
+        ("", False),
+        (None, False),
+        (42, False),
+    ],
+)
+def test_mirrorable_accepts_only_the_organizers_own_uploads(url, expected):
+    """Firebase Storage is where Partiful puts what the *host* uploaded.
+
+    Everything else in the cover slot is somebody else's artwork the host
+    picked off a shelf, and copying that into a public repo is not our call.
+    """
+    assert sync.mirrorable(url) is expected
+
+
+def test_resize_argv_is_the_whole_image_pipeline():
+    """Pinned, because this argv *is* the resize — there is no PIL here."""
+    assert sync.resize_argv("/tmp/in.bin", "/tmp/out.jpg", "magick") == [
+        "magick",
+        "/tmp/in.bin[0]",
+        "-auto-orient",
+        "-strip",
+        "-resize",
+        "800x800>",
+        "-quality",
+        "72",
+        "jpg:/tmp/out.jpg",
+    ]
+    # ImageMagick 6 spells the same command `convert`; the default is 7's name.
+    assert sync.resize_argv("a", "b")[0] == "magick"
+    assert sync.resize_argv("a", "b", "convert")[0] == "convert"
+    # -auto-orient has to come before -strip or an EXIF-rotated phone photo
+    # loses the rotation it was about to be turned by.
+    argv = sync.resize_argv("a", "b")
+    assert argv.index("-auto-orient") < argv.index("-strip")
+
+
+def test_imagemagick_prefers_magick_then_convert():
+    assert sync.imagemagick(which={"magick": "/usr/bin/magick"}.get) == "/usr/bin/magick"
+    assert sync.imagemagick(which={"convert": "/usr/bin/convert"}.get) == "/usr/bin/convert"
+    assert sync.imagemagick(which=lambda name: None) is None
+
+
+def test_the_step_mirrors_every_ride_photo_and_points_the_cards_at_it(data_dir):
+    state = mirror_run(data_dir)
+
+    assert state.report.posters_mirrored == 3
+    files = posters_in(data_dir)
+    assert set(files) == {
+        "evt-future-charles-loop-partiful.com.jpg",
+        "evt-future-minuteman-partiful.com.jpg",
+        "evt-past-jamaica-pond-partiful.com.jpg",
+    }
+    assert set(files.values()) == {STUB_JPEG}
+    for uid, ride in stored_rides(data_dir).items():
+        assert ride["poster"] == "posters/" + sync.render_route_maps.safe_name(uid) + ".jpg"
+        # The original stays exactly where it was: it is the card's fallback.
+        assert ride["image"].startswith("https://firebasestorage.googleapis.com/")
+
+
+def test_the_poster_path_is_relative_and_lands_under_the_data_dir(data_dir):
+    """Served from /boscafebikers/, so a leading slash 404s in production."""
+    state = mirror_run(data_dir)
+    for path in state.files.changed():
+        assert data_dir in path.parents
+    for ride in stored_rides(data_dir).values():
+        assert not ride["poster"].startswith(("/", "http"))
+        assert ride["poster"].startswith("posters/")
+
+
+def test_without_a_fetch_image_seam_an_offline_run_mirrors_nothing(data_dir):
+    """The --ics-file contract: a seam that isn't handed in doesn't run."""
+    state = do_run(data_dir)
+    assert not (data_dir / "posters").exists()
+    assert state.report.posters_mirrored == 0
+    assert all("poster" not in ride for ride in stored_rides(data_dir).values())
+    # …but the report still says how many *could* be mirrored.
+    assert state.report.posters_mirrorable == 3
+
+
+def test_a_stock_poster_is_left_hotlinked(data_dir):
+    """Partiful's own artwork and a Giphy GIF are never copied here."""
+    asked = []
+
+    def watching_fetch(url):
+        asked.append(url)
+        return fake_image(url)
+
+    def stock_page(url):
+        return EVENT_PAGE.replace(
+            "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com"
+            "/o/rides%2Fcharles-loop.jpg?alt=media",
+            STOCK_IMAGE,
+        )
+
+    state = sync.run(
+        config(data_dir),
+        **{**POSTER_SEAMS, "fetch_page": stock_page, "fetch_image": watching_fetch},
+    )
+    assert asked == [], "nobody's stock art gets fetched, let alone stored"
+    assert not (data_dir / "posters").exists()
+    assert state.report.posters_mirrorable == 0
+    for ride in stored_rides(data_dir).values():
+        assert ride["image"] == STOCK_IMAGE
+        assert "poster" not in ride
+
+
+def test_the_limit_bounds_one_run_and_the_rest_follow_next_time(data_dir):
+    """Same shape as the archive backfill: a few per sync, newest first."""
+    first = mirror_run(data_dir, poster_limit=1)
+    assert first.report.posters_mirrored == 1
+    # Newest first — the September 21 ride, not the September 7 one.
+    assert set(posters_in(data_dir)) == {"evt-future-minuteman-partiful.com.jpg"}
+
+    second = mirror_run(data_dir, now=LATER, poster_limit=1)
+    assert second.report.posters_mirrored == 1
+    assert set(posters_in(data_dir)) == {
+        "evt-future-charles-loop-partiful.com.jpg",
+        "evt-future-minuteman-partiful.com.jpg",
+    }
+
+    third = mirror_run(data_dir, now=LATER, poster_limit=1)
+    assert third.report.posters_mirrored == 1
+    assert len(posters_in(data_dir)) == 3
+    # And once there is nothing left, the step is a no-op forever.
+    fourth = mirror_run(data_dir, now=LATER, poster_limit=1)
+    assert fourth.report.posters_mirrored == 0
+    assert fourth.files.changed() == []
+
+
+def test_poster_limit_zero_mirrors_nothing(data_dir):
+    state = mirror_run(data_dir, poster_limit=0)
+    assert state.report.posters_mirrored == 0
+    assert not (data_dir / "posters").exists()
+
+
+def test_pending_posters_is_newest_first_and_skips_anything_already_answered():
+    rides = [
+        {"uid": "a", "start": "2026-01-01T10:00:00-05:00", "image": FIREBASE_IMAGE},
+        {"uid": "b", "start": "2026-03-01T10:00:00-05:00", "image": FIREBASE_IMAGE},
+        {"uid": "c", "start": "2026-02-01T10:00:00-05:00", "image": STOCK_IMAGE},
+        # Already mirrored, and already given up on: both have had their turn.
+        {"uid": "d", "start": "2026-04-01T10:00:00-04:00", "image": FIREBASE_IMAGE,
+         "poster": "posters/d.jpg"},
+        {"uid": "e", "start": "2026-05-01T10:00:00-04:00", "image": FIREBASE_IMAGE,
+         "poster": None},
+        {"uid": "f", "start": "2026-06-01T10:00:00-04:00", "image": None},
+        "not a ride",
+    ]
+    assert [ride["uid"] for ride in sync.pending_posters(rides)] == ["b", "a"]
+
+
+def test_a_definitive_4xx_records_a_null_poster_and_is_never_retried(data_dir):
+    """Gone is gone: asking again every six hours would be rude and pointless."""
+
+    def gone(url):
+        return None  # what fetch_image returns for a 4xx
+
+    first = sync.run(config(data_dir), **{**POSTER_SEAMS, "fetch_image": gone})
+    assert first.report.posters_mirrored == 0
+    assert not (data_dir / "posters").exists()
+    rides = stored_rides(data_dir)
+    assert all(ride["poster"] is None for ride in rides.values())
+
+    # The archive remembers, so the archived ride is never asked about again.
+    # The two *upcoming* rides are, because the feed hands them back bare every
+    # run and a null in a published file is not a memory the fetch can read —
+    # they stop being asked the moment they move into the archive.
+    asked = []
+    second = sync.run(
+        config(data_dir, now=LATER),
+        **{**POSTER_SEAMS, "fetch_image": lambda url: asked.append(url) or None},
+    )
+    assert len(asked) == 2, "the archived ride's null stuck; the upcoming two retry"
+    assert stored_rides(data_dir)["evt-past-jamaica-pond@partiful.com"]["poster"] is None
+    assert second.files.changed() == [], "a remembered null is not a rewrite"
+
+
+def test_any_other_failure_leaves_the_key_absent_so_the_next_run_retries(data_dir):
+    """A timeout is not an answer — it has to stay on the queue."""
+
+    def flaky(url):
+        raise sync.PosterFetchError("ConnectionError")
+
+    first = sync.run(config(data_dir), **{**POSTER_SEAMS, "fetch_image": flaky})
+    assert first.report.posters_mirrored == 0
+    for ride in stored_rides(data_dir).values():
+        assert "poster" not in ride, "no key at all — the question is still open"
+
+    second = mirror_run(data_dir, now=LATER)
+    assert second.report.posters_mirrored == 3
+    assert len(posters_in(data_dir)) == 3
+
+
+def test_a_resize_ImageMagick_refuses_also_leaves_the_key_absent(data_dir):
+    state = sync.run(
+        config(data_dir), **{**POSTER_SEAMS, "resize_image": lambda data: None}
+    )
+    assert state.report.posters_mirrored == 0
+    assert not (data_dir / "posters").exists()
+    for ride in stored_rides(data_dir).values():
+        assert "poster" not in ride
+
+
+def test_no_imagemagick_skips_the_step_with_a_notice_and_no_failure(
+    data_dir, monkeypatch, capsys
+):
+    """A machine with no ImageMagick makes no thumbnails. That is all it means."""
+    monkeypatch.setattr(sync, "imagemagick", lambda which=None: None)
+    seams = {**POSTER_SEAMS}
+    seams.pop("resize_image")
+
+    state = sync.run(config(data_dir), **seams)
+    assert state.posters_skipped and state.report.imagemagick_missing
+    assert not (data_dir / "posters").exists()
+    assert all("poster" not in ride for ride in stored_rides(data_dir).values())
+    # …and every card still has its photo, hotlinked exactly as before.
+    assert all(ride["image"] for ride in stored_rides(data_dir).values())
+
+    assert [level for level, _ in state.report.warnings()] == ["notice"]
+    sync.print_report(state.report, env={})
+    out = capsys.readouterr().out
+    assert "notice: no ImageMagick on this machine" in out
+    assert "warning:" not in out
+
+
+def test_the_cli_still_exits_zero_with_no_imagemagick(data_dir, monkeypatch, capsys):
+    """The owner's rule: a report line never changes an exit status."""
+    monkeypatch.setattr(sync, "imagemagick", lambda which=None: None)
+    code = sync.main(
+        ["--data-dir", str(data_dir), "--ics-file", str(FIXTURE),
+         "--now", NOW.isoformat()]
+    )
+    capsys.readouterr()
+    assert code == 0
+
+
+def test_a_second_run_with_the_mirror_on_changes_nothing(data_dir):
+    """The run-twice invariant, extended to the posters."""
+    mirror_run(data_dir)
+    before = snapshot(data_dir)
+
+    second = mirror_run(data_dir, now=LATER)
+    assert second.report.posters_mirrored == 0
+    assert second.files.changed() == []
+    assert snapshot(data_dir) == before
+
+
+def test_a_fresh_fetch_is_re_pointed_at_the_poster_it_already_has(data_dir):
+    """`poster` is added here and never by a fetch — same trap as `map_image`.
+
+    The upcoming payload comes back from the feed bare every run, so without
+    the re-point pass the promote would see a changed rides list forever.
+    """
+    mirror_run(data_dir)
+    asked = []
+    second = sync.run(
+        config(data_dir, now=LATER),
+        **{**POSTER_SEAMS, "fetch_image": lambda url: asked.append(url) or STUB_JPEG},
+    )
+    assert asked == [], "the copies are already on disk; nothing is downloaded"
+    for ride in second.payload["events"]:
+        assert ride["poster"].startswith("posters/")
+    assert second.files.changed() == []
+
+
+def test_the_dry_run_mirrors_nothing_to_disk(data_dir):
+    state = sync.run(config(data_dir, dry_run=True), **POSTER_SEAMS)
+    assert state.report.posters_mirrored == 3
+    assert [path.name for path in state.files.changed() if path.suffix == ".jpg"]
+    assert not (data_dir / "posters").exists()
+    assert list(data_dir.iterdir()) == []
+
+
+def test_posters_after_the_promote_restamps_events_json_every_run(data_dir):
+    """`poster` is added by this step and never by a fetch — like `map_image`."""
+    sync.run(config(data_dir), steps=POSTERS_AFTER_PROMOTE, **POSTER_SEAMS)
+    stamp = payload_of(data_dir / "events.json")["updated_at"]
+
+    second = sync.run(
+        config(data_dir, now=LATER), steps=POSTERS_AFTER_PROMOTE, **POSTER_SEAMS
+    )
+    assert config(data_dir).events_path in second.files.changed()
+    assert payload_of(data_dir / "events.json")["updated_at"] != stamp
+
+
+def test_the_report_counts_the_mirror(data_dir):
+    report = mirror_run(data_dir).report
+    assert (report.posters_mirrored, report.posters_local, report.posters_mirrorable) == (
+        3, 3, 3,
+    )
+    assert report.state()["posters"] == {"mirrored": 3, "mirrorable": 3}
+    assert "posters: 3 mirrored this run" in "\n".join(report.lines())
+    assert "Ride photos mirrored this run" in sync.summary_markdown(report)
 
 
 # --- the run report --------------------------------------------------------
@@ -609,6 +983,10 @@ def test_the_report_counts_the_fixture_run(data_dir):
         2, 2, 0,
     )
     assert (report.cafes_placed, report.cafes_unplaced) == (2, 0)
+    # The photo mirror is off without a fetch_image seam, but the report still
+    # says how many of the fixture's photos are the organizer's own uploads.
+    assert (report.posters_mirrored, report.posters_local) == (0, 0)
+    assert report.posters_mirrorable == 3
     # Maps: both upcoming rides plus the archived one, all with a basemap.
     assert report.maps_drawn == 3
     assert report.routes_without_map == 0
@@ -640,10 +1018,10 @@ def test_the_report_json_carries_nothing_that_moves_between_runs(data_dir):
     hours forever.
     """
     state = do_run(data_dir).report.state()
-    assert set(state) == {"feed", "upcoming", "archive", "cafes", "maps"}
+    assert set(state) == {"feed", "upcoming", "archive", "cafes", "posters", "maps"}
     keys = {key for section in state.values() for key in section}
     for moving in ("updated_at", "now", "drawn", "written", "first_seen",
-                   "queried", "backfilled", "enriched"):
+                   "queried", "backfilled", "enriched", "mirrored_this_run"):
         assert moving not in keys
 
 

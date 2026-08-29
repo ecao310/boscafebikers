@@ -3,13 +3,14 @@
 #
 #     scripts/pull_data.sh [remote]      # remote defaults to boscafebikers
 #
-# events.json, events-past.json, cafe-points.json, rides.ics and maps/ are not
-# committed on master or dev — the only copy lives on the orphan `data` branch,
-# laid out exactly as it appears inside site/. The sync bot writes it there and
-# pages.yml copies it into the published trees; this is how a local checkout
-# gets its copy, so `python -m http.server -d site` shows real rides.
+# events.json, events-past.json, cafe-points.json, rides.ics, maps/ and
+# posters/ are not committed on master or dev — the only copy lives on the
+# orphan `data` branch, laid out exactly as it appears inside site/. The sync
+# bot writes it there and pages.yml copies it into the published trees; this is
+# how a local checkout gets its copy, so `python -m http.server -d site` shows
+# real rides.
 #
-# Safe to re-run: it overwrites those five paths and touches nothing else. The
+# Safe to re-run: it overwrites those six paths and touches nothing else. The
 # data branch's own README.md is deliberately *not* extracted — it documents
 # the branch, it is not part of the site.
 set -euo pipefail
@@ -18,14 +19,14 @@ remote="${1:-boscafebikers}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 site="$repo_root/site"
 
-paths=(events.json events-past.json cafe-points.json rides.ics maps)
+paths=(events.json events-past.json cafe-points.json rides.ics maps posters)
 
 echo "pull_data: fetching $remote/data"
 git -C "$repo_root" fetch --quiet "$remote" data
 
 # Ask only for what the branch actually carries: a fresh data branch with no
-# route maps yet has no maps/ entry, and git archive fails on a pathspec that
-# matches nothing.
+# route maps or mirrored photos yet has no maps/ or posters/ entry, and git
+# archive fails on a pathspec that matches nothing.
 present=()
 for path in "${paths[@]}"; do
   if git -C "$repo_root" cat-file -e "$remote/data:$path" 2>/dev/null; then

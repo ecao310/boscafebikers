@@ -216,8 +216,12 @@
     // The drawn route map wins over the Partiful poster: it says something
     // about *this* ride. It also links to the route rather than to RSVP, and
     // is shown whole (object-fit: contain) instead of cropped like a photo.
+    // Failing a map, `poster` is our own resized copy of the ride photo,
+    // served from this site (a relative path the sync writes) — `image`, the
+    // multi-megabyte original on Firebase, is the last resort. The two behave
+    // identically here; only the bytes the visitor fetches differ.
     const firstRoute = (ev.routes || [])[0];
-    const banner = ev.map_image || ev.image;
+    const banner = ev.map_image || ev.poster || ev.image;
     if (banner) {
       const isMap = Boolean(ev.map_image);
       const imgLink = BCB.el("a", "ride-img-link");

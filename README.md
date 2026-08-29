@@ -20,6 +20,7 @@ Partiful ICS feed  →  scripts/sync.py  →  events.json        →  pages.yml 
    (repo secret)       (one process:    →  events-past.json     (copies the
                         fetch, archive, →  cafe-points.json      data branch
                         backfill,       →  maps/*.svg            into site/)
+                        mirror,         →  posters/*.jpg
                         geocode, draw,  →  rides.ics
                         publish, export)   (the `data` branch,
                                             committed by CI)
@@ -86,6 +87,15 @@ card, add an entry to `scripts/ride_images.json` mapping the ride's `uid`
 (shown in `events.json`) to an image URL, and commit it — the next sync
 bakes the `image` into `events.json` and the ride card displays it.
 
+The sync also keeps its own copy. A photo the organizer uploaded (Partiful
+stores those in Firebase Storage) is downloaded, resized to 800px and saved as
+`posters/<uid>.jpg` on the `data` branch, a few per run; the card prefers that
+copy, so the page serves its own bytes instead of sending every visitor to
+Google for a 3 MB original. Artwork the organizer only *picked* — Partiful's
+stock posters, a Giphy GIF — is left hotlinked, and `image` stays on every ride
+as the fallback. Resizing needs ImageMagick, which the runner has; without it
+the step is skipped and nothing else changes.
+
 **Events that aren't rides.** The calendar export is the organizer's whole
 Partiful calendar, so a birthday or a party can show up in the feed too. To
 keep one off the site — upcoming list, calendar and the past-rides archive
@@ -103,7 +113,8 @@ The generated files are **not** committed beside the code. They live on an
 orphan branch called `data`, laid out exactly as they appear inside `site/`:
 
 ```
-events.json  events-past.json  cafe-points.json  rides.ics  maps/<uid>.svg
+events.json  events-past.json  cafe-points.json  rides.ics
+maps/<uid>.svg     posters/<uid>.jpg
 sync-report.json   (the last run's counts; not published with the site)
 ```
 
@@ -111,7 +122,7 @@ One sync job runs every 6 hours: it checks the code out from whichever ref
 triggered it, checks `data` out beside it into `_data`, runs the pipeline
 against that directory and pushes back to `data` only if something changed.
 `pages.yml` then checks out `master`, `dev` **and** `data`, and copies those
-five paths into both published trees — so no URL moved
+six paths into both published trees — so no URL moved
 (`…/boscafebikers/events.json`, `…/rides.ics`, `…/maps/<uid>.svg` are exactly
 where they were, and `webcal://` subscribers noticed nothing).
 
@@ -255,7 +266,8 @@ scripts/pull_data.sh          # pull the ride data off the `data` branch into si
 ```
 
 `pull_data.sh` is the one extra step a fresh clone needs: `events.json`,
-`events-past.json`, `cafe-points.json`, `rides.ics` and `maps/` are generated,
+`events-past.json`, `cafe-points.json`, `rides.ics`, `maps/` and `posters/` are
+generated,
 so they are gitignored here and live only on the [`data` branch](#the-data-branch).
 Re-run it any time to catch up with the bot. Without it the page still loads —
 it just falls back to a link to the Partiful profile — and the handful of tests
@@ -336,8 +348,8 @@ needs touching.
 | `scripts/render_route_maps.py` | Fetch route geometry and write `maps/<uid>.svg` |
 | `site/index.html` | The rides page (calendar, next ride, about, contact) |
 | `site/contact.html` | Contact page — email form that composes a `mailto:` |
-| `data` branch | The only copy of the generated data: `events.json`, `events-past.json`, `cafe-points.json`, `rides.ics`, `maps/*.svg` — laid out like `site/`, written by the sync bot, plus `sync-report.json` (the last run's counts, not published) |
-| `site/events*.json`, `site/rides.ics`, `site/maps/` | Where `pull_data.sh` and `pages.yml` put that data; gitignored on the code branches |
+| `data` branch | The only copy of the generated data: `events.json`, `events-past.json`, `cafe-points.json`, `rides.ics`, `maps/*.svg`, `posters/*.jpg` — laid out like `site/`, written by the sync bot, plus `sync-report.json` (the last run's counts, not published) |
+| `site/events*.json`, `site/rides.ics`, `site/maps/`, `site/posters/` | Where `pull_data.sh` and `pages.yml` put that data; gitignored on the code branches |
 | `tests/fixtures/sample.ics` | Offline fixture: 2 future, 1 past, 1 cancelled |
 | `tests/test_sync.py` | pytest suite for the pipeline — a second run writes zero bytes, and each ordering rule is proved by breaking it |
 | `tests/test_fetch_rides.py` | pytest suite for the fetch script |

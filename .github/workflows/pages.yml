@@ -107,11 +107,11 @@ jobs:
           # Overlay the ride data onto *both* trees, by explicit path — the
           # data branch's own README.md and .git must never reach the artifact.
           # The layout mirrors site/, so the published URLs are unchanged
-          # (…/events.json, …/rides.ics, …/maps/<uid>.svg).
+          # (…/events.json, …/rides.ics, …/maps/<uid>.svg, …/posters/<uid>.jpg).
           if [ -d data-src ]; then
             for tree in _site _site/preview; do
               [ -d "$tree" ] || continue
-              for path in events.json events-past.json cafe-points.json rides.ics maps; do
+              for path in events.json events-past.json cafe-points.json rides.ics maps posters; do
                 [ -e "data-src/$path" ] || continue
                 rm -rf "${tree:?}/$path"
                 cp -R "data-src/$path" "$tree/$path"

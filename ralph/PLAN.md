@@ -9,7 +9,7 @@ with a ride schedule auto-synced from the organizer's Partiful ICS calendar feed
 - [x] Generated data on its own `data` branch: one sync job, `pages.yml` composes master+data and dev+data.
 - [x] Observability: per-run report (`$GITHUB_STEP_SUMMARY` + `sync-report.json`) and `::warning::` annotations — never a failed job.
 - [x] Precompute the JS twins in Python (`grace_until`, route `start_name`/`end_name`, `place_name`/`address`/`year`) and delete the JS re-derivations.
-- [ ] Browser third-party surface: SRI on FullCalendar; self-hosted ≤800px poster thumbnails made on the runner.
+- [x] Browser third-party surface: SRI on FullCalendar; self-hosted ≤800px poster thumbnails made on the runner.
 
 ## Backlog 11
 - [x] Create system for when next ride gets updated. People can be late to rides and still join, so keep it around for at least 1 hour after the ride, but the exact system is up to you.

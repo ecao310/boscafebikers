@@ -5,8 +5,9 @@
     python scripts/sync.py --data-dir site       # locally, after scripts/pull_data.sh
 
 Fetch the feed, absorb the rides that have already happened, backfill a few
-archived ones, geocode any new café, draw the maps that are missing, publish
-the upcoming list, re-export the public calendar — then write only the files
+archived ones, mirror a few ride photos, geocode any new café, draw the maps
+that are missing, publish the upcoming list, re-export the public calendar —
+then write only the files
 whose content actually changed. A quiet sync writes zero bytes, which is the
 property the workflow's "commit if changed" guard depends on.
 
@@ -20,6 +21,8 @@ to prove each rule still bites:
 * **maps before promote** — render_route_maps adds ``map_image``, which a fresh
   fetch never carries; add it after publishing and the committed file can never
   equal the next fetch, so every run commits a new ``updated_at`` forever.
+* **posters before promote** — same rule, same reason: the poster mirror adds
+  ``poster``, and a fetch never carries that either.
 * **the ICS export after promote** — its DTSTAMP comes from the payload's
   ``updated_at``, which is stamped fresh every run. Exported from the freshly
   fetched payload the calendar would churn every 6 hours; exported from the
@@ -48,12 +51,18 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 from argparse import Namespace
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional
+from urllib.parse import urlsplit
+
+import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -71,6 +80,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DATA_DIR = REPO_ROOT / "site"
 DEFAULT_URL_PREFIX = render_route_maps.DEFAULT_URL_PREFIX
 DEFAULT_ENRICH_LIMIT = enrich_archive.DEFAULT_LIMIT
+DEFAULT_POSTER_LIMIT = 8
 LOCAL_TZ = fetch_rides.LOCAL_TZ
 
 
@@ -97,6 +107,7 @@ class Config:
     excluded_events: Path = fetch_rides.EXCLUDED_EVENTS_PATH
     now: Optional[datetime] = None
     enrich_limit: int = DEFAULT_ENRICH_LIMIT
+    poster_limit: int = DEFAULT_POSTER_LIMIT
     url_prefix: str = DEFAULT_URL_PREFIX
     dry_run: bool = False
 
@@ -132,6 +143,11 @@ class Config:
     @property
     def maps_dir(self) -> Path:
         return self.data_dir / "maps"
+
+    @property
+    def posters_dir(self) -> Path:
+        """Where the mirrored ride photos live — see the poster section below."""
+        return self.data_dir / POSTER_PREFIX
 
     @property
     def report_path(self) -> Path:
@@ -175,6 +191,8 @@ class Seams:
     fetch_tile: Optional[Callable] = None
     geocode_fetch: Optional[Callable] = None
     geocode_sleep: Optional[Callable] = None
+    fetch_image: Optional[Callable] = None
+    resize_image: Optional[Callable] = None
     offline: bool = False
 
     @property
@@ -188,6 +206,24 @@ class Seams:
     @property
     def maps_enabled(self) -> bool:
         return self.fetch_geometry is not None or not self.offline
+
+    @property
+    def posters_enabled(self) -> bool:
+        return self.fetch_image is not None or not self.offline
+
+    def poster_resizer(self) -> Optional[Callable]:
+        """The bytes → web-sized-JPEG converter, or None if there isn't one.
+
+        None means ImageMagick is not installed, which is a *skip*, never a
+        failure: the cards keep pointing at the hotlinked original. A test
+        hands in ``resize_image`` and never touches the machine's binaries.
+        """
+        if self.resize_image is not None:
+            return self.resize_image
+        binary = imagemagick()
+        if binary is None:
+            return None
+        return lambda data: resize_poster(data, binary)
 
     def enrich_kwargs(self) -> dict:
         return {
@@ -303,6 +339,180 @@ def _dump(payload: dict) -> str:
 
 
 # --------------------------------------------------------------------------
+# The ride-photo mirror
+#
+# A ride with no drawn route map shows its Partiful poster, and that <img> used
+# to point straight at the original upload: a Firebase Storage URL with no
+# resize parameter, 0.1–3.5 MB, fetched from Google by every visitor's browser.
+# So the sync keeps a small copy beside the rest of the data and the card
+# prefers it — same instinct as the route maps' embedded tiles, one step
+# further. `image` is never touched; it stays the fallback.
+
+POSTER_PREFIX = "posters"  # the directory under --data-dir *and* the URL prefix
+POSTER_MAX_PX = 800  # longest side; a phone card is ~380 CSS px, retina ~760
+POSTER_QUALITY = 72
+POSTER_TIMEOUT_SECONDS = 30  # the download
+POSTER_RESIZE_TIMEOUT_SECONDS = 60  # the ImageMagick subprocess
+POSTER_USER_AGENT = "boscafebikers-sync/1.0"
+# ImageMagick 7 calls it `magick`, 6 called it `convert`; the Ubuntu runner has
+# one of them preinstalled. Neither is a dependency — see poster_resizer().
+IMAGEMAGICK_NAMES = ("magick", "convert")
+MIRROR_HOSTS = ("firebasestorage.googleapis.com",)
+
+
+class PosterFetchError(Exception):
+    """A *transient* failure mirroring one photo — retried on the next run."""
+
+
+def mirrorable(url) -> bool:
+    """Whether this cover image is the organizer's own upload.
+
+    Partiful puts what the host uploaded into Firebase Storage; everything else
+    that can sit in the cover slot is somebody else's artwork the host picked
+    off a shelf — Partiful's own stock posters (assets.getpartiful.com) or a
+    Giphy GIF. Copying those into a public repo is not ours to decide, so only
+    the Firebase ones are mirrored and the rest stay hotlinked exactly as they
+    are today. Today's data: 20 of 34 ride photos are mirrorable, 7 are
+    Partiful stock and 7 are Giphy.
+    """
+    if not isinstance(url, str):
+        return False
+    parts = urlsplit(url.strip())
+    if parts.scheme not in ("http", "https"):
+        return False
+    host = parts.netloc.rsplit("@", 1)[-1].split(":")[0].lower()
+    if host in MIRROR_HOSTS or host.endswith(".appspot.com"):
+        return True
+    # The other spelling of the same bucket: storage.googleapis.com/<bucket>/…
+    bucket = parts.path.lstrip("/").split("/", 1)[0].lower()
+    return host == "storage.googleapis.com" and bucket.endswith(".appspot.com")
+
+
+def resize_argv(src, dst, binary: str = "magick") -> list:
+    """The ImageMagick command line that makes one web-sized poster.
+
+    Pure, so a test can pin it: this argv *is* the whole image pipeline. There
+    is deliberately no PIL — the stdlib-only rule holds and ImageMagick is a
+    subprocess, exactly like nothing else here, but it is preinstalled on the
+    runner and adding a compiled dependency to requirements.txt for eight
+    thumbnails a month is not a trade worth making.
+
+    * ``[0]`` takes the first frame, so an animated source writes one file
+      instead of poster-0.jpg, poster-1.jpg, …
+    * ``-auto-orient`` *before* ``-strip``: the EXIF rotation has to be applied
+      while it still exists, or a phone photo comes out sideways.
+    * ``-strip`` drops the metadata — which on a ride photo can include the
+      camera's GPS fix, and none of it belongs on a public page.
+    * ``800x800>`` only ever shrinks; a poster already smaller is left alone.
+    * ``jpg:`` forces the output format from the command rather than the
+      filename, so a PNG upload still lands as the JPEG the card expects.
+    """
+    return [
+        binary,
+        f"{src}[0]",
+        "-auto-orient",
+        "-strip",
+        "-resize",
+        f"{POSTER_MAX_PX}x{POSTER_MAX_PX}>",
+        "-quality",
+        str(POSTER_QUALITY),
+        f"jpg:{dst}",
+    ]
+
+
+def imagemagick(which=None) -> Optional[str]:
+    """ImageMagick's binary on this machine, or None when it isn't installed."""
+    which = shutil.which if which is None else which
+    for name in IMAGEMAGICK_NAMES:
+        found = which(name)
+        if found:
+            return found
+    return None
+
+
+def resize_poster(data: bytes, binary: str) -> Optional[bytes]:
+    """One photo's bytes, shrunk to a web-sized JPEG. None if that failed.
+
+    Through temporary files, because ImageMagick is a separate process — but
+    the result comes back as *bytes*, so ``FileSet`` stays the only thing that
+    writes into the data dir and --dry-run still writes nothing.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "poster.in"
+        dst = Path(tmp) / "poster.jpg"
+        try:
+            src.write_bytes(data)
+            done = subprocess.run(
+                resize_argv(src, dst, binary),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=POSTER_RESIZE_TIMEOUT_SECONDS,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return None
+        if done.returncode != 0 or not dst.exists():
+            return None
+        return dst.read_bytes() or None
+
+
+def fetch_image(url: str) -> Optional[bytes]:
+    """The bytes behind a ride photo. ``None`` means "and don't ask again".
+
+    ``None`` is reserved for a definitive 4xx — the upload is gone, or its
+    access token was rotated — because re-asking every six hours forever is
+    both pointless and rude. Everything else (a timeout, a 5xx, a reset
+    connection) raises, which leaves the ride's ``poster`` key absent so the
+    next run simply tries again. Nothing here logs the URL: it carries a
+    Firebase access token.
+    """
+    try:
+        response = requests.get(
+            url,
+            timeout=POSTER_TIMEOUT_SECONDS,
+            headers={"User-Agent": POSTER_USER_AGENT},
+        )
+    except requests.RequestException as exc:
+        raise PosterFetchError(type(exc).__name__) from None
+    if 400 <= response.status_code < 500:
+        return None
+    if response.status_code >= 300 or not response.content:
+        raise PosterFetchError(f"HTTP {response.status_code}")
+    return response.content
+
+
+def pending_posters(rides: list) -> list:
+    """Rides whose photo can be mirrored and hasn't been tried, newest first.
+
+    A ``poster`` key that is present — a path *or* an explicit null — means
+    this ride has had its turn. Same "absent is the never-checked marker" rule
+    ``enrich_archive.pending`` uses for ``routes``, and the same newest-first
+    order: this year's rides are the ones anybody scrolls to.
+    """
+    out = [
+        ride
+        for ride in rides
+        if isinstance(ride, dict)
+        and "poster" not in ride
+        and mirrorable(ride.get("image"))
+    ]
+    out.sort(key=lambda ride: str(ride.get("start") or ""), reverse=True)
+    return out
+
+
+def poster_path(config: Config, ride: dict) -> Optional[Path]:
+    """Where this ride's mirrored photo belongs. None for a ride with no UID."""
+    uid = ride.get("uid")
+    if not uid:
+        return None
+    return config.posters_dir / f"{render_route_maps.safe_name(uid)}.jpg"
+
+
+def poster_url(target: Path) -> str:
+    """Relative, always: the site is served from the /boscafebikers/ subpath."""
+    return f"{POSTER_PREFIX}/{target.name}"
+
+
+# --------------------------------------------------------------------------
 # The run
 
 
@@ -327,6 +537,8 @@ class Run:
     # Counters the report reads. Each is "what this run did", which is why they
     # are collected here and not recomputed afterwards from the files.
     skipped_uids: set = field(default_factory=set)
+    posters_mirrored: int = 0
+    posters_skipped: bool = False
     archive_enriched: int = 0
     archive_unchecked_before: int = 0
     geocode_stats: dict = field(default_factory=dict)
@@ -455,6 +667,78 @@ def step_enrich_archive(run: Run) -> None:
     run.note(f"looked at {len(batch)} archived ride(s); {remaining} still unchecked")
 
 
+def step_posters(run: Run) -> None:
+    """Mirror a few ride photos onto the data branch, small enough to serve.
+
+    Runs over the upcoming payload *and* the archive, like the maps step does,
+    and for the same reason has to come before the promote: it adds ``poster``,
+    which a fresh fetch never carries.
+
+    Three fail-soft outcomes, none of them visible to a visitor, because
+    ``image`` is left exactly as it was and the card falls back to it:
+
+    * **No ImageMagick on the machine** — the whole step is skipped and the
+      report prints a ``notice``. Never a failure; a sync that can't make
+      thumbnails is a sync with no thumbnails, not a broken one.
+    * **A definitive 4xx** — ``poster`` is set to ``null``. The ride has had
+      its turn and is never asked about again.
+    * **Anything else** (timeout, 5xx, a photo ImageMagick won't read) — the
+      key is left absent, so the next run picks the ride up again.
+    """
+    if not run.seams.posters_enabled:
+        return
+    config = run.config
+    rides = [
+        ride
+        for group in ((run.payload or {}).get("events") or [], run.archive or [])
+        for ride in group
+        if isinstance(ride, dict)
+    ]
+    # First re-point every ride at a copy that already exists. The upcoming
+    # payload comes back from the feed with no `poster` at all, every run, so
+    # without this pass the promote would see a changed rides list forever —
+    # the same trap render_for_ride avoids for `map_image`. A ride re-pointed
+    # here costs nothing and does not count against the limit.
+    todo = []
+    for ride in pending_posters(rides):
+        target = poster_path(config, ride)
+        if target is None:
+            continue
+        if run.files.read_bytes(target) is not None:
+            ride["poster"] = poster_url(target)
+        else:
+            todo.append((ride, target))
+    resize = run.seams.poster_resizer() if todo else None
+    if todo and resize is None:
+        # Nothing is broken: every card keeps the hotlinked original.
+        run.posters_skipped = True
+    elif todo:
+        fetch = run.seams.fetch_image or fetch_image
+        limit = config.poster_limit
+        for ride, target in todo[:limit] if limit > 0 else []:
+            try:
+                data = fetch(ride.get("image"))
+            except (PosterFetchError, requests.RequestException, ValueError, TypeError):
+                continue  # transient: no key written, retried next run
+            if data is None:
+                ride["poster"] = None  # asked, answered — don't ask again
+                continue
+            jpeg = resize(data)
+            if not jpeg:
+                continue
+            run.files.write_bytes(target, jpeg)
+            ride["poster"] = poster_url(target)
+            run.posters_mirrored += 1
+        if run.posters_mirrored:
+            run.note(f"mirrored {run.posters_mirrored} ride photo(s)")
+    run.save_archive()
+    if run.promoted:
+        # Only reachable with the steps reordered: events.json already holds
+        # this payload, so the `poster` just added has to be written again —
+        # which is exactly the churn the correct order avoids.
+        run.save_events()
+
+
 def step_geocode(run: Run) -> None:
     """Place any café we haven't got coordinates for yet.
 
@@ -551,6 +835,7 @@ STEPS = (
     ("fetch", step_fetch),
     ("archive", step_archive),
     ("enrich_archive", step_enrich_archive),
+    ("posters", step_posters),
     ("geocode", step_geocode),
     ("maps", step_maps),
     ("promote", step_promote),
@@ -605,6 +890,11 @@ class Report:
     maps_drawn: int = 0
     routes_without_map: int = 0
     maps_without_basemap: list = field(default_factory=list)
+    # the ride-photo mirror
+    posters_mirrored: int = 0
+    posters_local: int = 0
+    posters_mirrorable: int = 0
+    imagemagick_missing: bool = False
     # stdout / summary only — deliberately not in state(), see below
     dry_run: bool = False
     written: list = field(default_factory=list)
@@ -645,6 +935,12 @@ class Report:
                 "never_checked": self.archive_unchecked,
             },
             "cafes": {"placed": self.cafes_placed, "unplaced": self.cafes_unplaced},
+            # Sizes after the run, so they are the same on a second quiet one.
+            # "mirrored this run" is deliberately absent, like "drew N maps".
+            "posters": {
+                "mirrored": self.posters_local,
+                "mirrorable": self.posters_mirrorable,
+            },
             "maps": {
                 "rides_with_a_route_and_no_map": self.routes_without_map,
                 "without_a_basemap": len(self.maps_without_basemap),
@@ -665,6 +961,9 @@ class Report:
             f"cafes: {self.geocode_queried} looked up this run "
             f"({self.geocode_found} found, {self.geocode_missed} missed), "
             f"{self.cafes_placed} placed, {self.cafes_unplaced} unplaced",
+            f"posters: {self.posters_mirrored} mirrored this run, "
+            f"{self.posters_local}/{self.posters_mirrorable} mirrorable ride "
+            "photo(s) held locally",
             f"maps: {self.maps_drawn} drawn this run, {self.routes_without_map} "
             f"ride(s) with a route and no map, "
             f"{len(self.maps_without_basemap)} without a basemap",
@@ -689,6 +988,12 @@ class Report:
                 "warning",
                 "the feed carried no events at all while the archive holds "
                 f"{self.archive_size} ride(s) — check the PARTIFUL_ICS_URL secret",
+            ))
+        if self.imagemagick_missing:
+            notes.append((
+                "notice",
+                "no ImageMagick on this machine, so ride photos were not "
+                "mirrored — the cards fall back to the hotlinked originals",
             ))
         if self.maps_without_basemap:
             notes.append((
@@ -807,6 +1112,7 @@ def build_report(state: Run) -> Report:
     ]
     cache = _cafe_cache(state)
     stats = state.geocode_stats or {}
+    stored = rides + archive
     return Report(
         upcoming=len(rides),
         feed_past=len(state.feed_past),
@@ -827,6 +1133,10 @@ def build_report(state: Run) -> Report:
         cafes_placed=len(cache["points"]),
         cafes_unplaced=len(cache["missing"]),
         maps_drawn=state.drawn,
+        posters_mirrored=state.posters_mirrored,
+        posters_local=sum(1 for ride in stored if ride.get("poster")),
+        posters_mirrorable=sum(1 for ride in stored if mirrorable(ride.get("image"))),
+        imagemagick_missing=state.posters_skipped,
         # A route link the maps step could not turn into a drawing: no
         # coordinates in the URL, or the router never answered.
         routes_without_map=sum(
@@ -864,6 +1174,11 @@ def summary_markdown(report: Report) -> str:
         ),
         ("Café locations placed", str(report.cafes_placed)),
         ("Café locations still unplaced", str(report.cafes_unplaced)),
+        ("Ride photos mirrored this run", str(report.posters_mirrored)),
+        (
+            "Ride photos held locally",
+            f"{report.posters_local} / {report.posters_mirrorable} mirrorable",
+        ),
         ("Route maps drawn this run", str(report.maps_drawn)),
         ("Rides with a route and no map", str(report.routes_without_map)),
         ("Maps still without a basemap", str(len(report.maps_without_basemap))),
@@ -932,6 +1247,8 @@ def run(
     fetch_tile: Optional[Callable] = None,
     geocode_fetch: Optional[Callable] = None,
     geocode_sleep: Optional[Callable] = None,
+    fetch_image: Optional[Callable] = None,
+    resize_image: Optional[Callable] = None,
     steps=None,
 ) -> Run:
     """Run the pipeline. Returns the finished Run (``.files.changed()`` etc.).
@@ -948,6 +1265,8 @@ def run(
         fetch_tile=fetch_tile,
         geocode_fetch=geocode_fetch,
         geocode_sleep=geocode_sleep,
+        fetch_image=fetch_image,
+        resize_image=resize_image,
         offline=config.offline,
     )
     state = Run(config=config, seams=seams, files=FileSet(dry_run=config.dry_run))
@@ -986,8 +1305,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--data-dir",
         default=str(DEFAULT_DATA_DIR),
-        help="where events.json, events-past.json, cafe-points.json, rides.ics "
-        f"and maps/ live (default: {DEFAULT_DATA_DIR})",
+        help="where events.json, events-past.json, cafe-points.json, rides.ics, "
+        f"maps/ and posters/ live (default: {DEFAULT_DATA_DIR})",
     )
     parser.add_argument(
         "--ics-file",
@@ -1018,6 +1337,13 @@ def build_parser() -> argparse.ArgumentParser:
         f"(default: {DEFAULT_ENRICH_LIMIT}, 0 for none)",
     )
     parser.add_argument(
+        "--poster-limit",
+        type=int,
+        default=DEFAULT_POSTER_LIMIT,
+        help="most ride photos to mirror per run "
+        f"(default: {DEFAULT_POSTER_LIMIT}, 0 for none)",
+    )
+    parser.add_argument(
         "--url-prefix",
         default=DEFAULT_URL_PREFIX,
         help=f"path prefix written into map_image (default: {DEFAULT_URL_PREFIX}); "
@@ -1040,6 +1366,7 @@ def main(argv: list = None) -> int:
         excluded_events=args.excluded_events,
         now=args.now,
         enrich_limit=args.enrich_limit,
+        poster_limit=args.poster_limit,
         url_prefix=args.url_prefix,
         dry_run=args.dry_run,
     )

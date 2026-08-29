@@ -24,5 +24,6 @@ site/events-past.json
 site/cafe-points.json
 site/rides.ics
 site/maps/
+site/posters/
 # …plus the run report sync.py writes beside them (data branch only).
 site/sync-report.json

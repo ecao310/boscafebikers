@@ -750,7 +750,14 @@
       }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
+  <!-- FullCalendar 6 (MIT) from jsDelivr, version-pinned with an SRI hash like
+       the MapLibre tags on cafes.html. If the CDN ever serves different bytes
+       the browser refuses to run the script — and that is the designed
+       behaviour, not a broken page: calendar.js sees no window.FullCalendar and
+       renders the hand-rolled month grid instead. -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"
+    integrity="sha384-B1OFx8Gy9GjPu8UbUyXbGQpzll9ubAUQ9agInFJ8NnD7nYG1u/CLR+Sqr5yifl4q"
+    crossorigin="anonymous" defer></script>
 </head>
 
 <body>

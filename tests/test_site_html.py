@@ -15,6 +15,12 @@ Two rules, both from CLAUDE.md:
   ``http.server``. Protocol-relative ``//host/…`` counts as the same failure:
   nothing here needs it.
 
+* **Every third-party subresource is pinned** — the two CDN libraries
+  (FullCalendar, MapLibre) are the only bytes on the site the repo does not
+  own, so each ``<script src="https://…">`` / ``<link rel=stylesheet
+  href="https://…">`` has to carry an ``integrity`` hash. A mismatch blocks
+  the file, which for both of them is a designed fallback, not a broken page.
+
 Plus the shared chrome: every page carries the same ``.nav`` and ``<footer>``.
 """
 
@@ -36,6 +42,15 @@ VOID_ELEMENTS = frozenset({
 
 # Attributes that hold a URL the browser will resolve against the page.
 URL_ATTRS = frozenset({"href", "src", "action", "poster", "srcset", "data-bg", "formaction"})
+
+# A subresource fetched from another origin — the only bytes on the site this
+# repo does not own, and so the only ones that need an integrity hash.
+OFFSITE_RE = re.compile(r"^(?:https?:)?//", re.IGNORECASE)
+
+# Google Fonts serves a per-browser stylesheet, so its bytes are deliberately
+# not hashable. Nothing on the site uses it today; the exemption is here so a
+# future font link doesn't have to argue with this test.
+SRI_EXEMPT_HOSTS = ("fonts.googleapis.com", "fonts.gstatic.com")
 
 # The seven pages CLAUDE.md documents. Checked as a subset of the glob so that
 # adding an eighth page doesn't fail the suite — but deleting one does.
@@ -64,18 +79,29 @@ class PageParser(HTMLParser):
         self.urls: list[tuple[str, str, int]] = []   # (attr, value, line)
         self.tags: list[str] = []
         self.classes: set[str] = set()
+        # (url, has_integrity, line) for every subresource fetched off-site.
+        self.external: list[tuple[str, bool, int]] = []
 
     # -- helpers -------------------------------------------------------
     def _record(self, tag: str, attrs) -> None:
         self.tags.append(tag)
         line = self.getpos()[0]
+        seen = {}
         for name, value in attrs:
             if value is None:
                 continue
+            seen[name] = value
             if name == "class":
                 self.classes.update(value.split())
             if name in URL_ATTRS:
                 self.urls.append((name, value, line))
+        url = None
+        if tag == "script":
+            url = seen.get("src")
+        elif tag == "link" and "stylesheet" in seen.get("rel", "").split():
+            url = seen.get("href")
+        if url and OFFSITE_RE.match(url):
+            self.external.append((url, bool(seen.get("integrity")), line))
 
     # -- HTMLParser hooks ----------------------------------------------
     def handle_starttag(self, tag, attrs):
@@ -159,6 +185,37 @@ def test_page_has_no_root_relative_urls_in_raw_text(path: Path):
     text = path.read_text(encoding="utf-8")
     bad = re.findall(r"""(?:href|src|action|poster)\s*=\s*['"]//?[^'"]*""", text)
     assert bad == [], f"{path.name}: {bad}"
+
+
+@pytest.mark.parametrize("path", PAGES, ids=PAGE_IDS)
+def test_third_party_subresources_carry_an_integrity_hash(path: Path):
+    """FullCalendar and MapLibre are the site's only off-site bytes.
+
+    Both are version-pinned on jsDelivr, so their content can never legitimately
+    change under a pinned URL — an SRI hash costs nothing and turns "the CDN
+    served something else" into "the script doesn't run". Both libraries degrade
+    on their own when that happens (the hand-rolled month grid; a hidden map
+    box), so a mismatch is a designed fallback rather than a broken page.
+    """
+    offenders = [
+        f"line {line}: {url}"
+        for url, has_integrity, line in parse(path).external
+        if not has_integrity and not any(host in url for host in SRI_EXEMPT_HOSTS)
+    ]
+    assert offenders == [], (
+        f"{path.name} loads third-party code with no integrity= hash:\n  "
+        + "\n  ".join(offenders)
+    )
+
+
+def test_the_cdn_subresources_are_version_pinned():
+    """An SRI hash on a floating version would just break on the next release."""
+    unpinned = []
+    for path in PAGES:
+        for url, _has_integrity, line in parse(path).external:
+            if "@" not in url.rsplit("/", 1)[0]:
+                unpinned.append(f"{path.name} line {line}: {url}")
+    assert unpinned == [], "CDN URLs without a pinned version:\n  " + "\n  ".join(unpinned)
 
 
 def test_stylesheet_has_no_root_relative_urls():

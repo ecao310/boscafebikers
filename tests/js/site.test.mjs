@@ -200,6 +200,46 @@ test("a ride with no rsvp_url falls back to the Partiful profile", async () => {
   assert.ok(!card.querySelector(".ride-img").classList.contains("is-map"));
 });
 
+test("the banner is map_image, then poster, then image", async () => {
+  // Three sources, in the order the site prefers them: the drawn route map
+  // (about this ride), our own resized copy of the photo (same bytes, served
+  // from here), and the multi-megabyte Firebase original as the last resort.
+  const h = await booted();
+  const rideCard = h.BCB.rideCard;
+  const base = Object.assign({}, RIDE_A, {
+    map_image: "maps/abc123.svg",
+    poster: "posters/abc123.jpg",
+    image: "https://firebasestorage.googleapis.invalid/original.jpg"
+  });
+
+  const withMap = rideCard(base);
+  assert.equal(withMap.querySelector(".ride-img").src, "maps/abc123.svg");
+  assert.ok(withMap.querySelector(".ride-img").classList.contains("is-map"));
+
+  const withPoster = rideCard(Object.assign({}, base, { map_image: null }));
+  const posterImg = withPoster.querySelector(".ride-img");
+  assert.equal(posterImg.src, "posters/abc123.jpg");
+  assert.equal(posterImg.loading, "lazy");
+  assert.ok(!posterImg.classList.contains("is-map"), "a photo is cropped, not contained");
+  assert.equal(posterImg.alt, RIDE_A.title);
+  // Same-origin and relative — the site is served from /boscafebikers/.
+  assert.ok(!posterImg.src.startsWith("/") && !/^https?:/.test(posterImg.src));
+  // A poster links at RSVP and stays in the tab, exactly like the original did.
+  const posterLink = withPoster.querySelector(".ride-img-link");
+  assert.equal(posterLink.href, RIDE_A.rsvp_url);
+  assert.equal(posterLink.target, undefined);
+
+  const withImage = rideCard(Object.assign({}, base, { map_image: null, poster: null }));
+  assert.equal(withImage.querySelector(".ride-img").src, base.image);
+
+  // A ride the mirror gave up on carries poster: null, which must fall through
+  // to the original rather than blanking the banner.
+  const none = rideCard(Object.assign({}, base, {
+    map_image: null, poster: null, image: null
+  }));
+  assert.equal(none.querySelector(".ride-img"), null, "no banner at all");
+});
+
 test("location_hidden renders the friendly note, not the feed's placeholder", async () => {
   const h = await booted();
   h.schedule.querySelectorAll(".ride-chip")[2].click();
