@@ -16,6 +16,11 @@ sync-report.json   the last sync run's counts (photos / routes / distances on th
                    scripts/sync.py, deliberately not copied into the site
 ```
 
+Each ride in `events.json` / `events-past.json` also carries the display fields
+`scripts/ride_fields.py` precomputes — `grace_until`, `place_name`, `address`,
+`year`, and `start_name`/`end_name` on each route — so the site reads them
+instead of deriving anything in the browser.
+
 **The layout mirrors `site/`.** Every path here sits at the same place it used
 to sit inside `site/`, so the published URLs are unchanged —
 `…/boscafebikers/events.json`, `…/rides.ics`, `…/maps/<uid>.svg` — and anyone
