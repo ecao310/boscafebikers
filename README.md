@@ -10,6 +10,10 @@ events-past.json   the accumulating archive of rides that already happened
 cafe-points.json   café lat/lon cache (the pins on cafes.html)
 rides.ics          the public, subscribable calendar
 maps/<uid>.svg     one drawn route map per ride
+posters/<uid>.jpg  a resized copy (<=800px, q72, metadata stripped) of the ride
+                   photo the organizer uploaded; the card prefers it over the
+                   Firebase original. Stock art (Partiful posters, Giphy) is
+                   not mirrored.
 sync-report.json   the last sync run's counts (photos / routes / distances on the
                    upcoming list, archive size and how many are still unchecked,
                    cafés placed vs unplaced, maps without a basemap) — written by
@@ -23,7 +27,7 @@ instead of deriving anything in the browser.
 
 **The layout mirrors `site/`.** Every path here sits at the same place it used
 to sit inside `site/`, so the published URLs are unchanged —
-`…/boscafebikers/events.json`, `…/rides.ics`, `…/maps/<uid>.svg` — and anyone
+`…/boscafebikers/events.json`, `…/rides.ics`, `…/maps/<uid>.svg`, `…/posters/<uid>.jpg` — and anyone
 subscribed to `webcal://ecao310.github.io/boscafebikers/rides.ics` never notices
 this branch exists.
 
@@ -44,7 +48,7 @@ artifact.
 ## Re-rooting when the history gets heavy
 
 Roughly four bot commits a day land here, and each new ride adds a 55–140 KB
-route map, so the branch grows without bound. Nothing depends on its history —
+route map and a ~40–120 KB poster, so the branch grows without bound. Nothing depends on its history —
 `master` and `dev` are the record of *decisions*; this is a snapshot of what
 Partiful says today. So whenever it gets heavy, flatten it to a single commit:
 
