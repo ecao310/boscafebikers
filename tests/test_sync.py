@@ -29,6 +29,20 @@ import render_route_maps  # noqa: E402
 import route_map  # noqa: E402
 import sync  # noqa: E402
 
+
+@pytest.fixture(autouse=True)
+def _outside_actions(monkeypatch):
+    """Every test starts outside GitHub Actions.
+
+    `sync.main()` reads the real environment, and the runner sets both of
+    these: GITHUB_ACTIONS flips the warning prefix to `::warning::` and
+    GITHUB_STEP_SUMMARY would make a test append to the job's real summary.
+    The first dev dispatch of the pytest gate failed on exactly that. Tests
+    that want the Actions behaviour pass `env=` explicitly or setenv.
+    """
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
+
 EASTERN = ZoneInfo("America/New_York")
 FIXTURE = REPO_ROOT / "tests" / "fixtures" / "sample.ics"
 EVENT_PAGE = (REPO_ROOT / "tests" / "fixtures" / "event-page.html").read_text(
