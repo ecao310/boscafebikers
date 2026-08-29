@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-29T01:48:21.903825-04:00",
+  "updated_at": "2026-08-29T02:07:30.111839-04:00",
   "count": 33,
   "events": [
     {
@@ -411,7 +411,8 @@
       "grace_until": "2026-06-14T11:00:00-04:00",
       "place_name": null,
       "address": null,
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/WX2ptgXyA7IVWtsroVa8.jpg"
     },
     {
       "uid": "41HT3tux8LzVeVSN6tQx",
@@ -449,7 +450,8 @@
       "grace_until": "2026-06-27T12:00:00-04:00",
       "place_name": null,
       "address": null,
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/u9DPNOffyehLiS8oh2U6.jpg"
     },
     {
       "uid": "BrezyQ7GtxVtvVh8fI6z",
@@ -487,7 +489,8 @@
       "grace_until": "2026-07-11T11:00:00-04:00",
       "place_name": null,
       "address": null,
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/TgXq84jCwOvqk8a48vRi.jpg"
     },
     {
       "uid": "jMgeLqj1GA8iuK0RreyM",
@@ -506,7 +509,8 @@
       "grace_until": "2026-07-11T11:00:00-04:00",
       "place_name": "65 Concord Ave",
       "address": "Backyard, Somerville, MA 02143",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/jMgeLqj1GA8iuK0RreyM.jpg"
     },
     {
       "uid": "s2lJdOo6KMunhzbGZrks",
@@ -650,7 +654,8 @@
       "grace_until": "2026-07-25T15:00:00-04:00",
       "place_name": "JP Licks",
       "address": "659 Centre St, Jamaica Plain, MA",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/Z50H1Zr8gbbyZtSyH75e.jpg"
     },
     {
       "uid": "exCp8fNan5xy41ZZdHLn",
@@ -711,7 +716,8 @@
       "grace_until": "2026-08-08T11:00:00-04:00",
       "place_name": "Newbery Street Coffee Roasters",
       "address": "14 Harvard St, Brookline, MA",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/6MBKxp6PQGamcBZsOi2r.jpg"
     },
     {
       "uid": "n00YHY91JAawRoNKJhb9",
@@ -795,7 +801,8 @@
       "grace_until": "2026-08-15T11:00:00-04:00",
       "place_name": "KoKo Coffee",
       "address": "226 Causeway St, Boston, MA",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/gRzH7L3EoMRl3q8pl7OS.jpg"
     },
     {
       "uid": "a0gbEpda9D8KPbQfY275",
