@@ -68,8 +68,17 @@ a { color: var(--roast); }
   color: var(--oat);
   margin: 0;
 }
-.hero .mark { font-size: 2rem; display: block; margin-bottom: .4rem; }
-.hero .mark svg { height: 2rem; width: auto; display: block; margin: 0 auto; color: var(--crema); }
+/* The mark is the group's logo (its Partiful profile picture): a rounded
+   square, sized in px so the wordmark inside stays legible on a phone.
+   width/height attributes on the <img> reserve the box before it loads. */
+.hero .mark {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto .6rem;
+  border-radius: 24px;
+  object-fit: cover;
+}
 .hero a { color: var(--foam); }
 
 /* --- photo-backed sections ([data-bg]) --- */
