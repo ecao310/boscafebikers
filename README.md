@@ -10,6 +10,10 @@ events-past.json   the accumulating archive of rides that already happened
 cafe-points.json   café lat/lon cache (the pins on cafes.html)
 rides.ics          the public, subscribable calendar
 maps/<uid>.svg     one drawn route map per ride
+sync-report.json   the last sync run's counts (photos / routes / distances on the
+                   upcoming list, archive size and how many are still unchecked,
+                   cafés placed vs unplaced, maps without a basemap) — written by
+                   scripts/sync.py, deliberately not copied into the site
 ```
 
 **The layout mirrors `site/`.** Every path here sits at the same place it used
