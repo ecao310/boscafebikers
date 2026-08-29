@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-29T02:07:30.111839-04:00",
-  "count": 33,
+  "updated_at": "2026-08-29T16:20:34.934649-04:00",
+  "count": 34,
   "events": [
     {
       "uid": "zNzLp290WKRSyUhpwGfI",
@@ -118,7 +118,8 @@
       "grace_until": "2026-05-02T12:00:00-04:00",
       "place_name": "65 Concord Ave Backyard",
       "address": "Somerville, MA",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/LOUbCIwmaCIoFwgW9hmy.jpg"
     },
     {
       "uid": "QzhYTz9dn7KeTOWRLjyc",
@@ -156,7 +157,8 @@
       "grace_until": "2026-05-02T16:00:00-04:00",
       "place_name": null,
       "address": null,
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/PPlSB0Pofzf6aDLL1sFG.jpg"
     },
     {
       "uid": "niFxL83hYumsS2Zuy4AE",
@@ -175,7 +177,8 @@
       "grace_until": "2026-05-07T08:00:00-04:00",
       "place_name": "Government Center Plaza",
       "address": "1 City Hall Ave, Ste 500, Boston, MA",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/niFxL83hYumsS2Zuy4AE.jpg"
     },
     {
       "uid": "pDn8muQeRscUHGSvoTze",
@@ -194,7 +197,8 @@
       "grace_until": "2026-05-10T12:00:00-04:00",
       "place_name": "Lizzy’s Ice Cream",
       "address": "29 Church St, Cambridge, MA",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/pDn8muQeRscUHGSvoTze.jpg"
     },
     {
       "uid": "UZLDj2opk9JdRPnmlJNk",
@@ -232,7 +236,8 @@
       "grace_until": "2026-05-16T11:00:00-04:00",
       "place_name": null,
       "address": null,
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/pEWGKBfnPbwufmj35mq6.jpg"
     },
     {
       "uid": "U6SUvqa3uB2ZVOMbN5mj",
@@ -270,7 +275,8 @@
       "grace_until": "2026-05-31T12:00:00-04:00",
       "place_name": null,
       "address": null,
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/Y0Xc1LxQRjGuNmSt9PEp.jpg"
     },
     {
       "uid": "fnOIDVrUulU2l5UhZl5G",
@@ -312,7 +318,8 @@
       "grace_until": "2026-06-04T18:45:00-04:00",
       "place_name": "88 Seaport Blvd",
       "address": "Boston, MA",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/fnOIDVrUulU2l5UhZl5G.jpg"
     },
     {
       "uid": "T38qNQGs9HtiGGtQwqoE",
@@ -392,7 +399,8 @@
       "grace_until": "2026-06-13T12:00:00-04:00",
       "place_name": null,
       "address": null,
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/S5slcE16gPWml5dZZwTK.jpg"
     },
     {
       "uid": "WX2ptgXyA7IVWtsroVa8",
@@ -887,6 +895,49 @@
       "place_name": "O'some Cafe",
       "address": "100 Main St, Watertown, MA",
       "year": "2026"
+    },
+    {
+      "uid": "0kgziJu0xvnL3SBCeuU7",
+      "title": "Meet Cute @ Meet Point",
+      "start": "2026-08-29T11:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, August 29",
+      "time_display": "11:00 am",
+      "location": "Meet Point Patisserie Brookline, 3 Kendall St, Brookline, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Let’s meet for a ride westward from Downtown Crossing to Meet Point Patisserie in Brookline. Mmmmmmm pastry!\n\nSavor the moment to bike with your neighbors in the sun as the last ride of August.",
+      "rsvp_url": "https://partiful.com/e/0kgziJu0xvnL3SBCeuU7",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2Fa_n4RCOs-b0-vLrAAPmsK?alt=media&token=431384ca-cce9-4556-968e-657167941507",
+      "routes": [
+        {
+          "start": "Bluebikes, Washington St at Temple Pl, Boston, MA 02111",
+          "end": "Meet Point Patisserie, Kendall Street, Brookline, MA",
+          "points": [
+            [
+              42.354968,
+              -71.060976
+            ],
+            [
+              42.327051,
+              -71.124506
+            ]
+          ],
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/cYsc93yx96y2BybN8?g_st=ic",
+          "distance_m": 7884,
+          "distance_display": "~4.9 mi",
+          "start_name": "Washington St at Temple Pl",
+          "end_name": "Meet Point Patisserie"
+        }
+      ],
+      "grace_until": "2026-08-29T12:00:00-04:00",
+      "place_name": "Meet Point Patisserie Brookline",
+      "address": "3 Kendall St, Brookline, MA",
+      "year": "2026",
+      "poster": "posters/0kgziJu0xvnL3SBCeuU7.jpg",
+      "map_image": "maps/0kgziJu0xvnL3SBCeuU7.svg"
     }
   ]
 }

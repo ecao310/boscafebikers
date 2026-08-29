@@ -1,17 +1,17 @@
 {
   "feed": {
-    "upcoming": 1,
-    "past": 23,
+    "upcoming": 0,
+    "past": 24,
     "excluded": 0
   },
   "upcoming": {
-    "with_image": 1,
-    "with_route": 1,
-    "routes": 1,
-    "routes_measured": 1
+    "with_image": 0,
+    "with_route": 0,
+    "routes": 0,
+    "routes_measured": 0
   },
   "archive": {
-    "rides": 33,
+    "rides": 34,
     "never_checked": 0
   },
   "cafes": {
@@ -19,7 +19,7 @@
     "unplaced": 0
   },
   "posters": {
-    "mirrored": 8,
+    "mirrored": 16,
     "mirrorable": 20
   },
   "maps": {

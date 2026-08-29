@@ -24,16 +24,4 @@ DTSTART:19701101T020000
 RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
 END:STANDARD
 END:VTIMEZONE
-BEGIN:VEVENT
-UID:0kgziJu0xvnL3SBCeuU7
-DTSTAMP:20260829T060730Z
-DTSTART;TZID=America/New_York:20260829T110000
-SUMMARY:Meet Cute @ Meet Point
-LOCATION:Meet Point Patisserie Brookline\, 3 Kendall St\, Brookline\, MA
-DESCRIPTION:Let’s meet for a ride westward from Downtown Crossing to Meet
-  Point Patisserie in Brookline. Mmmmmmm pastry!\n\nSavor the moment to bik
- e with your neighbors in the sun as the last ride of August.\n\nRSVP: http
- s://partiful.com/e/0kgziJu0xvnL3SBCeuU7
-URL:https://partiful.com/e/0kgziJu0xvnL3SBCeuU7
-END:VEVENT
 END:VCALENDAR
