@@ -1053,3 +1053,104 @@ def test_rides_routes_measures_the_fixture_route():
     routes = fetch_rides.rides_routes(event, _fake_resolve_link, _fake_route_length)
     assert routes[0]["distance_m"] == 1000  # one leg, 1 km from the stub
     assert routes[0]["distance_display"] == "~0.6 mi"
+
+
+# --- excluded events (scripts/excluded_events.json) ---
+
+EXCLUDED_FIXTURE = REPO_ROOT / "scripts" / "excluded_events.json"
+
+
+def test_excluded_uid_is_dropped_from_the_upcoming_pass(feed_bytes):
+    rides = fetch_rides.parse_events(
+        feed_bytes, now=NOW, excluded={"evt-future-charles-loop@partiful.com"}
+    )
+    assert [r["uid"] for r in rides] == ["evt-future-minuteman@partiful.com"]
+
+
+def test_excluded_uid_is_dropped_from_the_past_pass(feed_bytes):
+    assert [
+        r["uid"] for r in fetch_rides.parse_events(feed_bytes, now=NOW, past=True)
+    ] == ["evt-past-jamaica-pond@partiful.com"]
+    assert fetch_rides.parse_events(
+        feed_bytes, now=NOW, past=True, excluded={"evt-past-jamaica-pond@partiful.com"}
+    ) == []
+
+
+def test_no_exclusions_changes_nothing(feed_bytes):
+    assert fetch_rides.parse_events(feed_bytes, now=NOW, excluded=set()) == (
+        fetch_rides.parse_events(feed_bytes, now=NOW)
+    )
+
+
+def test_load_excluded_events_missing_file_is_empty(tmp_path):
+    assert fetch_rides.load_excluded_events(tmp_path / "nope.json") == set()
+
+
+def test_load_excluded_events_keys_are_the_uids(tmp_path):
+    sidecar = tmp_path / "excluded_events.json"
+    sidecar.write_text('{"abc": "a birthday", "def": ""}', encoding="utf-8")
+    assert fetch_rides.load_excluded_events(sidecar) == {"abc", "def"}
+
+
+def test_load_excluded_events_malformed_raises(tmp_path):
+    sidecar = tmp_path / "excluded_events.json"
+    sidecar.write_text("{not json", encoding="utf-8")
+    with pytest.raises(fetch_rides.FeedError):
+        fetch_rides.load_excluded_events(sidecar)
+
+
+def test_load_excluded_events_non_object_raises(tmp_path):
+    sidecar = tmp_path / "excluded_events.json"
+    sidecar.write_text('["abc"]', encoding="utf-8")
+    with pytest.raises(fetch_rides.FeedError):
+        fetch_rides.load_excluded_events(sidecar)
+
+
+def test_main_honours_the_exclusion_list_in_both_outputs(tmp_path):
+    sidecar = tmp_path / "excluded_events.json"
+    sidecar.write_text(
+        '{"evt-future-charles-loop@partiful.com": "x", '
+        '"evt-past-jamaica-pond@partiful.com": "y"}',
+        encoding="utf-8",
+    )
+    out = tmp_path / "events.json"
+    past_out = tmp_path / "events-past.json"
+    assert fetch_rides.main([
+        "--ics-file", str(FIXTURE),
+        "--excluded-events", str(sidecar),
+        "--out", str(out),
+        "--past-out", str(past_out),
+    ]) == 0
+    upcoming = json.loads(out.read_text(encoding="utf-8"))
+    past = json.loads(past_out.read_text(encoding="utf-8"))
+    assert [r["uid"] for r in upcoming["events"]] == ["evt-future-minuteman@partiful.com"]
+    assert upcoming["count"] == 1
+    assert past["events"] == [] and past["count"] == 0
+
+
+def test_main_exits_nonzero_on_a_malformed_exclusion_list(tmp_path, capsys):
+    sidecar = tmp_path / "excluded_events.json"
+    sidecar.write_text("{oops", encoding="utf-8")
+    out = tmp_path / "events.json"
+    assert fetch_rides.main([
+        "--ics-file", str(FIXTURE), "--excluded-events", str(sidecar), "--out", str(out)
+    ]) == 1
+    assert not out.exists()
+    assert "excluded events" in capsys.readouterr().err
+
+
+def test_committed_exclusion_list_is_well_formed_and_applied():
+    """The real sidecar: bare Partiful ids with a note each, and none of them
+    left in the committed ride data (the sync would otherwise re-archive
+    whatever was deleted by hand)."""
+    data = json.loads(EXCLUDED_FIXTURE.read_text(encoding="utf-8"))
+    assert isinstance(data, dict) and data
+    for uid, note in data.items():
+        assert uid.isalnum(), uid  # a bare Partiful event id, not a name@partiful.com UID
+        assert isinstance(note, str) and note.strip(), uid
+    excluded = fetch_rides.load_excluded_events(EXCLUDED_FIXTURE)
+    assert excluded == set(data)
+    for name in ("events.json", "events-past.json"):
+        payload = json.loads((REPO_ROOT / "site" / name).read_text(encoding="utf-8"))
+        present = {r["uid"] for r in payload["events"]} & excluded
+        assert not present, f"site/{name} still holds excluded rides: {sorted(present)}"

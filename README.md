@@ -64,6 +64,15 @@ card, add an entry to `scripts/ride_images.json` mapping the ride's `uid`
 (shown in `site/events.json`) to an image URL, and commit it — the next sync
 bakes the `image` into `events.json` and the ride card displays it.
 
+**Events that aren't rides.** The calendar export is the organizer's whole
+Partiful calendar, so a birthday or a party can show up in the feed too. To
+keep one off the site — upcoming list, calendar and the past-rides archive
+alike — add its `uid` (the id in its `partiful.com/e/<uid>` link) to
+`scripts/excluded_events.json` with a short note and commit; the next sync
+drops it everywhere, including from `site/events-past.json` if it was
+already archived. Deleting it from that file by hand doesn't stick: the sync
+would archive it again from the feed.
+
 The sync also re-exports every upcoming ride as a public calendar feed at `site/rides.ics` — subscribe to <https://ecao310.github.io/boscafebikers/rides.ics> (or the `webcal://` form in Apple Calendar) and new rides appear on their own.
 
 ## Getting the ICS URL from Partiful

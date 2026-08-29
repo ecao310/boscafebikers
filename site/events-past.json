@@ -1,22 +1,7 @@
 {
-  "updated_at": "2026-08-28T22:10:27.918241-04:00",
-  "count": 42,
+  "updated_at": "2026-08-28T22:19:16.452431-04:00",
+  "count": 33,
   "events": [
-    {
-      "uid": "cf9gTQtBKTWuGI9OpiD0",
-      "title": "Carolyn and Chin’s grad party",
-      "start": "2025-09-19T17:00:00-04:00",
-      "end": "2025-09-19T20:00:00-04:00",
-      "date_display": "Friday, September 19",
-      "time_display": "5:00 pm",
-      "location": "Boston Common, 139 Tremont St, Boston, MA",
-      "location_hidden": false,
-      "location_url": null,
-      "description": "Join us in Boston Common for a scavenger hunt followed by dinner in Chinatown!\n\nMeet at 5 pm by the Park St. T stop\n\nDinner will be at ShoYu (38 Harrison Ave, Boston, MA 02111)",
-      "rsvp_url": "https://partiful.com/e/cf9gTQtBKTWuGI9OpiD0",
-      "image": "https://assets.getpartiful.com/posters/grad-11_graduation_party_2025",
-      "routes": []
-    },
     {
       "uid": "zNzLp290WKRSyUhpwGfI",
       "title": "Lovestruck on bike",
@@ -30,21 +15,6 @@
       "description": "Get ready to cry your heart out, stay delusional, and confess your feelings during our Valentines Day Weekend ride!!\n\nProjected to be 40 degrees out, so a beautiful day to get out and bring a loved one (partner/friend/family/pet) on a main character bike ride through Boston along the Charles, into Cambridge’s romance-themed bookstore: Lovestruck Books and Cafe!!\n\nFREE BLUEBIKE codes will be provided!! Bring a friend who doesn’t have a bike\n\nLovestruck has a George Howell cafe so well be book perusing, making friends, and enjoying their coffee & treats there :)",
       "rsvp_url": "https://partiful.com/e/zNzLp290WKRSyUhpwGfI",
       "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2FW05lVZlLlrelbIDhOUoYl?alt=media&token=0e34f91e-58ea-4312-a93b-5d427f236286",
-      "routes": []
-    },
-    {
-      "uid": "npKtfRqQUHQAiEdUsmm9",
-      "title": "jessica’s birthday/phd candidacy shenanigans",
-      "start": "2026-02-20T19:00:00-05:00",
-      "end": "2026-02-20T23:00:00-05:00",
-      "date_display": "Friday, February 20",
-      "time_display": "7:00 pm",
-      "location": "597 Prospect St Apt B, New Haven, CT",
-      "location_hidden": false,
-      "location_url": null,
-      "description": "it almost killed me, but I’m 1) a PhD candidate 2) 27 years old\n\nCome celebrate with me!! food, drinks and karaoke will be provided 🎤☺️\n\nThe theme is FRANCE and BASKETBALL, one or both, in honor of Frenchman and nba legend(ary meme?) rudy gobert, who wears number 27🏀🥳 no one represents silliness, shenanigans, and mediocre basketball more than this man🫡 dressing to theme encouraged but not required!!!\n\nBackground Reading (recommended but not required):\n\nhttps://youtube.com/shorts/lfi3LzonTUQ?si=5Z9Jwh6HV21ioKoO\nhttps://youtube.com/shorts/YOxlvYz9N5k?si=dtTmlBgIUjuEsgW6\nhttps://youtube.com/shorts/y2N2UQ_lfAA?si=hwePIQjf_oCsHLIW",
-      "rsvp_url": "https://partiful.com/e/npKtfRqQUHQAiEdUsmm9",
-      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2Fpy0qlwUeNvYZVfl6Kb3sBdib1DG3%2FjiP2SQWVMh9a9fdgk5DC9?alt=media&token=f65dedce-a31b-4566-927c-cd8d1a636e94",
       "routes": []
     },
     {
@@ -114,21 +84,6 @@
       "map_image": "maps/vdoypNkcu59YUYRhPnPB.svg"
     },
     {
-      "uid": "BDhDbAOwKQ82nSQvoBXT",
-      "title": "We Survived!",
-      "start": "2026-04-25T14:00:00-04:00",
-      "end": null,
-      "date_display": "Saturday, April 25",
-      "time_display": "2:00 pm",
-      "location": null,
-      "location_hidden": false,
-      "location_url": "https://maps.app.goo.gl/RjYBT617bK2uiPW4A?g_st=ic",
-      "description": "We survived our PhDs! Come celebrate by playing Survivor in real life. Compete in team and individual challenges for a chance at the grand prize.\n\nFeel free to invite others. Snacks, drinks, and cake will be provided.\n\nTo get to Magazine Beach, cross the BU Bridge and turn left.",
-      "rsvp_url": "https://partiful.com/e/BDhDbAOwKQ82nSQvoBXT",
-      "image": "https://media2.giphy.com/media/PgEgPRXcEDr1qDvqEg/giphy.gif?cid=c00e53c6edac2rrlujcp080vcawe12acym5636ttdujlch7e&ep=v1_gifs_search&rid=giphy.gif&ct=g",
-      "routes": []
-    },
-    {
       "uid": "LOUbCIwmaCIoFwgW9hmy",
       "title": "Jimmy’s Café: Spring 2026",
       "start": "2026-05-02T11:00:00-04:00",
@@ -186,21 +141,6 @@
       "description": "Ride from Forest Hills Bluebike Station OR Inman Square to City Hall for Boston Bike to Work Day!!! They’ll have free coffee and breakfast, as well as a free t shirt if you register with the link above",
       "rsvp_url": "https://partiful.com/e/niFxL83hYumsS2Zuy4AE",
       "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FZqlmvS7hr2eSY7yhYSxqRiw2WD43%2Fcgh6XZbJbASO3SFIoeySK?alt=media&token=ca1bde04-5378-422c-8c19-1bff6c3f7821",
-      "routes": []
-    },
-    {
-      "uid": "VjfOWMVFpYPys3BrwwWY",
-      "title": "Board game birthday",
-      "start": "2026-05-07T18:00:00-04:00",
-      "end": null,
-      "date_display": "Thursday, May 7",
-      "time_display": "6:00 pm",
-      "location": "33 Madison Ave, Cambridge, MA",
-      "location_hidden": false,
-      "location_url": null,
-      "description": "Celebrate Carolyn’s birthday with board games! Food and cake will be provided.\n\nSecret bonus: ask about NoCa Mocha for desert drinks.",
-      "rsvp_url": "https://partiful.com/e/VjfOWMVFpYPys3BrwwWY",
-      "image": "https://media3.giphy.com/media/jJMjabAOv7seQ/giphy.gif?cid=c00e53c6zjj0oxmh6ne56nqzkq8som7kw06nllpe2p6qizjg&ep=v1_gifs_search&rid=giphy.gif&ct=g",
       "routes": []
     },
     {
@@ -411,21 +351,6 @@
       "routes": []
     },
     {
-      "uid": "FJF0GWIjLfEORRuoWH9u",
-      "title": "Big Adam Bikes the Block",
-      "start": "2026-06-21T07:00:00-04:00",
-      "end": "2026-06-21T17:00:00-04:00",
-      "date_display": "Sunday, June 21",
-      "time_display": "7:00 am",
-      "location": "Kendall Sq Dunkin, 1 Broadway, Cambridge, MA",
-      "location_hidden": false,
-      "location_url": null,
-      "description": "Join us for a BikeMS fundraising ride with a twist: we’re biking laps around one city block stacking up enough miles to “cross the country” together. Take a break at the Dunkin pitstop, cash in your laps for gift cards and swag, and climb the leaderboard for prizes from Bullmoose Softgoods. Ride one lap, ride a lot, or come cheer us on, every loop gets us closer to the goal and every dollar goes towards MS research.\n\nPlease fill out the waiver linked above.",
-      "rsvp_url": "https://partiful.com/e/FJF0GWIjLfEORRuoWH9u",
-      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FWdUyMoy12LZHuLiNnZIhqlguLqx1%2FIW8dduKLxXMnAZMQ53g3f?alt=media&token=6fe60f79-bca8-44c1-a935-18663210275b",
-      "routes": []
-    },
-    {
       "uid": "u9DPNOffyehLiS8oh2U6",
       "title": "Get those Beans",
       "start": "2026-06-27T11:00:00-04:00",
@@ -438,21 +363,6 @@
       "description": "Did someone say exquisite Ethiopian coffee and the Somerville Community path??\n\nJoin us for a ride down from Chestnut & Poplar near the East Somerville T-stop to Farmer's Horse Coffee on Mass Ave.",
       "rsvp_url": "https://partiful.com/e/u9DPNOffyehLiS8oh2U6",
       "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FAwrLrX-6_84VRtwvwW2yl?alt=media&token=0dde8129-0fe6-4ad4-9692-3a8aa5daf506",
-      "routes": []
-    },
-    {
-      "uid": "30v9kV8AMOPgmb7aBRgm",
-      "title": "Baby shower",
-      "start": "2026-06-27T13:00:00-04:00",
-      "end": "2026-06-27T16:00:00-04:00",
-      "date_display": "Saturday, June 27",
-      "time_display": "1:00 pm",
-      "location": "Larz Anderson Park, Newton St and Goddard Ave Grill #8-9, Brookline, MA",
-      "location_hidden": false,
-      "location_url": null,
-      "description": "Let’s celebrate together new life arriving into our family. Happy Baby Shower!\n\nPlus ones are more than welcome!",
-      "rsvp_url": "https://partiful.com/e/30v9kV8AMOPgmb7aBRgm",
-      "image": "https://assets.getpartiful.com/posters/baby-shower-shapes",
       "routes": []
     },
     {
@@ -543,21 +453,6 @@
       "description": "Come check out the new bike lane protections on Congress St in Boston!\n\nWe'll start from Jackson Sq in JP and make our way up to downtown Boston for some bagels on Congress St.",
       "rsvp_url": "https://partiful.com/e/KGy03ng81XHqKVJinp3s",
       "image": "https://media1.giphy.com/media/ZBoNSRGAvnbkgVVA6X/giphy.gif?cid=c00e53c6pf3z5exvasejppixytudrqcbn3stoyjg098jnt7o&ep=v1_gifs_search&rid=giphy.gif&ct=g",
-      "routes": []
-    },
-    {
-      "uid": "QLIdeBOBGP9q1CVT1sCc",
-      "title": "Bike to meet Burhan",
-      "start": "2026-07-19T13:00:00-04:00",
-      "end": null,
-      "date_display": "Sunday, July 19",
-      "time_display": "1:00 pm",
-      "location": "Better Bagels, 211 Congress St, Boston, MA",
-      "location_hidden": false,
-      "location_url": null,
-      "description": "Meet Burhan Azeem and eat ice cream! Burhan is currently the vice mayor of Cambridge and is running for MA state senate representing Somerville, Medford, Cambridge and Winchester.\n\nWe will bike after BCU’s buffers and bagels event to the meet and greet in North Cambridge.",
-      "rsvp_url": "https://partiful.com/e/QLIdeBOBGP9q1CVT1sCc",
-      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FCE53NC6PSNdJl69f9MfhznAUIgw2%2F5loP3OUspc5Z1rS63X83c?alt=media&token=48ba58b3-bea6-42ff-95f2-383add99992d",
       "routes": []
     },
     {
@@ -655,21 +550,6 @@
       "routes": []
     },
     {
-      "uid": "LjbmPGgu1Z3Zc7bJTibI",
-      "title": "Post PMC Celebration!!",
-      "start": "2026-08-02T17:00:00-04:00",
-      "date_display": "Sunday, August 2",
-      "time_display": "5:00 pm",
-      "location": "Aeronaut, 14 Tyler St, Somerville, MA",
-      "description": "Come celebrate Jude's 50 mile ride for the PMC!",
-      "rsvp_url": "https://partiful.com/e/LjbmPGgu1Z3Zc7bJTibI",
-      "location_hidden": false,
-      "location_url": null,
-      "image": "https://assets.getpartiful.com/posters/Let's%20Celebrate%207",
-      "routes": [],
-      "end": null
-    },
-    {
       "uid": "6MBKxp6PQGamcBZsOi2r",
       "title": "Salt Bread and Coffee pop-up",
       "start": "2026-08-08T10:00:00-04:00",
@@ -703,21 +583,6 @@
         }
       ],
       "map_image": "maps/6MBKxp6PQGamcBZsOi2r.svg",
-      "end": null
-    },
-    {
-      "uid": "TskpmnYxmCi7eGn1mb0G",
-      "title": "Too Hot to Handle",
-      "start": "2026-08-08T18:00:00-04:00",
-      "date_display": "Saturday, August 8",
-      "time_display": "6:00 pm",
-      "location": null,
-      "description": "You are cordially invited to an Indian food dinner party at mine! I will be making the mains and apps but please feel free to bring a dish or a drink!. Just showing up for the good food + vibes is totally a valid option!\n\nIf guest count exceeds 8-10 we will move to a nearby park - please keep an eye out for venue changes! 😄",
-      "rsvp_url": "https://partiful.com/e/TskpmnYxmCi7eGn1mb0G",
-      "location_hidden": true,
-      "location_url": null,
-      "image": "https://assets.getpartiful.com/posters/Dinner%20Party%20Feast",
-      "routes": [],
       "end": null
     },
     {

@@ -253,3 +253,89 @@ def test_main_merges_sources_in_order(tmp_path):
     archive = tmp_path / "events-past.json"
     assert archive_events.main(["--archive", str(archive), str(older), str(newer)]) == 0
     assert json.loads(archive.read_text(encoding="utf-8"))["events"][0]["title"] == "New"
+
+
+# --- excluded events (scripts/excluded_events.json) ---
+
+
+def test_excluded_rides_are_skipped_from_sources():
+    sources = [[ride("a", "2026-05-02T11:00:00-04:00"), ride("b", "2026-05-03T11:00:00-04:00")]]
+    merged = archive_events.merge_archive([], sources, NOW, excluded={"b"})
+    assert [r["uid"] for r in merged] == ["a"]
+
+
+def test_excluded_rides_are_purged_from_the_archive_itself():
+    """The one exception to "the archive never forgets": adding a UID to the
+    list is enough to drop a ride that was archived before it was listed."""
+    archive = [ride("a", "2026-05-02T11:00:00-04:00"), ride("b", "2026-05-03T11:00:00-04:00")]
+    merged = archive_events.merge_archive(archive, [], NOW, excluded={"b"})
+    assert [r["uid"] for r in merged] == ["a"]
+
+
+def test_exclusion_keys_on_the_uid_only():
+    """A ride without a UID is keyed start|title, so a bare title can't match."""
+    archive = [ride(None, "2026-05-02T11:00:00-04:00", title="Baby shower")]
+    merged = archive_events.merge_archive(archive, [], NOW, excluded={"Baby shower"})
+    assert len(merged) == 1
+
+
+def test_no_exclusions_is_the_old_behaviour():
+    archive = [ride("a", "2026-05-02T11:00:00-04:00")]
+    assert archive_events.merge_archive(archive, [], NOW) == (
+        archive_events.merge_archive(archive, [], NOW, excluded=set())
+    )
+
+
+def test_load_excluded_missing_file_is_empty(tmp_path):
+    assert archive_events.load_excluded(tmp_path / "nope.json") == set()
+
+
+def test_load_excluded_reads_the_keys(tmp_path):
+    path = tmp_path / "excluded_events.json"
+    path.write_text('{"abc": "a birthday"}', encoding="utf-8")
+    assert archive_events.load_excluded(path) == {"abc"}
+
+
+@pytest.mark.parametrize("text", ["{oops", '["abc"]'])
+def test_load_excluded_rejects_a_broken_file(tmp_path, text):
+    path = tmp_path / "excluded_events.json"
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(archive_events.ArchiveError):
+        archive_events.load_excluded(path)
+
+
+def test_run_purges_an_excluded_ride_and_rewrites(tmp_path):
+    archive = tmp_path / "events-past.json"
+    write_payload(archive, [ride("a", "2026-05-02T11:00:00-04:00"), ride("b", "2026-05-03T11:00:00-04:00")])
+    source = write_payload(tmp_path / "source.json", [ride("b", "2026-05-03T11:00:00-04:00")])
+    excluded = tmp_path / "excluded_events.json"
+    excluded.write_text('{"b": "not a ride"}', encoding="utf-8")
+    assert archive_events.run(archive, [source], now=NOW, excluded_path=excluded) is True
+    payload = json.loads(archive.read_text(encoding="utf-8"))
+    assert [r["uid"] for r in payload["events"]] == ["a"]
+    assert payload["count"] == 1
+    # Now that it is gone, the same sources make no further change.
+    assert archive_events.run(archive, [source], now=NOW, excluded_path=excluded) is False
+
+
+def test_main_takes_an_excluded_flag(tmp_path):
+    archive = tmp_path / "events-past.json"
+    source = write_payload(tmp_path / "source.json", [ride("b", "2026-05-03T11:00:00-04:00")])
+    excluded = tmp_path / "excluded_events.json"
+    excluded.write_text('{"b": "not a ride"}', encoding="utf-8")
+    assert archive_events.main(["--archive", str(archive), "--excluded", str(excluded), str(source)]) == 0
+    assert not archive.exists()  # nothing to write: the only ride was excluded
+
+
+def test_main_exits_nonzero_on_a_broken_exclusion_list(tmp_path, capsys):
+    archive = tmp_path / "events-past.json"
+    source = write_payload(tmp_path / "source.json", [ride("b", "2026-05-03T11:00:00-04:00")])
+    excluded = tmp_path / "excluded_events.json"
+    excluded.write_text("{oops", encoding="utf-8")
+    assert archive_events.main(["--archive", str(archive), "--excluded", str(excluded), str(source)]) == 1
+    assert "archive_events" in capsys.readouterr().err
+
+
+def test_excluded_path_matches_fetch_rides():
+    """Both scripts must read the same sidecar (duplicated, not imported)."""
+    assert archive_events.DEFAULT_EXCLUDED == fetch_rides.EXCLUDED_EVENTS_PATH

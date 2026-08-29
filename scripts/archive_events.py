@@ -34,6 +34,12 @@ from zoneinfo import ZoneInfo
 LOCAL_TZ = ZoneInfo("America/New_York")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_ARCHIVE = REPO_ROOT / "site" / "events-past.json"
+# The same UID → note sidecar fetch_rides.py reads (its EXCLUDED_EVENTS_PATH;
+# duplicated because this module is stdlib-only). Excluded rides are skipped
+# from every source *and purged from the archive itself*, so adding a UID is
+# enough to remove an already-archived event on the next sync — no hand
+# editing of events-past.json, which the feed would only re-fill.
+DEFAULT_EXCLUDED = REPO_ROOT / "scripts" / "excluded_events.json"
 # The same grace hour fetch_rides.py keeps a just-started ride in the upcoming
 # export for (a latecomer can still catch the group). It has to be the same
 # number here: the sync feeds this script the *previous* site/events.json, so a
@@ -62,6 +68,19 @@ def load_payload(path: Path, required: bool = True) -> dict:
     if not isinstance(data, dict) or not isinstance(data.get("events"), list):
         raise ArchiveError(f"{path} is not an events payload (no `events` list)")
     return data
+
+
+def load_excluded(path: Path) -> set[str]:
+    """The UIDs to leave out. A missing file means none; a broken one is an error."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return set()
+    except (OSError, ValueError) as exc:
+        raise ArchiveError(f"could not read {path}: {exc}") from None
+    if not isinstance(data, dict):
+        raise ArchiveError(f"{path} must be a JSON object of UID → note")
+    return {str(uid) for uid in data}
 
 
 def ride_key(ride: dict) -> str:
@@ -109,16 +128,21 @@ def is_past(ride: dict, now: datetime) -> bool:
 
 
 def merge_archive(
-    archive: list[dict], sources: list[list[dict]], now: datetime
+    archive: list[dict],
+    sources: list[list[dict]],
+    now: datetime,
+    excluded: set[str] | None = None,
 ) -> list[dict]:
     """Fold every already-happened ride from `sources` into `archive`.
 
     Rides already in the archive stay even if a source no longer mentions them
-    — the feed pruning its history must not erase ours. Returns a new list
-    sorted by start.
+    — the feed pruning its history must not erase ours. The one exception is
+    `excluded` (UIDs from excluded_events.json): those are dropped wherever
+    they come from, the archive included. Returns a new list sorted by start.
     """
     merged: dict[str, dict] = {}
     order: list[str] = []
+    excluded = excluded or set()
 
     def absorb(rides: list[dict], past_only: bool) -> None:
         for ride in rides:
@@ -127,6 +151,8 @@ def merge_archive(
             if past_only and not is_past(ride, now):
                 continue
             key = ride_key(ride)
+            if key in excluded:
+                continue
             if key in merged:
                 merged[key] = merge_ride(merged[key], ride)
             else:
@@ -156,12 +182,18 @@ def write_archive(payload: dict, path: Path) -> None:
     )
 
 
-def run(archive_path: Path, source_paths: list[Path], now: datetime | None = None) -> bool:
+def run(
+    archive_path: Path,
+    source_paths: list[Path],
+    now: datetime | None = None,
+    excluded_path: Path | None = None,
+) -> bool:
     """Update the archive from the sources. True when the file was rewritten."""
     now = (now or datetime.now(timezone.utc)).astimezone(LOCAL_TZ)
     existing = load_payload(archive_path, required=False)
     sources = [load_payload(path)["events"] for path in source_paths]
-    rides = merge_archive(existing["events"], sources, now)
+    excluded = load_excluded(excluded_path or DEFAULT_EXCLUDED)
+    rides = merge_archive(existing["events"], sources, now, excluded=excluded)
     if rides == existing["events"]:
         return False
     write_archive(build_payload(rides, now), archive_path)
@@ -176,6 +208,11 @@ def main(argv: list[str] | None = None) -> int:
         help=f"the accumulating past-rides file (default: {DEFAULT_ARCHIVE})",
     )
     parser.add_argument(
+        "--excluded",
+        default=str(DEFAULT_EXCLUDED),
+        help=f"UID → note JSON of events to leave out (default: {DEFAULT_EXCLUDED})",
+    )
+    parser.add_argument(
         "sources",
         nargs="+",
         metavar="SOURCE",
@@ -185,7 +222,11 @@ def main(argv: list[str] | None = None) -> int:
 
     archive_path = Path(args.archive)
     try:
-        changed = run(archive_path, [Path(p) for p in args.sources])
+        changed = run(
+            archive_path,
+            [Path(p) for p in args.sources],
+            excluded_path=Path(args.excluded),
+        )
     except ArchiveError as exc:
         print(f"archive_events: {exc}", file=sys.stderr)
         return 1

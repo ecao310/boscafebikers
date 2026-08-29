@@ -40,6 +40,11 @@ DEFAULT_OUTPUT = REPO_ROOT / "site" / "events.json"
 # `image`. The ICS feed itself carries no photos, so this is how the organizer
 # attaches a picture to a ride without touching the site code.
 RIDE_IMAGES_PATH = REPO_ROOT / "scripts" / "ride_images.json"
+# UIDs of feed events that are not group rides (the organizer's calendar
+# export carries their personal events too). archive_events.py reads the
+# same file, so an excluded ride is dropped from the upcoming list, the past
+# export, and any archive that already holds it.
+EXCLUDED_EVENTS_PATH = REPO_ROOT / "scripts" / "excluded_events.json"
 FETCH_TIMEOUT_SECONDS = 30
 # A ride does not stop being "the next ride" the instant it starts: people turn
 # up late at the dock and still catch the group, so the upcoming export keeps a
@@ -163,6 +168,28 @@ def load_ride_images(path: Path | None = None) -> dict:
     if not isinstance(data, dict):
         raise FeedError(f"ride images ({path.name}) must be a JSON object of UID → URL")
     return data
+
+
+def load_excluded_events(path: Path | None = None) -> set[str]:
+    """Read the optional UID → note sidecar of events to leave out.
+
+    The value is a human note (what the event was and why it is excluded);
+    only the keys matter. A missing file means "exclude nothing".
+    """
+    path = Path(path) if path is not None else EXCLUDED_EVENTS_PATH
+    if not path.exists():
+        return set()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise FeedError(
+            f"could not parse excluded events ({path.name}): {scrub(exc)}"
+        ) from None
+    if not isinstance(data, dict):
+        raise FeedError(
+            f"excluded events ({path.name}) must be a JSON object of UID → note"
+        )
+    return {str(uid) for uid in data}
 
 
 def _event_from_page(html: str) -> dict | None:
@@ -626,6 +653,7 @@ def parse_events(
     now: datetime | None = None,
     images: dict | None = None,
     past: bool = False,
+    excluded: set[str] | None = None,
 ) -> list[dict]:
     """Parse feed bytes into a sorted list of non-cancelled rides.
 
@@ -635,9 +663,11 @@ def parse_events(
     ride's start — see `is_upcoming`. Either way the list is sorted by start.
 
     `images` is the optional UID → image-URL sidecar; each ride carries its
-    photo URL as `image` (None when absent).
+    photo URL as `image` (None when absent). `excluded` is the set of UIDs to
+    leave out of either pass (see `load_excluded_events`).
     """
     images = images or {}
+    excluded = excluded or set()
     now = (now or datetime.now(timezone.utc)).astimezone(LOCAL_TZ)
     try:
         calendar = Calendar.from_ical(data)
@@ -655,6 +685,8 @@ def parse_events(
         if is_upcoming(start, now) == past:
             continue
         uid = _text(component, "UID")
+        if uid in excluded:
+            continue
         description = _text(component, "DESCRIPTION")
         dtend = component.get("DTEND")
         location, location_hidden, location_url = _clean_location(
@@ -743,6 +775,12 @@ def main(argv: list[str] | None = None) -> int:
         help=f"UID → image-URL sidecar JSON (default: {RIDE_IMAGES_PATH})",
     )
     parser.add_argument(
+        "--excluded-events",
+        default=str(EXCLUDED_EVENTS_PATH),
+        help="UID → note sidecar JSON of feed events that are not group rides "
+             f"(default: {EXCLUDED_EVENTS_PATH})",
+    )
+    parser.add_argument(
         "--past-out",
         help="also write the feed's already-happened rides here, for the "
              "archive scripts/archive_events.py merges into events-past.json",
@@ -755,9 +793,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         data = load_source(args)
         images = load_ride_images(args.ride_images)
-        rides = parse_events(data, now=now, images=images)
+        excluded = load_excluded_events(args.excluded_events)
+        rides = parse_events(data, now=now, images=images, excluded=excluded)
         past_rides = (
-            parse_events(data, now=now, images=images, past=True)
+            parse_events(data, now=now, images=images, past=True, excluded=excluded)
             if args.past_out
             else []
         )
