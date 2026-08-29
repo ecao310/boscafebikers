@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-24T11:04:34.730236-04:00",
-  "count": 35,
+  "updated_at": "2026-08-28T22:10:27.918241-04:00",
+  "count": 42,
   "events": [
     {
       "uid": "cf9gTQtBKTWuGI9OpiD0",
@@ -249,6 +249,36 @@
       "routes": []
     },
     {
+      "uid": "U6SUvqa3uB2ZVOMbN5mj",
+      "title": "Picnic Ride",
+      "start": "2026-05-25T14:30:00-04:00",
+      "end": null,
+      "date_display": "Monday, May 25",
+      "time_display": "2:30 pm",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/YRsof8h8GFaZHQ2N7",
+      "description": "Make the most of Memorial Day and join us on a ride to Castle Island, the perfect place to spread out for a picnic! We'll start from Park and Tremont St in the Common and wind our way over on Summer St.",
+      "rsvp_url": "https://partiful.com/e/U6SUvqa3uB2ZVOMbN5mj",
+      "image": "https://assets.getpartiful.com/posters/Good%20Day%20for%20a%20Picnic",
+      "routes": []
+    },
+    {
+      "uid": "Y0Xc1LxQRjGuNmSt9PEp",
+      "title": "Mystic Crossing to Bikenny Cafe",
+      "start": "2026-05-31T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, May 31",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/cvn1Q3NifzSUScG28",
+      "description": "Join up with the Everett Transportation Advisory Committee to highlight how you too can cross the Mystic by bike! Heading to Bikenny Cafe in Malden!!",
+      "rsvp_url": "https://partiful.com/e/Y0Xc1LxQRjGuNmSt9PEp",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FAaOEb0sfj2hophzGVSRyb2mRWZz1%2FaEefuJYEhOt5--1hbxyhm?alt=media&token=ab760fd9-c01c-48c9-80da-5950da95112d",
+      "routes": []
+    },
+    {
       "uid": "fnOIDVrUulU2l5UhZl5G",
       "title": "Ride to SCOOPER BOWL",
       "start": "2026-06-04T17:45:00-04:00",
@@ -351,6 +381,21 @@
       "routes": []
     },
     {
+      "uid": "WX2ptgXyA7IVWtsroVa8",
+      "title": "Watertown - Cambridge Greenway",
+      "start": "2026-06-14T10:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, June 14",
+      "time_display": "10:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/GfyhAna5qkE3mKM48",
+      "description": "Join us for a ride on the Watertown-Cambridge greenway!\n\nWe'll start at 160 Arsenal St -- possibly the farther west we've ever started -- and take the trail up to Tilde for a well deserved treat.",
+      "rsvp_url": "https://partiful.com/e/WX2ptgXyA7IVWtsroVa8",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FEOmkAaTJBeN2BqWD15gPM?alt=media&token=86565bbe-1586-4d69-bff6-141c04ed0c1c",
+      "routes": []
+    },
+    {
       "uid": "41HT3tux8LzVeVSN6tQx",
       "title": "Linger @ Linger",
       "start": "2026-06-20T10:00:00-04:00",
@@ -381,6 +426,21 @@
       "routes": []
     },
     {
+      "uid": "u9DPNOffyehLiS8oh2U6",
+      "title": "Get those Beans",
+      "start": "2026-06-27T11:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, June 27",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/uSqN3b8WAMFDx7dAA",
+      "description": "Did someone say exquisite Ethiopian coffee and the Somerville Community path??\n\nJoin us for a ride down from Chestnut & Poplar near the East Somerville T-stop to Farmer's Horse Coffee on Mass Ave.",
+      "rsvp_url": "https://partiful.com/e/u9DPNOffyehLiS8oh2U6",
+      "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FHs47uq5mucZyXLBJZCda%2FAwrLrX-6_84VRtwvwW2yl?alt=media&token=0dde8129-0fe6-4ad4-9692-3a8aa5daf506",
+      "routes": []
+    },
+    {
       "uid": "30v9kV8AMOPgmb7aBRgm",
       "title": "Baby shower",
       "start": "2026-06-27T13:00:00-04:00",
@@ -403,8 +463,8 @@
       "date_display": "Sunday, July 5",
       "time_display": "10:00 am",
       "location": null,
-      "location_hidden": true,
-      "location_url": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/U8n7JrMbifXHUyWG8",
       "description": "Drinking coffee and riding bikes are at least 2 of the 13!\n\nJoin us for a ride from Powder House Sq to Intelligentsia in Watertown.",
       "rsvp_url": "https://partiful.com/e/BrezyQ7GtxVtvVh8fI6z",
       "image": "https://media2.giphy.com/media/LhyhsxtMmossXIg1zB/giphy.gif?cid=c00e53c6y7k590w7wo0403osx8gp9prm9xijyz1rhbeub8lf&ep=v1_gifs_search&rid=giphy.gif&ct=g",
@@ -438,6 +498,21 @@
       "description": "You probably guessed it by now...\n\nKuya Jimmy travels to the PHILIPPINES🇵🇭🥥🌴\n\nWe are so excited to island hop to this beautiful country and we were so inspired by the incredible flavors and sweets that Filipinos enjoy! To celebrate, we are bringing the islands to you in a few weeks 🇵🇭🫶\n\nSpecial shout out to Sarah’s Little Kitchen for proving time and time again she is a Filipina Force to be reckoned with when it comes to baking! As always, we will feature some of her amazing treats🤭\n\nThank you so so so much Kuya Eric for all of the menu inspo, knowledge, videography, tastings, and sincerity☀️\n\nSoooo I guess we’ll see you there, suki?",
       "rsvp_url": "https://partiful.com/e/jMgeLqj1GA8iuK0RreyM",
       "image": "https://firebasestorage.googleapis.com/v0/b/getpartiful.appspot.com/o/external%2Fuser%2FQUwYKiFw7madZKzvI6EI4dxysmv1%2FVPw5MPhnFt9mjwv_vGscl?alt=media&token=07966bd8-065e-4dbb-9ebe-30d1b467d1c3",
+      "routes": []
+    },
+    {
+      "uid": "s2lJdOo6KMunhzbGZrks",
+      "title": "Ship Watchers Ride",
+      "start": "2026-07-11T12:00:00-04:00",
+      "end": null,
+      "date_display": "Saturday, July 11",
+      "time_display": "12:00 pm",
+      "location": "65 Concord Ave, Somerville, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Celebrate the Tall Ships (tm) coming to Boston with a watch party! We'll bike out to Deer Island and watch them as they travel in and head to their ports in the city.\n\nhttps://www.mwra.com/node/8641\nhttps://www.sailboston.com/events/",
+      "rsvp_url": "https://partiful.com/e/s2lJdOo6KMunhzbGZrks",
+      "image": "https://media0.giphy.com/media/3oz8xRQiRlaS1XwnPW/giphy.gif?cid=c00e53c6e3e4ewsp3zu59v4dlc2mjkdo9uhi1zgs52czbkqx&ep=v1_gifs_search&rid=giphy.gif&ct=g",
       "routes": []
     },
     {
@@ -565,6 +640,21 @@
       "end": null
     },
     {
+      "uid": "exCp8fNan5xy41ZZdHLn",
+      "title": "Riverbend Picnic",
+      "start": "2026-07-26T11:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, July 26",
+      "time_display": "11:00 am",
+      "location": null,
+      "location_hidden": false,
+      "location_url": "https://maps.app.goo.gl/5xoTLSVLGM2UYZXo6",
+      "description": "Spend some time in the park with us! We'll start in North Point Park and make our way over to Riverbend Park for a group picnic. Bring something to share!",
+      "rsvp_url": "https://partiful.com/e/exCp8fNan5xy41ZZdHLn",
+      "image": "https://assets.getpartiful.com/posters/park-flowers",
+      "routes": []
+    },
+    {
       "uid": "LjbmPGgu1Z3Zc7bJTibI",
       "title": "Post PMC Celebration!!",
       "start": "2026-08-02T17:00:00-04:00",
@@ -629,6 +719,42 @@
       "image": "https://assets.getpartiful.com/posters/Dinner%20Party%20Feast",
       "routes": [],
       "end": null
+    },
+    {
+      "uid": "n00YHY91JAawRoNKJhb9",
+      "title": "Pedal to Pepita",
+      "start": "2026-08-09T12:00:00-04:00",
+      "end": null,
+      "date_display": "Sunday, August 9",
+      "time_display": "12:00 pm",
+      "location": "Pepita Coffee, 284 Broadway, Cambridge, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "Start in the South End and soar over the Charles into Cambridge, ending at Pepita Coffee on Broadway.\n\nHow else are you spending your Sunday?",
+      "rsvp_url": "https://partiful.com/e/n00YHY91JAawRoNKJhb9",
+      "image": "https://media2.giphy.com/media/3og0ISvpQVLJwOaWv6/giphy.gif?cid=c00e53c66riqu88so0twxst5bz0b5tpcc6lprqvtonuiv7x2&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+      "routes": [
+        {
+          "start": "Bluebikes, Washington St at Peters Park, Boston, MA 02118",
+          "end": "Pepita Coffee, Broadway, Cambridge, MA",
+          "points": [
+            [
+              42.342958,
+              -71.067051
+            ],
+            [
+              42.367999,
+              -71.097949
+            ]
+          ],
+          "mode": "b",
+          "label": "Estimated Route",
+          "url": "https://maps.app.goo.gl/6sp943cQ14FsGA2XA?g_st=ic",
+          "distance_m": 5583,
+          "distance_display": "~3.5 mi"
+        }
+      ],
+      "map_image": "maps/n00YHY91JAawRoNKJhb9.svg"
     },
     {
       "uid": "gRzH7L3EoMRl3q8pl7OS",
