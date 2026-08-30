@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-29T16:20:34.934649-04:00",
+  "updated_at": "2026-08-29T23:22:45.184599-04:00",
   "count": 34,
   "events": [
     {
@@ -19,7 +19,8 @@
       "grace_until": "2026-02-15T12:00:00-05:00",
       "place_name": "City Hall Plaza",
       "address": "1 City Hall Ave, Ste 500, Boston, MA",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/zNzLp290WKRSyUhpwGfI.jpg"
     },
     {
       "uid": "rflqRP1d9jU86Pha75PR",
@@ -57,7 +58,8 @@
       "grace_until": "2026-04-04T10:30:00-04:00",
       "place_name": "The BU Cycle Kitchen",
       "address": "1019 Commonwealth Ave, Boston, MA",
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/1GLYc8zTyo0GSCMkER5k.jpg"
     },
     {
       "uid": "vdoypNkcu59YUYRhPnPB",
@@ -99,7 +101,8 @@
       "grace_until": "2026-04-18T12:00:00-04:00",
       "place_name": null,
       "address": null,
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/vdoypNkcu59YUYRhPnPB.jpg"
     },
     {
       "uid": "LOUbCIwmaCIoFwgW9hmy",
@@ -138,7 +141,8 @@
       "grace_until": "2026-05-02T12:00:00-04:00",
       "place_name": null,
       "address": null,
-      "year": "2026"
+      "year": "2026",
+      "poster": "posters/QzhYTz9dn7KeTOWRLjyc.jpg"
     },
     {
       "uid": "PPlSB0Pofzf6aDLL1sFG",
