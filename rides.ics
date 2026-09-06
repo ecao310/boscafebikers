@@ -24,4 +24,18 @@ DTSTART:19701101T020000
 RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
 END:STANDARD
 END:VTIMEZONE
+BEGIN:VEVENT
+UID:Rm4Lv7N60seCePrNfg79
+DTSTAMP:20260906T183253Z
+DTSTART;TZID=America/New_York:20260907T100000
+SUMMARY:Boston Cafe Bikers 1 year anniversary
+LOCATION:Park Street Station\, Boston\, MA
+DESCRIPTION:It’s been 1 YEAR since Boston Cafe Bikers hosted our first ri
+ de and we’re running back that same ride from Park St. Station in Boston
+  to Yafa Bakery in Somerville.\nCome celebrate a year of city biking\, mak
+ ing friends\, exploring cafés and building the cycling culture we deserve
+  in the Boston area.\nBring a friend that hasn’t been on the rides yet 
+ 🫡\n\nRSVP: https://partiful.com/e/Rm4Lv7N60seCePrNfg79
+URL:https://partiful.com/e/Rm4Lv7N60seCePrNfg79
+END:VEVENT
 END:VCALENDAR
