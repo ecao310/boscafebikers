@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-29T23:22:45.184599-04:00",
-  "count": 34,
+  "updated_at": "2026-09-07T13:09:21.450585-04:00",
+  "count": 35,
   "events": [
     {
       "uid": "zNzLp290WKRSyUhpwGfI",
@@ -942,6 +942,25 @@
       "year": "2026",
       "poster": "posters/0kgziJu0xvnL3SBCeuU7.jpg",
       "map_image": "maps/0kgziJu0xvnL3SBCeuU7.svg"
+    },
+    {
+      "uid": "Rm4Lv7N60seCePrNfg79",
+      "title": "Boston Cafe Bikers 1 year anniversary",
+      "start": "2026-09-07T10:00:00-04:00",
+      "end": null,
+      "date_display": "Monday, September 7",
+      "time_display": "10:00 am",
+      "location": "Park Street Station, Boston, MA",
+      "location_hidden": false,
+      "location_url": null,
+      "description": "It’s been 1 YEAR since Boston Cafe Bikers hosted our first ride and we’re running back that same ride from Park St. Station in Boston to Yafa Bakery in Somerville.\nCome celebrate a year of city biking, making friends, exploring cafés and building the cycling culture we deserve in the Boston area.\nBring a friend that hasn’t been on the rides yet 🫡",
+      "rsvp_url": "https://partiful.com/e/Rm4Lv7N60seCePrNfg79",
+      "image": "https://media2.giphy.com/media/ADWQ0BpgkyuJuFWBuF/giphy.gif?cid=c00e53c6oom1d2o46sbzwezbkx4e2bqwt8xwnsvnxolnrc1k&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+      "routes": [],
+      "grace_until": "2026-09-07T11:00:00-04:00",
+      "place_name": "Park Street Station",
+      "address": "Boston, MA",
+      "year": "2026"
     }
   ]
 }
