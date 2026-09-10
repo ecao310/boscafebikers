@@ -374,7 +374,7 @@ export function buildIndexDocument() {
   const schedule = mk("div", { id: "schedule" });
   const updatedLink = mk("a", {
     id: "updated-link",
-    attrs: { href: "https://github.com/ecao310/boscafebikers/actions/workflows/sync.yml" }
+    attrs: { href: "https://github.com/Boston-Cafe-Bikers/boscafebikers/actions/workflows/sync.yml" }
   });
   const updated = mk("p", { id: "updated", cls: "note", hidden: true, kids: [updatedLink] });
   const subscribeNote = mk("p", { id: "subscribe-note", cls: "note" });
