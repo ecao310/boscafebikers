@@ -24,4 +24,28 @@ DTSTART:19701101T020000
 RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
 END:STANDARD
 END:VTIMEZONE
+BEGIN:VEVENT
+UID:vv38L3uTZhc7m7zo21PL
+DTSTAMP:20260910T025310Z
+DTSTART;TZID=America/New_York:20260912T110000
+SUMMARY:Urban Agricultural Fair Ride
+DESCRIPTION:Boston café bikers is hosting a ride to the Urban Agricultural
+  and Climate Fair hosted by Boston Communitu Gardens and The Trustees! Mee
+ t us at either meeting point in Allston or Central Square at 11 AM and rid
+ e with us to the event!! I hear there’ll be free food and a harvest comp
+ etition???\n\nRSVP: https://partiful.com/e/vv38L3uTZhc7m7zo21PL
+URL:https://partiful.com/e/vv38L3uTZhc7m7zo21PL
+END:VEVENT
+BEGIN:VEVENT
+UID:Pk8PEGpxf96QnRTFX5q4
+DTSTAMP:20260910T025310Z
+DTSTART;TZID=America/New_York:20260913T110000
+SUMMARY:Cuckoo for Kicco Coffee
+DESCRIPTION:Idk about you but I’m Cuckoo for Kicco Coffee 😎\n\nLet’s
+  ride from Somerville down the community path to Kicco coffee in North Sta
+ tion\, where they’ll be ready with the discount for us if you RSVP￼
+ 🥳🥳!!!\n\nMeeting point: https://maps.app.goo.gl/85kT8TVkYWkciRTF9?g_
+ st=ic\n\nRSVP: https://partiful.com/e/Pk8PEGpxf96QnRTFX5q4
+URL:https://partiful.com/e/Pk8PEGpxf96QnRTFX5q4
+END:VEVENT
 END:VCALENDAR
