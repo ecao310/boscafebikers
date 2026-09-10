@@ -1,11 +1,11 @@
 {
   "feed": {
-    "upcoming": 2,
+    "upcoming": 5,
     "past": 25,
     "excluded": 0
   },
   "upcoming": {
-    "with_image": 2,
+    "with_image": 5,
     "with_route": 0,
     "routes": 0,
     "routes_measured": 0
@@ -15,7 +15,7 @@
     "never_checked": 0
   },
   "cafes": {
-    "placed": 17,
+    "placed": 18,
     "unplaced": 0
   },
   "posters": {

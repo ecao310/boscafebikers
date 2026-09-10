@@ -26,7 +26,7 @@ END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
 UID:vv38L3uTZhc7m7zo21PL
-DTSTAMP:20260910T025310Z
+DTSTAMP:20260910T103101Z
 DTSTART;TZID=America/New_York:20260912T110000
 SUMMARY:Urban Agricultural Fair Ride
 DESCRIPTION:Boston café bikers is hosting a ride to the Urban Agricultural
@@ -38,7 +38,7 @@ URL:https://partiful.com/e/vv38L3uTZhc7m7zo21PL
 END:VEVENT
 BEGIN:VEVENT
 UID:Pk8PEGpxf96QnRTFX5q4
-DTSTAMP:20260910T025310Z
+DTSTAMP:20260910T103101Z
 DTSTART;TZID=America/New_York:20260913T110000
 SUMMARY:Cuckoo for Kicco Coffee
 DESCRIPTION:Idk about you but I’m Cuckoo for Kicco Coffee 😎\n\nLet’s
@@ -47,5 +47,42 @@ DESCRIPTION:Idk about you but I’m Cuckoo for Kicco Coffee 😎\n\nLet’s
  🥳🥳!!!\n\nMeeting point: https://maps.app.goo.gl/85kT8TVkYWkciRTF9?g_
  st=ic\n\nRSVP: https://partiful.com/e/Pk8PEGpxf96QnRTFX5q4
 URL:https://partiful.com/e/Pk8PEGpxf96QnRTFX5q4
+END:VEVENT
+BEGIN:VEVENT
+UID:QEVwg0dzu9q53uZmusrF
+DTSTAMP:20260910T103101Z
+DTSTART;TZID=America/New_York:20260920T110000
+SUMMARY:Broadway Bound
+DESCRIPTION:Sadly we’re not riding to the theatre\, but you will get to s
+ ee how well the new bike lanes on Broadway perform!!!! Come with us on a r
+ ide with Cambridge Bike Safety and Boston Cyclists Union to showcase the n
+ ew bike lanes along Broadway in Cambridge!!!\n\nMeeting point: https://map
+ s.app.goo.gl/SHnpKYA1WpN91ArZ9?g_st=ic\n\nRSVP: https://partiful.com/e/QEV
+ wg0dzu9q53uZmusrF
+URL:https://partiful.com/e/QEVwg0dzu9q53uZmusrF
+END:VEVENT
+BEGIN:VEVENT
+UID:AU6ZZDL8Ao8fgsHlMbYJ
+DTSTAMP:20260910T103101Z
+DTSTART;TZID=America/New_York:20260926T110000
+SUMMARY:Dazed at Dudley Cafe
+DESCRIPTION:If you go too hard on Friday night you’re gonna be dazed when
+  you finish the ride to Dudley Cafe with us 🤪 jk you probably won’t c
+ uz it’s at 11 am on Saturday and it’s not that long of a ride\n\nMeeti
+ ng point: https://maps.app.goo.gl/JkmHFdjbpnizbEC76?g_st=ic\n\nRSVP: https
+ ://partiful.com/e/AU6ZZDL8Ao8fgsHlMbYJ
+URL:https://partiful.com/e/AU6ZZDL8Ao8fgsHlMbYJ
+END:VEVENT
+BEGIN:VEVENT
+UID:V8yrXesgubVmuTgHoWYc
+DTSTAMP:20260910T103101Z
+DTSTART;TZID=America/New_York:20260927T170000
+SUMMARY:Sunday Scaries Picnic
+LOCATION:Somerville Junction Park\, 3 Woodbine St\, Somerville\, MA
+DESCRIPTION:Show up at the junction park and come hang before we start the 
+ week up again!!! Bring snacks\, food\, games\, speakers\, whatever you wan
+ t\, it’s a Sunday evening picnic party :)\n\nRSVP: https://partiful.com/
+ e/V8yrXesgubVmuTgHoWYc
+URL:https://partiful.com/e/V8yrXesgubVmuTgHoWYc
 END:VEVENT
 END:VCALENDAR
