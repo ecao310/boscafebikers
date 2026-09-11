@@ -27,8 +27,8 @@ instead of deriving anything in the browser.
 
 **The layout mirrors `site/`.** Every path here sits at the same place it used
 to sit inside `site/`, so the published URLs are unchanged —
-`…/boscafebikers/events.json`, `…/rides.ics`, `…/maps/<uid>.svg`, `…/posters/<uid>.jpg` — and anyone
-subscribed to `webcal://ecao310.github.io/boscafebikers/rides.ics` never notices
+`cafebikers.org/events.json`, `…/rides.ics`, `…/maps/<uid>.svg`, `…/posters/<uid>.jpg` — and anyone
+subscribed to `webcal://cafebikers.org/rides.ics` never notices
 this branch exists.
 
 **Written by the sync bot.** `.github/workflows/sync.yml` (cron every 6 hours)
@@ -55,7 +55,7 @@ Partiful says today. So whenever it gets heavy, flatten it to a single commit:
 ```bash
 git checkout --orphan data-fresh data
 git commit -m "Re-root the data branch"
-git push --force boscafebikers data-fresh:data
+git push --force origin data-fresh:data
 ```
 
 No code history is touched, and the next sync carries on from the new root.
