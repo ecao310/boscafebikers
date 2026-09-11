@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Pull the generated ride data out of the `data` branch into site/.
 #
-#     scripts/pull_data.sh [remote]      # remote defaults to boscafebikers
+#     scripts/pull_data.sh [remote]      # remote defaults to origin
 #
 # events.json, events-past.json, cafe-points.json, rides.ics, maps/ and
 # posters/ are not committed on master or dev — the only copy lives on the
@@ -15,7 +15,7 @@
 # the branch, it is not part of the site.
 set -euo pipefail
 
-remote="${1:-boscafebikers}"
+remote="${1:-origin}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 site="$repo_root/site"
 

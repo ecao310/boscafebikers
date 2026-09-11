@@ -247,16 +247,6 @@ Instead `pages.yml` is `workflow_call`-able, and `sync.yml` has a `deploy` job
 that calls it — only when the sync actually changed the rides. If the feed is
 unchanged, no commit and no deploy.
 
-The site is served from `https://<user>.github.io/<repo>/`, a project subpath.
-Every URL in `index.html` is relative or absolute-with-host — nothing starts
-with `/` — so it works there without config. Keep it that way; a root-relative
-path would 404.
-
-**Custom domain (future).** Add a `site/CNAME` file containing the bare domain
-(e.g. `bostoncafebikers.com`) so it ships with the artifact and survives every
-redeploy, then set the same domain under **Settings → Pages → Custom domain**
-and point DNS at GitHub Pages.
-
 ## Local development
 
 ```bash
